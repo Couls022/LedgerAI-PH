@@ -1,0 +1,4 @@
+[OPERATIONAL-LOG] {"timestamp":"2026-08-18T09:03:59.376Z","severity":"INFO","event":"Startup validation executed","success":true,"details":{"nodeEnv":"production","warningCount":0,"criticalCount":0}}
+[WebSocket] Real-time notification server initialized
+[LedgerAI Production Server] Serving static frontend from: /app/applet/dist
+[LedgerAI Server] Running on http://0.0.0.0:3000

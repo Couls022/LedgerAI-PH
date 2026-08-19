@@ -1,0 +1,6 @@
+[OPERATIONAL-LOG] {"timestamp":"2026-08-18T09:02:43.778Z","severity":"INFO","event":"Startup validation executed","success":true,"details":{"nodeEnv":"development","warningCount":0,"criticalCount":0}}
+[WebSocket] Real-time notification server initialized
+WebSocket server error: Port 24678 is already in use
+[LedgerAI Server] Port 8080 is in use, attempting automatic fallback to dynamic available port...
+[WebSocket] Real-time notification server initialized
+[LedgerAI Server] Running on http://0.0.0.0:46217 (dynamic fallback)

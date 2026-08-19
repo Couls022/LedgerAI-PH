@@ -1,0 +1,6 @@
+[OPERATIONAL-LOG] {"timestamp":"2026-08-18T09:05:58.781Z","severity":"INFO","event":"Startup validation executed","success":true,"details":{"nodeEnv":"production","warningCount":0,"criticalCount":0}}
+[WebSocket] Real-time notification server initialized
+[LedgerAI Production Server] Serving static frontend from: /app/applet/dist
+[LedgerAI Server] Port 3000 is in use, attempting automatic fallback to dynamic available port...
+[WebSocket] Real-time notification server initialized
+[LedgerAI Server] Running on http://0.0.0.0:43503 (dynamic fallback)

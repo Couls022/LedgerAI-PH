@@ -1,0 +1,12 @@
+{
+  "id": "LGR-PH-2026-TEST-00-ABC12345",
+  "legalName": "LedgerAI PH Test Corp",
+  "createdAt": "2026-08-17T09:18:52.100Z",
+  "dbPath": "/app/applet/data/companies/LGR-PH-2026-TEST-00-ABC12345/database.lai",
+  "documentLocation": "/app/applet/data/companies/LGR-PH-2026-TEST-00-ABC12345/documents",
+  "location": "/app/applet/data/companies/LGR-PH-2026-TEST-00-ABC12345",
+  "backupLocation": "/app/applet/data/companies/LGR-PH-2026-TEST-00-ABC12345/backups",
+  "status": "ACTIVE",
+  "isDemo": true,
+  "lastOpenedAt": "2026-08-17T09:19:34.740Z"
+}

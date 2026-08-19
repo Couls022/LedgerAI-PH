@@ -1,0 +1,20 @@
+{
+  "payload": {
+    "licenseId": "LIC-5A4BB840",
+    "productId": "LEDGERAI-PH",
+    "companyId": "LGR-PH-WRONG-123",
+    "activationKey": "ACT-08C5D175D21C",
+    "planType": "PRO",
+    "status": "ACTIVE",
+    "issuedAt": "2026-08-12T08:46:35.583Z",
+    "expirationDate": null,
+    "type": "LIFETIME",
+    "entitlements": {
+      "users": 5,
+      "ocr": true,
+      "ai": true
+    },
+    "schemaVersion": 1
+  },
+  "signature": "Fyfmj9AsDA5+n8hyaHaW7AHKYr1Itck4tXaMyj1Jd73OIau5xKQ8bO5b2XHiXNoXUQ5M29IaFmuKMVKurvbc8sK84L3lwlzJzB8n3ch+AFnetOhQ6FpgG1kehIU6wx2EXki+L1ZevjFVc4kWnbp9kK2AeGN8e1VWx8HKd0z+QkFvZY75oi38SzPIpAuoSVclA3mLivaT4yuLw3XEuQZdlzoCVlHCsEFjfQwLXX9nFVmI/9Fid2qkxn7C++dgZNTop1edN/2wlVzQNpsLL3EOwzwZ8AfYcfnzns+fPlmhixSsvKLpoJCAokMz1Ys66sSUvv3GOjJmMqEzQsbkZgbTzA=="
+}

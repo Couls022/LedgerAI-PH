@@ -1,0 +1,34 @@
+{
+  "appId": "com.ledgerai.ph.keygenerator",
+  "productName": "LedgerAI PH Key Generator",
+  "directories": {
+    "output": "release-installers"
+  },
+  "extraMetadata": {
+    "name": "ledgerai-ph-keygenerator",
+    "productName": "LedgerAI PH Key Generator",
+    "version": "1.0.0",
+    "main": "dist-authority/authority-main.cjs"
+  },
+  "npmRebuild": false,
+  "win": {
+    "target": "nsis",
+    "icon": "packaging/windows/assets/keygenerator-icon.ico",
+    "artifactName": "LedgerAI-PH-KeyGenerator-Setup.exe"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "LedgerAI PH Key Generator"
+  },
+  "files": [
+    "dist-authority/**/*",
+    "internal/**/*",
+    "package.json",
+    "packaging/windows/service-config-authority/**/*",
+    "packaging/windows/assets/keygenerator-icon.ico",
+    "!dist/**/*"
+  ]
+}

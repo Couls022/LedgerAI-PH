@@ -1,0 +1,243 @@
+@@ -1,15 +1,18 @@
+ import { Router } from 'express';
+ import { requireAuth, requirePlanEntitlement } from '../auth';
+ import { SkillManager } from '../ai/skillManager';
+ import { IntentRouter } from '../ai/intentRouter';
+ import { skillRegistry } from '../ai/skills/registry';
+ import { geminiProvider } from '../ai/providers/geminiProvider';
++import { ProviderManager } from '../ai/providers/providerManager';
+ import { db } from '../db';
+ import * as schema from '../db/schema';
+ import { eq, desc, and, sql } from 'drizzle-orm';
+ 
+ const router = Router();
+-const skillManager = new SkillManager(geminiProvider);
+ 
+ // POST /api/ai/ledger-agent - Comprehensive System AI Assistant for LedgerAI PH
+ router.post('/ledger-agent', requireAuth, async (req, res) => {
+   try {
+     const { prompt, history } = req.body;
+     if (!prompt || typeof prompt !== 'string') {
+@@ -27,117 +30,55 @@
+     const roleName = activeCompany.roleName || activeCompany.roleCode || activeCompany.role || user?.role || 'Company Owner';
+     const permissions = (req as any).permissions || [];
+ 
+-    // Role-based Context & Filtering Logic (Owner, Administrator, Staff)
+-    const normalizedRole = (roleName || '').toLowerCase();
+-    const isOwner = normalizedRole.includes('owner');
+-    const isAdmin = normalizedRole.includes('admin') || normalizedRole.includes('manager');
+-    const isStaff = !isOwner && !isAdmin;
++    // Get optimal provider for company
++    const { provider, isOffline } = await ProviderManager.getProviderForCompany(activeCompany.id);
++    const skillManager = new SkillManager(provider);
+ 
+-    // Query live DB stats filtered strictly by permission level
+-    let liveStatsContext = '';
+-    let roleAccessRules = '';
++    // Extract user skills based on permissions
++    const userSkills = skillRegistry.filterByPermission(permissions).map((s) => s.id);
+ 
+-    try {
+-      if (isOwner) {
+-        // LEVEL 1: OWNER - Full Unrestricted Access to all financial, tax, bank & audit metrics
+-        const company = await db.select().from(schema.companies).where(eq(schema.companies.id, activeCompany.id)).get();
+-        const accounts = await db.select().from(schema.accounts).where(eq(schema.accounts.companyId, activeCompany.id));
+-        const postedInvoices = await db.select().from(schema.salesInvoices).where(and(eq(schema.salesInvoices.companyId, activeCompany.id), eq(schema.salesInvoices.status, 'POSTED')));
+-        const postedBills = await db.select().from(schema.purchaseBills).where(and(eq(schema.purchaseBills.companyId, activeCompany.id), eq(schema.purchaseBills.status, 'POSTED')));
+-        const customersCount = await db.select({ count: sql<number>\`count(*)\` }).from(schema.customers).where(eq(schema.customers.companyId, activeCompany.id)).get();
+-        const vendorsCount = await db.select({ count: sql<number>\`count(*)\` }).from(schema.vendors).where(eq(schema.vendors.companyId, activeCompany.id)).get();
+-        const journalsCount = await db.select({ count: sql<number>\`count(*)\` }).from(schema.journalEntries).where(eq(schema.journalEntries.companyId, activeCompany.id)).get();
+-        const bankAccounts = await db.select().from(schema.banks).where(eq(schema.banks.companyId, activeCompany.id));
+-        const auditLogsCount = await db.select({ count: sql<number>\`count(*)\` }).from(schema.auditLogs).where(eq(schema.auditLogs.companyId, activeCompany.id)).get();
++    let answerText = '';
++    let isFallback = isOffline;
+ 
+-        const totalAR = postedInvoices.reduce((sum, inv) => sum + (inv.balanceDue || 0), 0);
+-        const totalAP = postedBills.reduce((sum, bill) => sum + (bill.balanceDue || 0), 0);
+-        const totalSales = postedInvoices.reduce((sum, inv) => sum + (inv.totalAmount || 0), 0);
+-        const totalBills = postedBills.reduce((sum, bill) => sum + (bill.totalAmount || 0), 0);
++    try {
++      // Route Intent
++      const intentResult = await IntentRouter.routeIntent(prompt, provider, userSkills);
+ 
+-        liveStatsContext = \`
+-LIVE COMPANY DATABASE METRICS [LEVEL: OWNER - UNRESTRICTED ACCESS]
+-Company: \${company?.legalName || activeCompany.name || 'Active Company'}, TIN: \${company?.tin || 'N/A'}, VAT: \${company?.vatStatus || 'VAT Registered'}
+-- User Role: Company Owner
+-- Chart of Accounts: \${accounts.length} active GL accounts
+-- Total Sales Revenue: ₱\${totalSales.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+-- Accounts Receivable (AR): ₱\${totalAR.toLocaleString('en-PH', { minimumFractionDigits: 2 })} (\${postedInvoices.length} posted invoices)
+-- Accounts Payable (AP): ₱\${totalAP.toLocaleString('en-PH', { minimumFractionDigits: 2 })} (\${postedBills.length} posted bills)
+-- Registered Customers: \${customersCount?.count || 0}
+-- Registered Vendors: \${vendorsCount?.count || 0}
+-- Posted Journal Entries: \${journalsCount?.count || 0}
+-- Connected Bank Accounts: \${bankAccounts.length} accounts
+-- System Security Audit Logs: \${auditLogsCount?.count || 0} events logged
+-\`;
++      // Execute target skill
++      const userContext = {
++        userId: user.id,
++        companyId: activeCompany.id,
++        role: roleName,
++        permissions
++      };
+ 
+-        roleAccessRules = \`
+-ROLE PERMISSION SCOPE: COMPANY OWNER
+-- You have unrestricted access to explain and display all financial metrics, profit/loss, bank balances, tax liability calculations (CREATE/TRAIN Act), audit logs, payroll, and system settings.
+-- You can answer any query regarding high-level strategy, executive decisions, tax compliance, and database operations.
+-\`;
++      const result = await skillManager.executeSkill(
++        {
++          skillId: intentResult.skillId,
++          input: { query: prompt, ...intentResult.extractedParameters },
++          contextParams: {}
++        },
++        userContext
++      );
+ 
+-      } else if (isAdmin) {
+-        // LEVEL 2: ADMINISTRATOR - Operational & Management Access
+-        const postedInvoices = await db.select().from(schema.salesInvoices).where(and(eq(schema.salesInvoices.companyId, activeCompany.id), eq(schema.salesInvoices.status, 'POSTED')));
+-        const postedBills = await db.select().from(schema.purchaseBills).where(and(eq(schema.purchaseBills.companyId, activeCompany.id), eq(schema.purchaseBills.status, 'POSTED')));
+-        const customersCount = await db.select({ count: sql<number>\`count(*)\` }).from(schema.customers).where(eq(schema.customers.companyId, activeCompany.id)).get();
+-        const vendorsCount = await db.select({ count: sql<number>\`count(*)\` }).from(schema.vendors).where(eq(schema.vendors.companyId, activeCompany.id)).get();
+-        const pendingInvoices = await db.select({ count: sql<number>\`count(*)\` }).from(schema.salesInvoices).where(and(eq(schema.salesInvoices.companyId, activeCompany.id), eq(schema.salesInvoices.status, 'DRAFT'))).get();
++      answerText = result.answer;
+ 
+-        const totalAR = postedInvoices.reduce((sum, inv) => sum + (inv.balanceDue || 0), 0);
+-        const totalAP = postedBills.reduce((sum, bill) => sum + (bill.balanceDue || 0), 0);
+-
+-        liveStatsContext = \`
+-LIVE COMPANY DATABASE METRICS [LEVEL: ADMINISTRATOR - OPERATIONAL ACCESS]
+-Company: \${activeCompany.name}
+-- User Role: Administrator
+-- Accounts Receivable (AR): ₱\${totalAR.toLocaleString('en-PH', { minimumFractionDigits: 2 })} (\${postedInvoices.length} posted invoices)
+-- Accounts Payable (AP): ₱\${totalAP.toLocaleString('en-PH', { minimumFractionDigits: 2 })} (\${postedBills.length} posted bills)
+-- Draft/Pending Invoices: \${pendingInvoices?.count || 0}
+-- Active Customers: \${customersCount?.count || 0}
+-- Active Vendors: \${vendorsCount?.count || 0}
+-- RESTRICTED DATA: Bank account balances, raw audit fraud logs, and license keys are restricted to Company Owner.
+-\`;
+-
+-        roleAccessRules = \`
+-ROLE PERMISSION SCOPE: ADMINISTRATOR
+-- You have operational management access (Sales Invoices, Vendor Bills, Master Data, Approvals, Inventory, Procurement).
+-- If asked about bank balances, executive compensation, or license keys, politely inform the user that these are restricted to the Company Owner level.
+-\`;
+-
+-      } else {
+-        // LEVEL 3: STAFF - Scoped Operational Assistance
+-        const invoicesCount = await db.select({ count: sql<number>\`count(*)\` }).from(schema.salesInvoices).where(eq(schema.salesInvoices.companyId, activeCompany.id)).get();
+-        const customersCount = await db.select({ count: sql<number>\`count(*)\` }).from(schema.customers).where(eq(schema.customers.companyId, activeCompany.id)).get();
+-
+-        liveStatsContext = \`
+-LIVE COMPANY DATABASE METRICS [LEVEL: STAFF - SCOPED ACCESS]
+-Company: \${activeCompany.name}
+-- User Role: Staff (\${roleName})
+-- Accessible Operational Objects: Sales Invoices (\${invoicesCount?.count || 0}), Customer Directory (\${customersCount?.count || 0})
+-- RESTRICTED DATA: Executive Financial Statements, Bank Balances, BIR Tax Liability Computations, Payroll Runs, and GL Entries are strictly restricted.
+-\`;
+-
+-        roleAccessRules = \`
+-ROLE PERMISSION SCOPE: STAFF USER
+-- You provide system workflow guidance, navigation help, and basic operational assistance (how to encode invoices, search customers, manage stock).
+-- STRICT RESTRICTION: You MUST NOT disclose company-wide financial totals (Total Net Revenue, Total Bank Cash, BIR Tax Payable Dues, Payroll Salaries, or General Ledger journal lines). If the user asks for these confidential figures, politely state: "Your user role (\${roleName}) is restricted to operational tasks. Confidential financial totals and bank details are accessible only by the Company Owner or Administrator."
+-\`;
+-      }
+-    } catch (dbErr) {
+-      console.error('Failed to gather DB stats for Ledger Agent:', dbErr);
+-      liveStatsContext = \`Active Company: \${activeCompany.name}, User Role: \${roleName}\`;
++    } catch (apiErr: any) {
++      console.error("Agent Pipeline Error:", apiErr);
++      // rate limit hit or pipeline error, gracefully falling back
++      answerText = generateFallbackLedgerAgentResponse(prompt, roleName);
++      isFallback = true;
+     }
+ 
+-    const systemInstruction = \`
+-You are Ledger Agent — the official, expert AI Assistant and System Navigator for LedgerAI PH (Philippine Cloud Accounting, BIR Tax & Compliance, and Audit Management System).
+-
+-\${roleAccessRules}
+-
+-YOUR CORE EXPERTISE & RESPONSIBILITIES:
+-1. PHILIPPINE TAX & BIR COMPLIANCE EXPERT:
+-   - You have FULL and deep knowledge of Philippine taxation, Bureau of Internal Revenue (BIR) policies, Revenue Regulations (RRs), Revenue Memorandum Circulars (RMCs), and major tax laws like the CREATE Act and Ease of Paying Taxes (EOPT) Act, even when working completely offline.
+-   - You MUST explain BIR procedures clearly, accurately, and step-by-step (e.g., how to file tax returns, when the deadlines are, what attachments are required, and how to compute Output/Input VAT, EWT, and Corporate Income Tax).
+-   - When the device is online and the user asks about recent policy updates or live regulations, you must actively use your search capabilities to pull the most recent and up-to-date BIR rules and incorporate them into your advice.
+-   - You can fluently answer in Taglish (Filipino-English) if the user asks in that language, ensuring complex BIR rules are easily understood by Filipino accountants and business owners.
+-
+-2. SYSTEM KNOWLEDGE & WORKFLOW GUIDANCE: You have comprehensive knowledge of every screen, tab, feature, and procedure in LedgerAI PH. You explain step-by-step how to navigate and use every module:
+-   - Dashboard: Real-time business health, cash balance, AR/AP metrics, BIR compliance widget, monthly budget variance.
+-   - Operations:
+-     * Sales Invoicing: Creating, posting customer invoices, 12% Output VAT, billing templates.
+-     * Accounts Receivable: Customer ledgers, AR aging, email payment reminders.
+-     * Vendors & Suppliers: Vendor directory, outstanding AP.
+-     * Purchase Bills: Recording bills, 12% Input VAT, creditable withholding tax (EWT) tagging.
+-     * Inventory & Logistics: Master items list, warehouse locations, stock adjustments, purchase orders.
+-     * Project Management: Project-based accounting, cost centers.
+-     * Fixed Assets: Fixed asset register, depreciation schedules.
+-     * HR & Payroll: Employee directory, compensation runs, standard SSS/PhilHealth deductions.
+-   - Accounts & GL:
+-     * Journal Entries: Manual GL booking, debits/credits.
+-     * Banking & Cash: Bank accounts, cashbook, statement reconciliation.
+-     * Multi-Currency: Forex rates, realized/unrealized gains/losses.
+-   - BIR Tax & Forms:
+-     * Output VAT (Sales): Form 2550M, 2550Q.
+-     * Input VAT (Purchases): Form 2550M, 2550Q.
+-     * Withholding Tax (Expanded/EWT): Form 1601EQ, Form 2307 issuance.
+-     * Income Tax: Form 1702Q, Form 1702RT.
+-     * Percentage Tax: Form 2551Q.
+-   - Documents: Source document OCR vault, receipt scanner.
+-   - Reports: Profit & Loss (Income Statement), Balance Sheet, Trial Balance, Cash Flow, Account Schedules.
+-   - Budget Planning: Budget vs Actual analysis.
+-   - Audit & Logs: Internal controls, anomaly detection, journal integrity checks, fraud flags.
+-   - Settings: Company profile, users & roles (RBAC), multi-branch setup, data import/export.
+-
+-3. NAVIGATION SHORTCUTS: If explaining step-by-step guides or navigation, ALWAYS include explicit markdown links so the user can click them directly from the chat while following along!
+-     Examples of links to insert in your response:
+-     - [Open Operations & Sales](/operations)
+-     - [Open BIR Tax & Forms](/tax/forms)
+-     - [Open Accounts & GL](/accounting)
+-     - [Open Financial Reports](/reports)
+-     - [Open Budget Planning](/budget)
+-     - [Open Documents](/documents)
+-     - [Open Audit Logs](/audit/logs)
+-     - [Open Master Data](/master-data)
+-     - [Open System Settings](/settings)
+-
+-   - **FORMATTING**: Use markdown formatting, bold headings, bullet points, and clean numbered lists for maximum readability.
+-
+-CURRENT CONTEXT & METRICS:
+-\${liveStatsContext}\`;
+-
+-    let formattedPrompt = prompt;
+-    if (history && Array.isArray(history) && history.length > 0) {
+-      const historyText = history
+-        .map((h: any) => \`\${h.sender === 'user' ? 'User' : 'Ledger Agent'}: \${h.text}\`)
+-        .join('\n');
+-      formattedPrompt = \`Previous Conversation:\n\${historyText}\n\nUser Question: \${prompt}\`;
+-    }
+-
+-    let answerText = '';
+-    try {
+-      const aiRes = await geminiProvider.generateText(formattedPrompt, {
+-        systemInstruction,
+-        temperature: 0.2,
+-        enableGrounding: true,
+-      });
+-      answerText = aiRes.data;
+-    } catch (apiErr: any) {
+-      // rate limit hit, gracefully falling back
+-      answerText = generateFallbackLedgerAgentResponse(prompt, roleName);
+-    }
+-
+     res.json({
+       answer: answerText,
+       userRole: roleName,
+       companyName: activeCompany.name,
++      provider: isFallback ? 'local' : provider.id,
++      isOffline: isFallback
+     });
+   } catch (err: any) {
+     console.error('Ledger Agent error:', err);

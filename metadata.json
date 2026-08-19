@@ -1,0 +1,8 @@
+{
+  "name": "Ledger.ph Accounting & Tax Dashboard",
+  "description": "Comprehensive accounting, BIR tax compliance, document management & AI OCR, audit management, production licensing, and multi-user operations.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

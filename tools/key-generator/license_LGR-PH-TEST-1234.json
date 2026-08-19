@@ -1,0 +1,20 @@
+{
+  "payload": {
+    "licenseId": "LIC-3565CC6D",
+    "productId": "LEDGERAI-PH",
+    "companyId": "LGR-PH-TEST-1234",
+    "activationKey": "ACT-6274306E6BC9",
+    "planType": "PRO",
+    "status": "ACTIVE",
+    "issuedAt": "2026-08-12T08:39:39.803Z",
+    "expirationDate": null,
+    "type": "LIFETIME",
+    "entitlements": {
+      "users": 5,
+      "ocr": true,
+      "ai": true
+    },
+    "schemaVersion": 1
+  },
+  "signature": "RZVd0BmgsUbrxHhmidiyu7aP+45c1sVisYbyvqQwWaSY+dI+7wvtZxof1VpP07CYx0zVF+cupoXKDoQxlOpMr/JvVmWq2FOSVFnNs3fXP619JK1T7feJ5UfHI8iDJsvj3up983XYHQgIf3/HSjw1YAxQ5I3h6bTvQgpAztyoxvv34ccIYFDEAqM2ZmU2rxgL4ItCy4I6d365U4/2dO7jfOxdzraMSxqVdgQy59dqFAe19tHNBvfh98uMQkB4XF6dNzXRsaa84YVnDTOcgkEcHtbuJRoeMXiSTeaQnbmhZKS30s0i8DxI9c29kbfiQFH2B6SbToZPbcNp93aoON4d6Q=="
+}

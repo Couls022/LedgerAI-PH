@@ -1,0 +1,25 @@
+node_modules/
+coverage/
+.DS_Store
+*.log
+*.sqlite
+*.db
+.env*
+!.env.example
+
+# Internal authority keys and build outputs
+internal/authority-keys/*
+!internal/authority-keys/.gitkeep
+dist-authority/
+dist-installer/
+*.pem
+*.key
+authority_keys.json
+authority-credentials.json
+dist/
+
+# Generated release/build files
+release-installers/
+test-dist-installer/
+*.zip
+*.tgz

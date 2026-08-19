@@ -1,0 +1,29 @@
+{
+  "appId": "com.ledgerai.ph",
+  "productName": "LedgerAI PH",
+  "directories": {
+    "output": "dist-installer"
+  },
+  "win": {
+    "target": "nsis",
+    "icon": "public/favicon.ico"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "LedgerAI PH"
+  },
+  "files": [
+    "dist/**/*",
+    "package.json",
+    "!internal/**/*",
+    "!tools/**/*",
+    "!dist-authority/**/*",
+    "!**/*.key",
+    "!**/*.pem",
+    "!**/*keys.json",
+    "!**/*credentials.json"
+  ]
+}
