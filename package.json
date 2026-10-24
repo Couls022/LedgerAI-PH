@@ -70,7 +70,7 @@
     "@types/ws": "^8.18.1",
     "autoprefixer": "^10.4.21",
     "drizzle-kit": "^0.31.10",
-    "electron": "^43.4.0",
+    "electron": "^43.8.1",
     "electron-builder": "^26.15.3",
     "jsdom": "^30.0.1",
     "playwright": "^1.62.1",
