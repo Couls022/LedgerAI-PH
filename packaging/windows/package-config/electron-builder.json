@@ -1,0 +1,40 @@
+{
+  "appId": "com.ledgerai.ph.accounting",
+  "productName": "LedgerAI PH",
+  "copyright": "Copyright © 2026 LedgerAI Corp. All rights reserved.",
+  "directories": {
+    "output": "dist"
+  },
+  "files": [
+    "dist/**/*",
+    "main.js",
+    "package.json",
+    "assets/**/*"
+  ],
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": [
+          "x64"
+        ]
+      },
+      {
+        "target": "portable",
+        "arch": [
+          "x64"
+        ]
+      }
+    ],
+    "icon": "assets/app-icon.ico"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "LedgerAI PH",
+    "runAfterFinish": true,
+    "uninstallDisplayName": "LedgerAI PH Ledger Suite"
+  }
+}

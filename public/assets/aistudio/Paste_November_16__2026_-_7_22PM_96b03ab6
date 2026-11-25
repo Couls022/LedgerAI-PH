@@ -1,0 +1,942 @@
+# LEDGERAI PH — FULL ENTERPRISE FUNCTIONAL READINESS, ACCOUNTING ACCURACY & END-TO-END WORKFLOW AUDIT
+
+## MISSION
+
+Conduct a comprehensive, evidence-based audit of the entire LedgerAI PH application to determine whether every visible control, button, action, transaction workflow, approval process, accounting computation, BIR tax treatment, financial report, data source, and Ledger Agent AI capability is genuinely functional and reliable for real enterprise accounting operations in the Philippines.
+
+This is a FULL SYSTEM AUDIT, not a UI review.
+
+The objective is to establish the exact current implementation status, identify every incomplete or defective requirement, and produce one controlled, prioritized remediation backlog that will guide all subsequent development until the application is ready for real business use.
+
+The audit must cover the entire application from the first screen and first module through the final administration and governance modules.
+
+---
+
+# 1. GOVERNANCE AND MASTER ROADMAP CONTROL
+
+Before starting:
+
+1. Locate and read the authoritative `LEDGERAI_ENTERPRISE_MASTER_ROADMAP.md`.
+2. Read the latest implementation status, release evidence, audit records, test inventories, user manual, and relevant source files.
+3. Identify existing requirements, completed work, pending work, known defects, external dependencies, and previously accepted decisions.
+4. Preserve the existing roadmap structure and requirement IDs.
+5. Do not create another roadmap, competing master document, or additional standalone Markdown status files.
+6. Update the existing master roadmap IN PLACE only when the audit findings have been sufficiently verified.
+7. Preserve completed requirements unless new reproducible evidence demonstrates a regression or incorrect implementation.
+8. Never mark a requirement COMPLETE based only on UI appearance, mocked data, a successful build, or an unverified implementation report.
+
+The master roadmap must remain the single source of truth for:
+- Completed requirements
+- Partially completed requirements
+- Open requirements
+- Defects and remediation
+- Dependencies
+- Test and validation evidence
+- External certification requirements
+- Next authorized development task
+
+Do not change the release version, release freeze state, or commercial release status during this audit.
+
+## Execution environment restriction
+
+This work is being conducted inside the Google AI Studio browser/Linux environment.
+
+DO NOT build, package, generate, or deliver a Windows EXE installer. DO NOT run NSIS or claim Windows-native acceptance.
+
+Limit environment-dependent checks to source-code inspection, Linux-compatible tests, typechecking, linting, and supported builds. Windows-native acceptance, DPAPI/ACL, installation, upgrade, uninstall, and native backup/restore acceptance must remain pending until validated on an actual Windows 10/11 host or Windows CI runner.
+
+---
+
+# 2. COMPLETE UI CONTROL AND BUTTON INVENTORY
+
+Inspect the entire application, including all 16 primary ERP modules, their submodules, tabs, drawers, dialogs, forms, action menus, settings, and administration workspaces.
+
+Every visible interactive control must be inventoried and tested.
+
+This explicitly includes ALL controls highlighted in the screenshots supplied with this task, including but not limited to:
+
+### A. Customer Master Registry
+- Add Customer
+- Edit
+- 360° Journey
+- All actions inside the Customer 360° workspace
+- Customer profile changes
+- Customer transaction history
+- Customer approval and governance history
+- Any archive, remove, deactivate, or delete action
+
+### B. Vendor & Supplier Registry
+- Add Vendor
+- Edit
+- 360° Journey
+- Quick Drawer
+- Edit Record
+- Archive
+- Remove from List
+- Soft Delete
+- Supplier registration and TIN profile
+- Payables exposure
+- Procurement summary
+- Purchase Orders and Purchase Bills history
+- Supplier disbursements
+- BIR Form 2307/EWT records
+- Accreditation and governance history
+- Master Profile Changes
+- Every action inside the Vendor 360° workspace
+
+### C. Organizational Dimensions & Cost Accounting
+- Add Department
+- Add Project
+- Add Cost Center
+- Edit Dimension
+- All dimension tabs and filters
+- Cost center, department, and project relationships
+- Links to journals, expenses, budgets, payroll, projects, and financial reports
+
+### D. Statutory Tax Codes & ATC Rates
+- Add Tax Code
+- Edit
+- Tax type
+- Tax direction
+- Tax status
+- Effective dates
+- Tax rate
+- ATC classification
+- Links to transactions and statutory computations
+
+### E. Enterprise RBAC & Access Matrix
+- User and member lifecycle
+- Add Member
+- Edit Member
+- Disable Account
+- Remove from Company
+- Grant / Transfer Ownership
+- Reset to Role Default
+- Save Module Assignments
+- Add Compatible Role
+- Switch Primary Role
+- All module and submodule permission checkboxes
+- Allowed actions
+- Role Permissions Catalog
+- Compatibility Matrix
+- Live User Access Preview
+- Removal and Lifecycle History
+- Export Matrix
+
+Validate actual backend enforcement, not just frontend visibility.
+
+### F. Database Vault & Disaster Recovery
+- Run Integrity Check
+- Create Encrypted Backup
+- Automated Backup Scheduler
+- Preferred Backup Time
+- Enable/Disable Scheduler
+- Email Records & Notifications
+- Send Record
+- Storage Monitor
+- Rescan Storage
+- Recommended Cleanup
+- All .lai Files
+- Active Databases
+- Cleanup actions
+- Restore validation
+- Restore as New
+- Replace Existing
+- Backup verification
+- Recovery and rollback
+
+### G. Multi-Workstation LAN & Concurrency
+- Refresh Status
+- Server startup and shutdown controls, if present
+- Client workstation discovery
+- LAN connection setup
+- Session management
+- Connected workstation controls
+- Locking and concurrency
+- Client connection scripts
+- Network diagnostics
+- Local loopback and private LAN interface behavior
+
+Determine whether the application is correctly distinguishing a valid private LAN interface from loopback, APIPA, and unavailable network interfaces.
+
+### H. Company Profile & System Settings
+- Company Profile & BIR
+- License & CAS Authority
+- User Profile & Appearance
+- Email Notifications
+- Ledger Agent AI configuration
+- Role & Access Matrix shortcuts
+- Database Vault & Recovery shortcuts
+- Multi-Workstation LAN shortcuts
+- Company registration fields
+- Taxpayer classification
+- VAT status
+- RDO
+- BIR registration details
+- Document storage path
+- Backup path
+- Save Company Settings
+- Check License Status
+- Factory Reset & Wipe All Data
+
+Factory Reset must receive a dedicated destructive-action security audit, including authorization, confirmation, company isolation, audit evidence, backup protection, and rollback or irreversibility warnings.
+
+### I. All 360° Journey buttons
+
+This is a mandatory global requirement.
+
+Search the entire source code for every implementation of:
+- 360° Journey
+- 360 View
+- Relationship Workspace
+- Quick Drawer
+- Entity Journey
+- Similar transaction-history or profile-journey actions
+
+Do not audit only Customer and Vendor.
+
+Include all supported entities, such as customers, vendors, invoices, bills, purchase orders, payments, receipts, checks, bank transactions, employees, payroll records, fixed assets, journal entries, tax records, documents, approvals, and other supported business records.
+
+For each 360° workspace, verify:
+
+1. Correct entity identification and company/tenant scope.
+2. Accurate profile information.
+3. Complete source transaction history.
+4. Correct links to originating and downstream records.
+5. Correct document and attachment references.
+6. Accurate balances and cumulative amounts.
+7. Correct approval, rejection, posting, reversal, and audit history.
+8. Correct status and lifecycle transitions.
+9. Authorized actions only.
+10. No fabricated, duplicated, stale, unrelated, or cross-company data.
+11. Every displayed action performs its actual intended operation.
+12. Every transaction can be traced back to its authoritative source record.
+
+A 360° Journey must be a real traceability workspace, not a decorative summary panel.
+
+---
+
+# 3. BUTTON FUNCTIONALITY AND END-TO-END TRACEABILITY
+
+For EVERY identified button and interactive control, record:
+
+- Module and screen
+- Button/control name
+- Frontend component and handler
+- API endpoint or action
+- Backend route/controller
+- Service/domain function
+- Database table and affected records
+- Permission required
+- Validation rules
+- Audit event generated
+- Expected result
+- Actual observed result
+- Related tests
+- Defect classification
+
+Test whether each button:
+
+- Executes the correct operation.
+- Calls the correct API.
+- Uses the correct company and user context.
+- Validates all required inputs.
+- Prevents invalid state transitions.
+- Persists changes correctly.
+- Refreshes affected UI and related workspaces.
+- Updates downstream accounting and reporting records when appropriate.
+- Produces a traceable success or failure response.
+- Prevents duplicate submission and race conditions.
+- Handles network failure and retry safely.
+
+Classify each control as:
+
+- FUNCTIONAL AND VERIFIED
+- FUNCTIONAL WITH LIMITATIONS
+- UI ONLY / PLACEHOLDER
+- BROKEN
+- INCORRECT DATA SOURCE
+- INCORRECT PERMISSION ENFORCEMENT
+- NOT TESTED
+- NOT APPLICABLE
+
+A button is not COMPLETE simply because it opens a modal or displays a success notification.
+
+---
+
+# 4. COMPLETE ACCOUNTING AND FINANCE PROCESS AUDIT
+
+Audit the complete enterprise accounting lifecycle.
+
+## A. Sales to Cash
+- Customer onboarding
+- Customer credit terms and limits
+- Sales quotation
+- Sales order
+- Delivery
+- Sales invoice
+- VAT classification
+- Output VAT
+- Withholding tax treatment
+- Accounts Receivable
+- Customer collections
+- Official Receipt / collection records
+- Credit memo
+- Debit memo
+- Refund
+- Write-off
+- Unapplied payment
+- Customer balance
+- Customer statement
+- General Ledger posting
+
+## B. Procurement to Pay
+- Vendor onboarding
+- Vendor TIN and tax profile
+- Vendor accreditation
+- Purchase requisition
+- Purchase order
+- Receiving
+- Purchase bill
+- Input VAT
+- EWT classification and ATC
+- Accounts Payable
+- Supplier payment
+- Check and bank disbursement
+- BIR Form 2307
+- Supplier balance
+- Purchase returns
+- Debit/credit adjustments
+- General Ledger posting
+
+## C. Inventory and Warehouse
+- Item master
+- Units of measure
+- Warehouse
+- Stock receiving
+- Stock issuing
+- Transfers
+- Adjustments
+- Inventory costing
+- Cost of Goods Sold
+- Returns
+- Inventory valuation
+- Inventory-to-GL reconciliation
+- Negative stock protection
+- Period-end inventory cutoff
+
+## D. Cash and Banking
+- Cash receipts
+- Cash disbursements
+- Bank deposits
+- Check register
+- Check clearing and bouncing
+- Bank statement import
+- Bank matching
+- Reconciliation
+- Outstanding checks
+- Deposits in transit
+- Book adjustments
+- Approval and posting
+- Cashbook
+- Bank-to-GL reconciliation
+
+## E. General Ledger and Accounting
+- Company-managed Chart of Accounts
+- Account classification
+- Account hierarchy
+- Parent/header versus posting accounts
+- Journal entries
+- Recurring journals
+- Adjusting entries
+- Accruals
+- Prepayments
+- Depreciation
+- Reversals
+- Opening balances
+- Trial Balance
+- General Ledger
+- Subsidiary Ledgers
+- Period lock
+- Month-end close
+- Year-end close
+- Retained earnings
+- Financial statement generation
+
+## F. Fixed Assets
+- Asset registration
+- Acquisition
+- Capitalization
+- Depreciation method
+- Useful life
+- Residual value
+- Accumulated depreciation
+- Disposal
+- Impairment, where supported
+- Fixed asset register
+- GL reconciliation
+
+## G. Payroll and HR
+- Employee records
+- Payroll periods
+- Time and attendance, where supported
+- Earnings
+- Deductions
+- SSS
+- PhilHealth
+- Pag-IBIG
+- Withholding tax on compensation
+- Payroll approval
+- Payroll posting
+- Net pay
+- Payroll liabilities
+- Payslips
+- Statutory reports
+- Payroll-to-GL reconciliation
+
+## H. Budget and Financial Planning
+- Budget creation
+- Department and cost center allocation
+- Project allocation
+- Budget approval
+- Budget revisions
+- Actual versus budget
+- Variance analysis
+- Forecasting
+- Cash flow planning
+- Budget-to-GL data consistency
+
+## I. Tax and BIR Compliance
+- VAT
+- Percentage tax
+- EWT
+- CWT
+- Compensation withholding
+- ATC codes
+- Form 2307
+- Alphalists
+- SAWT
+- SLSP
+- Applicable BIR returns
+- Tax payable and tax credit reconciliation
+- Filing-period accuracy
+- Tax adjustments
+- Tax report generation
+
+For each workflow, identify its actual source transaction, accounting entry, tax impact, approval requirements, posting status, and report destinations.
+
+---
+
+# 5. BIR RULES, TAX ENGINE AND STATUTORY ACCURACY
+
+This is a critical audit area.
+
+Do not assume that a tax computation is correct merely because a rate appears in the UI.
+
+For each implemented tax rule, inspect:
+
+- Legal/regulatory basis
+- BIR issuance or applicable regulation
+- Taxpayer classification
+- Transaction type
+- Taxability
+- Tax base
+- Rate
+- Tax direction
+- ATC
+- Effective date
+- Applicable filing period
+- Exemption or zero-rating conditions
+- Required supporting documents
+- Rounding rules
+- Journal impact
+- Return and alphalist mapping
+- Validation and exception handling
+
+Verify that tax codes are not applied indiscriminately.
+
+The engine must distinguish applicable classifications, including:
+- VAT-registered
+- Non-VAT
+- Zero-rated
+- VAT-exempt
+- Percentage-tax applicable
+- Withholding tax subject
+- Withholding tax exempt
+- Other supported taxpayer/transaction classifications
+
+For each transaction, determine whether it should be:
+- Included in a tax computation
+- Excluded from a tax computation
+- Included with a different tax treatment
+- Pending supporting documentation
+- Pending validation
+- Reversed or adjusted
+- Included in a later filing period
+
+Never invent BIR rules or treat illustrative rates as universally applicable.
+
+Use authoritative and current Philippine legal/tax references where external validation is required. Record the source, issuance number, effective date, applicability, and unresolved interpretation.
+
+Mark rules requiring CPA or BIR confirmation as EXTERNAL VALIDATION REQUIRED.
+
+Do not claim CAS/CBA registration, BIR approval, or taxpayer-specific certification without actual evidence.
+
+---
+
+# 6. APPROVAL, REJECTION AND MAKER-CHECKER WORKFLOW
+
+Map every transaction that requires approval.
+
+For each workflow, identify:
+
+1. Who creates/submits the transaction?
+2. Who receives the approval request?
+3. What permission is required?
+4. Who can approve?
+5. Who can reject?
+6. Can the creator approve their own transaction?
+7. What happens when rejected?
+8. Can the requester revise and resubmit?
+9. What happens when approved?
+10. Does approval automatically post, or is posting a separate authorized step?
+11. What accounting records are created?
+12. What audit events are recorded?
+13. What happens when the period is locked?
+14. What happens during concurrent approval attempts?
+
+Use clear, consistent lifecycle states where applicable, such as:
+
+DRAFT
+→ SUBMITTED
+→ PENDING_APPROVAL
+→ APPROVED / REJECTED
+→ POSTED
+→ PARTIALLY_PAID / PAID
+→ VOIDED / REVERSED
+
+Do not force this exact lifecycle on transactions where a different legitimate process is required.
+
+Verify the actual state machine for every transaction type.
+
+The user must be able to understand:
+- Current status
+- Previous status
+- Submitted by
+- Submitted date/time
+- Assigned approver
+- Approval or rejection date/time
+- Reason for rejection
+- Required next action
+- Whether it affects the General Ledger
+- Whether it affects tax computations
+- Whether it is included in financial reports
+
+Approval and rejection must not be cosmetic UI actions.
+
+---
+
+# 7. ACCOUNTING SOURCE OF TRUTH AND DATA LINEAGE
+
+Identify the authoritative source of every important displayed number.
+
+For every major dashboard metric, ledger balance, tax amount, financial statement value, customer balance, vendor balance, inventory balance, payroll amount, and AI-generated financial insight, trace:
+
+SOURCE RECORD
+→ BUSINESS TRANSACTION
+→ VALIDATION
+→ APPROVAL
+→ POSTING
+→ ACCOUNTING ENTRY
+→ SUBSIDIARY LEDGER
+→ GENERAL LEDGER
+→ TRIAL BALANCE
+→ FINANCIAL REPORT
+→ DASHBOARD / AI INSIGHT
+
+Verify:
+
+- No hardcoded financial figures.
+- No synthetic data leaking into real company books.
+- No duplicate posting.
+- No orphaned transaction.
+- No incorrect company scope.
+- No stale cached totals.
+- No silent fallback to incorrect account codes.
+- No arbitrary selection among multiple eligible control accounts.
+- No use of unposted or rejected transactions in posted financial statements.
+- Correct treatment of reversals, credit memos, write-offs, and adjustments.
+- Correct date and period cutoff.
+- Correct currency and centavo precision.
+- Correct account mapping using the company's actual COA.
+
+If a source record is missing, ambiguous, invalid, or unavailable, the application must fail safely and identify the issue. It must not silently generate a misleading financial result.
+
+For all reports, document:
+- Data source
+- Query/service
+- Date basis
+- Posting-status filters
+- Company/branch filters
+- Tax treatment
+- Calculation logic
+- Drilldown destination
+- Reconciliation method
+
+---
+
+# 8. FINANCIAL REPORTING ACCURACY
+
+Audit every report and export, including:
+
+- General Ledger
+- Subsidiary Ledgers
+- Trial Balance
+- Balance Sheet / Statement of Financial Position
+- Income Statement
+- Cash Flow Statement
+- Statement of Changes in Equity
+- Accounts Receivable Aging
+- Accounts Payable Aging
+- Inventory Valuation
+- Fixed Asset Register
+- Depreciation Schedule
+- Payroll Reports
+- Tax Returns and Schedules
+- VAT Reports
+- Withholding Tax Reports
+- Alphalists
+- Budget versus Actual
+- Bank Reconciliation
+- Management Reports
+
+For each report verify:
+
+1. Correct accounting basis.
+2. Correct reporting period.
+3. Correct posting status.
+4. Correct account mapping.
+5. Correct opening and closing balances.
+6. Correct debit and credit totals.
+7. Correct treatment of reversals and adjustments.
+8. Correct subsidiary-to-GL reconciliation.
+9. Correct formulas and totals.
+10. Correct CSV, PDF, and XLSX exports.
+11. Drilldown from report amount to source transactions.
+12. Consistency between dashboard, ledger, trial balance, and financial statements.
+
+Perform independent recalculation using controlled synthetic data.
+
+Do not modify production or pilot company records during testing.
+
+---
+
+# 9. LEDGER AGENT AI — COMPLETE KNOWLEDGE AND OPERATIONAL INSTRUCTION AUDIT
+
+The Ledger Agent AI must understand the complete LedgerAI PH system, not merely answer general accounting questions.
+
+Audit its actual knowledge, prompts, tools, context retrieval, permissions, and response grounding.
+
+It must have a complete, maintained operational knowledge base covering:
+
+- Entire user and operations manual
+- All 16 ERP modules
+- Every module and submodule
+- Every important button and action
+- Every form and required field
+- Every workflow and transaction lifecycle
+- Submission and approval processes
+- Rejection and resubmission
+- Posting and reversal
+- Accounting effects
+- BIR and tax treatment
+- Report generation
+- Error messages
+- Troubleshooting
+- Backup and restore
+- Company database lifecycle
+- LAN setup and multi-user operation
+- RBAC and security
+- Audit and governance
+- Known limitations
+- External certification boundaries
+
+The AI must be able to answer operational questions such as:
+
+- How do I create and submit a sales invoice?
+- What happens after I submit it?
+- Who must approve it?
+- What happens if it is rejected?
+- When does it affect Accounts Receivable?
+- When does it post to the General Ledger?
+- Is it included in the VAT return?
+- Which report should reflect the transaction?
+- How can I verify the result?
+- What should I do if the amount is incorrect?
+- How do I correct a posted transaction?
+- What happens if I submit a transaction during a locked accounting period?
+- How do I restore a company database safely?
+
+AI requirements:
+
+1. Default responses must be clear, professional English.
+2. It must use actual LedgerAI PH terminology and workflows.
+3. It must distinguish instructions supported by the current implementation from proposed or unavailable functionality.
+4. It must never invent a button, route, permission, BIR rule, computation, or system capability.
+5. It must cite or identify the relevant module, screen, and procedure where possible.
+6. It must explain expected results and downstream effects.
+7. It must identify when human authorization or CPA/BIR validation is required.
+8. It must respect the current user's RBAC permissions.
+9. It must never expose another company's data.
+10. It must not fabricate financial figures or claim that a transaction has been completed without verified system results.
+
+The knowledge base must be versioned and maintained as part of the application's controlled system knowledge.
+
+Its backup and recovery process must be verified. Include the knowledge package and its version/checksum in the appropriate backup manifest or system backup process, without contaminating company financial tables or mixing one company's private records into another company's knowledge.
+
+Verify that restored systems can recover the correct knowledge version and that updated procedures are not silently lost.
+
+Test AI responses against real application workflows and known accounting/tax cases, not only general conversation prompts.
+
+---
+
+# 10. USER MANUAL AND GUIDED TOUR
+
+Audit `LEDGERAI_PH_USER_MANUAL.md` against the actual implementation.
+
+Every instruction must correspond to a real screen, field, button, permission, workflow, and expected result.
+
+Include:
+- Company creation and opening
+- Company-managed Chart of Accounts
+- Opening balances
+- Customer and vendor management
+- Sales and procurement
+- Inventory
+- Cash and banking
+- General Ledger
+- Payroll
+- Tax compliance
+- Reports
+- Approvals
+- Audit
+- Backup and restore
+- LAN
+- RBAC
+- Ledger Agent AI
+- Troubleshooting
+
+Verify the Guided Tour button and all steps in the actual application.
+
+Do not document an unimplemented capability as available.
+
+The manual and AI knowledge base must remain synchronized with the actual system.
+
+---
+
+# 11. SECURITY, DATA INTEGRITY AND ENTERPRISE GOVERNANCE
+
+Verify:
+
+- Company and tenant isolation
+- RBAC frontend and backend enforcement
+- Module/submodule visibility
+- Action-level permissions
+- Company Owner access boundaries
+- Maker-checker separation of duties
+- Approval concurrency
+- Immutable posted transactions
+- Journal reversal and amendment controls
+- Period locks
+- Append-only audit evidence
+- Audit integrity verification
+- Encryption and key management
+- Backup encryption
+- Restore authorization
+- Restore identity checks
+- Data retention
+- Document repository security
+- LAN authentication
+- Session termination
+- Destructive action protections
+- Recovery and rollback
+
+Identify any control that is only implemented in the frontend but not enforced by the backend.
+
+---
+
+# 12. TESTING AND EVIDENCE REQUIREMENTS
+
+Create a complete test inventory from the existing test suite.
+
+Do not duplicate existing tests unnecessarily.
+
+For each critical requirement, determine whether there is:
+- Unit test
+- Integration test
+- API test
+- Database test
+- UI test
+- End-to-end test
+- Security/adversarial test
+- Accounting reconciliation test
+- Regression test
+- External validation evidence
+
+Use isolated synthetic companies and datasets.
+
+Test realistic enterprise scenarios with:
+- Multiple customers and vendors
+- Multiple transactions
+- Multiple approval roles
+- Partial payments
+- Returns and adjustments
+- Withholding tax
+- VAT
+- Payroll
+- Inventory
+- Fixed assets
+- Bank reconciliation
+- Period close
+- Reversals
+- Backup and restore
+- Multiple LAN workstations
+
+Measure and reconcile results across subsidiary ledgers, GL, TB, financial statements, and reports.
+
+Never count the same test twice in the consolidated inventory.
+
+Clearly separate:
+- Number of test files
+- Number of test cases
+- Number of assertions
+- Curated release acceptance tests
+- External validation tests
+- Windows-native tests
+
+---
+
+# 13. REQUIRED AUDIT DELIVERABLES
+
+Do not implement fixes during this initial audit.
+
+Produce a complete audit result in the existing master roadmap and report the following sections in your response:
+
+## A. Executive Readiness Verdict
+Select one:
+- NOT READY FOR REAL BUSINESS USE
+- INTERNAL TESTING READY
+- CONTROLLED PILOT READY
+- LIMITED PRODUCTION READY
+- COMMERCIAL GA READY
+
+State the evidence and limitations supporting the verdict.
+
+## B. Complete Button and Control Inventory
+Show every audited button/control, its actual destination, backend operation, permission, data impact, test evidence, and result.
+
+## C. 360° Journey Audit
+List every 360° Journey entry point and verify its complete traceability, action functionality, and data accuracy.
+
+## D. Workflow and Approval Matrix
+Show each transaction lifecycle from creation through submission, approval/rejection, posting, reversal, and reporting.
+
+## E. Accounting and Data Source Matrix
+Identify the source of truth for every major computation and report.
+
+## F. BIR Compliance Matrix
+List verified rules, unresolved rules, effective dates, tax treatments, and external validation requirements.
+
+## G. Ledger Agent AI Knowledge Audit
+Identify missing knowledge, incorrect responses, unavailable tools, missing system procedures, and backup/versioning gaps.
+
+## H. Security and Governance Audit
+Show verified and unverified controls, particularly backend RBAC, isolation, approval, audit, backup, and recovery.
+
+## I. Defect and Requirement Register
+For every finding provide:
+- Stable requirement/defect ID
+- Priority: P0, P1, P2, P3
+- Affected module
+- Exact source file and function/component
+- Root cause
+- Business/accounting/tax risk
+- Required remediation
+- Dependencies
+- Acceptance criteria
+- Required tests
+- Evidence needed
+- Status
+
+## J. Master Roadmap Update
+Update the existing `LEDGERAI_ENTERPRISE_MASTER_ROADMAP.md` IN PLACE.
+
+Do not create another master roadmap or a separate Markdown report.
+
+Maintain:
+- Completed
+- In progress
+- Not started
+- Blocked
+- External validation required
+- Next authorized task
+
+Keep all verified completed work intact.
+
+## K. Next Execution Lock
+Identify exactly ONE highest-priority implementation task to execute next.
+
+Provide:
+- Requirement ID
+- Scope
+- Files/functions involved
+- Explicit out-of-scope items
+- Acceptance criteria
+- Test commands
+- Required evidence
+- Definition of Done
+
+Do not start the next task until the audit is complete and the next task has been clearly identified.
+
+---
+
+# 14. NON-NEGOTIABLE RULES
+
+- Do not treat visible UI as proof of functionality.
+- Do not treat a successful build as proof of accounting accuracy.
+- Do not treat synthetic test success as external CPA or BIR certification.
+- Do not invent legal/tax requirements.
+- Do not hardcode universal COA account codes.
+- Do not silently choose ambiguous control accounts.
+- Do not use mock data as real financial data.
+- Do not let rejected, draft, or unposted transactions enter posted financial reports unless the report explicitly and correctly includes them.
+- Do not allow duplicate or unauthorized posting.
+- Do not bypass maker-checker or period locks.
+- Do not expose cross-company information.
+- Do not modify actual pilot or production financial records.
+- Do not implement unrelated features.
+- Do not create additional competing Markdown roadmaps.
+- Do not mark incomplete work as complete.
+- Do not promote the release automatically.
+- Do not build Windows EXE/NSIS in Google AI Studio.
+
+## FINAL OBJECTIVE
+
+We are building a complete, connected, reliable Philippine enterprise accounting and ERP system.
+
+Every button must perform its intended operation. Every transaction must follow a valid business process. Every approval or rejection must be traceable. Every accounting number must come from the correct source of truth. Every BIR computation must follow the applicable, verified rules. Every report must reconcile to the underlying records. Every 360° Journey must expose a trustworthy transaction history. Ledger Agent AI must know how to guide users through the actual application.
+
+The system must be continuously improved through one authoritative master roadmap.
+
+After every completed implementation task:
+1. Run the required tests.
+2. Verify the actual behavior.
+3. Record evidence.
+4. Update the existing master roadmap in place.
+5. Mark only proven requirements complete.
+6. Preserve unfinished requirements and dependencies.
+7. Identify the next authorized task.
+
+The goal is not to produce more documentation. The goal is to make the actual application enterprise-ready, accurate, auditable, and dependable for real Philippine business operations.
+
+BEGIN WITH THE READ-ONLY FULL SYSTEM AUDIT. DO NOT IMPLEMENT FIXES YET.

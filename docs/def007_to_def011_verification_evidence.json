@@ -1,0 +1,389 @@
+{
+  "def009_quarantine": {
+    "status": "PASS",
+    "totalRegisteredCompanies": 10,
+    "quarantinedCount": 10,
+    "productionVisibleCount": 0,
+    "primaryStressCompanyClassification": "STRESS_TEST",
+    "benchmarkCompanyClassification": "BENCHMARK",
+    "allClassifiedCompanies": [
+      {
+        "companyId": "LGR-PH-2026-TEST-00-ABC12345",
+        "legalName": "LedgerAI PH Test Corp",
+        "classification": "STRESS_TEST",
+        "isQuarantinedFromProduction": true
+      },
+      {
+        "companyId": "LGR-ST-C5DA274F",
+        "legalName": "LedgerAI Enterprise Stress Test Corp (Utility Run)",
+        "classification": "STRESS_TEST",
+        "isQuarantinedFromProduction": true
+      },
+      {
+        "companyId": "LGR-ST-13B43126",
+        "legalName": "LedgerAI Enterprise Stress Test Corp (Max Volume Submodules)",
+        "classification": "STRESS_TEST",
+        "isQuarantinedFromProduction": true
+      },
+      {
+        "companyId": "LGR-ST-E342DDAC",
+        "legalName": "LedgerAI Enterprise Stress Test Corp (Max Volume Submodules)",
+        "classification": "STRESS_TEST",
+        "isQuarantinedFromProduction": true
+      },
+      {
+        "companyId": "LGR-ST-0D4C0581",
+        "legalName": "LedgerAI Enterprise Stress Test Corp (Max Volume Submodules)",
+        "classification": "STRESS_TEST",
+        "isQuarantinedFromProduction": true
+      },
+      {
+        "companyId": "LGR-ST-F9CEABDB",
+        "legalName": "LedgerAI Enterprise Stress Test Corp (Max Volume Submodules)",
+        "classification": "STRESS_TEST",
+        "isQuarantinedFromProduction": true
+      },
+      {
+        "companyId": "LGR-BENCH-VOLUME",
+        "legalName": "LedgerAI Enterprise Volume Benchmark Corp",
+        "classification": "BENCHMARK",
+        "isQuarantinedFromProduction": true
+      },
+      {
+        "companyId": "LGR-DEF2-ISOLATED",
+        "legalName": "Defect Resolution Sandbox",
+        "classification": "STRESS_TEST",
+        "isQuarantinedFromProduction": true
+      },
+      {
+        "companyId": "LGR-DEF3-ISOLATED",
+        "legalName": "Period Resolution Sandbox",
+        "classification": "STRESS_TEST",
+        "isQuarantinedFromProduction": true
+      },
+      {
+        "companyId": "LGR-FAILOVER-ISOLATED",
+        "legalName": "LedgerAI Failover & Recovery Sandbox Corp",
+        "classification": "STRESS_TEST",
+        "isQuarantinedFromProduction": true
+      }
+    ],
+    "preservedTestDatasetCounts": {
+      "journalEntries": 200,
+      "salesInvoices": 151,
+      "purchaseBills": 150,
+      "payrollItems": 281,
+      "auditLogs": 722,
+      "classificationInDb": "STRESS_TEST"
+    },
+    "promotionBlocked": true,
+    "promotionBlockMessage": "SYNTHETIC_PROMOTION_PROHIBITED: Company LGR-PH-2026-TEST-00-ABC12345 is classified as STRESS_TEST containing synthetic test/benchmark data and cannot be promoted to PRODUCTION. Provision a clean PILOT or PRODUCTION company instead.",
+    "migrationBlocked": true,
+    "migrationBlockMessage": "SYNTHETIC_COMPANY_QUARANTINED: Company LGR-PH-2026-TEST-00-ABC12345 is classified as STRESS_TEST and is strictly quarantined from OPENING_BALANCE_MIGRATION. Synthetic stress-test and benchmark datasets cannot be mixed into production reports or pilot opening-balance migrations."
+  },
+  "def010_payroll": {
+    "status": "PASS",
+    "has2035InDefaultCoa": true,
+    "goldenCase36500MonthlySemiMonthly": {
+      "proratedSemiMonthly": {
+        "grossCompensationCentavos": 1825000,
+        "sssEmployeeShareCentavos": 67500,
+        "philHealthEmployeeShareCentavos": 45625,
+        "pagIbigEmployeeShareCentavos": 10000,
+        "totalMandatoryContributionsCentavos": 123125,
+        "taxableCompensationCentavos": 1701875,
+        "statutoryWithholdingCentavos": 100785,
+        "legacyFlat10PercentCentavos": 182500,
+        "varianceCentavos": 81715,
+        "bracketDescription": "Bracket 3: ₱16,667.00 to ₱33,332.00 (₱937.50 + 20% over ₱16,667.00)"
+      },
+      "historicalFullMonthSssOnFirstHalf": {
+        "grossCompensationCentavos": 1825000,
+        "sssEmployeeShareCentavos": 135000,
+        "philHealthEmployeeShareCentavos": 45625,
+        "pagIbigEmployeeShareCentavos": 10000,
+        "totalMandatoryContributionsCentavos": 190625,
+        "taxableCompensationCentavos": 1634375,
+        "statutoryWithholdingCentavos": 88901,
+        "legacyFlat10PercentCentavos": 182500,
+        "varianceCentavos": 93599,
+        "bracketDescription": "Bracket 2: Over ₱10,417.00 to ₱16,666.00 (15% over ₱10,417.00)"
+      }
+    },
+    "historicalRemediationBreakdown": {
+      "employeeOverWithholdingRefundCentavos": 4781133,
+      "employeeOverWithholdingRowCount": 98,
+      "employeeUnderWithholdingCentavos": 20420029,
+      "employeeUnderWithholdingRowCount": 182,
+      "employerTaxAdjustmentCentavos": 20420029,
+      "actualBirWithholdingPayableCentavos": 107688896,
+      "legacyRemittedOrAccruedCentavos": 92050000,
+      "unOffsetGrossUnderWithholdingCentavos": 20420029,
+      "unOffsetGrossOverWithholdingRefundCentavos": 4781133,
+      "netBirRemittanceDeltaCentavos": 15638896,
+      "statutoryJustificationNote": "Per NIRC Sec. 79(H) and RR 11-2018, employee tax over-withholding refunds (₱47,811.33 across 98 rows) are distinct employer refund obligations to those specific employees (Account 2036 Employee Tax Refund Payable) and must NOT be used to silently offset other employees' under-withheld tax liabilities (₱204,200.29 across 182 rows, Account 1085/6075). Actual BIR compensation withholding payable is recorded in dedicated Account 2035 (Withholding Tax Payable - Compensation, PAYABLE, CREDIT)."
+    },
+    "proposedAdjustmentJournal": {
+      "entryNumber": "JE-PAY-ADJ-2026-08-11",
+      "entryDate": "2026-11-03",
+      "description": "Historical Payroll Statutory BIR Withholding Tax Remediation Adjustment (Runs 2026-08-A to 2026-11-A)",
+      "debitAccountCode": "1085",
+      "debitAccountName": "Employee Withholding Tax Receivable / Employer Tax Adjustment",
+      "creditAccountCode": "2035",
+      "creditAccountName": "Withholding Tax Payable - Compensation",
+      "creditAccountType": "PAYABLE",
+      "creditNormalBalance": "CREDIT",
+      "amountCentavos": 15638896,
+      "amountPesos": 156388.96,
+      "unOffsetLines": [
+        {
+          "accountCode": "1085",
+          "accountName": "Employee Withholding Tax Receivable (Under-Withheld Employees)",
+          "accountType": "RECEIVABLE",
+          "debitCentavos": 20420029,
+          "creditCentavos": 0,
+          "description": "Gross employee under-withholding receivable (182 items)"
+        },
+        {
+          "accountCode": "2036",
+          "accountName": "Employee Tax Refund Payable (Over-Withheld Employees)",
+          "accountType": "PAYABLE",
+          "debitCentavos": 0,
+          "creditCentavos": 4781133,
+          "description": "Gross employee tax refund obligation to over-withheld employees (98 items)"
+        },
+        {
+          "accountCode": "2035",
+          "accountName": "Withholding Tax Payable - Compensation",
+          "accountType": "PAYABLE",
+          "debitCentavos": 0,
+          "creditCentavos": 15638896,
+          "description": "Net additional BIR Form 1601-C compensation withholding tax payable"
+        }
+      ],
+      "alreadyExistsInLedger": false,
+      "existingJournalEntryId": null
+    },
+    "historicalAdjustmentBlockedOnProtected": true,
+    "historicalAdjustmentBlockMsg": "DEF-010 / DEF-009 Safety Gate: Execution of JE-PAY-ADJ-2026-08-11 is strictly prohibited on quarantined STRESS_TEST dataset LGR-PH-2026-TEST-00-ABC12345."
+  },
+  "phase6_encryptionPolicy": {
+    "status": "PASS",
+    "fallbackKeyRejectedForProduction": true,
+    "fallbackKeyRejectionMessage": "PRODUCTION_KEY_POLICY_VIOLATION: Deterministic fallback development key (LEGACY_DEV_KEY) is strictly prohibited for PRODUCTION companies. Configure OS_KEYCHAIN_STANDALONE or EXTERNAL_KMS_ENVELOPE with a non-default secret.",
+    "envFallbackLiteralRejectedForProduction": true,
+    "kmsPolicyCheck": {
+      "allowed": true,
+      "effectiveKeyMode": "EXTERNAL_KMS_ENVELOPE",
+      "keyId": "kms-kek-LGR-ENT-KMS-01"
+    }
+  },
+  "phase7_cleanCompanyCertification": {
+    "status": "PASS",
+    "companyId": "LGR-PH-2026-PILOT-CLEAN-01",
+    "encryptionBeforeRotation": {
+      "isEncrypted": true,
+      "containerVersion": "LAISENC2",
+      "keyMode": "OS_KEYCHAIN_STANDALONE",
+      "keyId": "os-keychain-LGR-PH-2026-PILOT-CLEAN-01",
+      "keyVersion": 1,
+      "companyId": "LGR-PH-2026-PILOT-CLEAN-01",
+      "encryptedAt": "2026-11-03T15:06:48.820Z",
+      "usesFallbackDevKey": false
+    },
+    "keyRotation": {
+      "companyId": "LGR-PH-2026-PILOT-CLEAN-01",
+      "previousKeyVersion": 1,
+      "newKeyVersion": 2,
+      "keyMode": "OS_KEYCHAIN_STANDALONE",
+      "keyId": "os-keychain-LGR-PH-2026-PILOT-CLEAN-01",
+      "rotatedAt": "2026-11-03T15:06:48.834Z"
+    },
+    "encryptionAfterRotation": {
+      "isEncrypted": true,
+      "containerVersion": "LAISENC2",
+      "keyMode": "OS_KEYCHAIN_STANDALONE",
+      "keyId": "os-keychain-LGR-PH-2026-PILOT-CLEAN-01",
+      "keyVersion": 2,
+      "companyId": "LGR-PH-2026-PILOT-CLEAN-01",
+      "encryptedAt": "2026-11-03T15:06:48.832Z",
+      "usesFallbackDevKey": false
+    },
+    "snapshotConsistency": {
+      "valid": true,
+      "laiChecksum": "8756f763019467c7559ec1396aa7c1d6fd27b341100ae21369b65b9524df5946",
+      "details": "Snapshot is consistent, valid, and passes PRAGMA integrity_check."
+    },
+    "steps": {
+      "step1_to_3_salesAndAr": {
+        "invoiceNumber": "SI-PILOT-2026-001",
+        "journalEntryId": "4ee5d87b-af6f-42f0-a730-8ff694b02965",
+        "arSubledgerCentavos": 11200000,
+        "arGlControlCentavos": 11200000,
+        "reconciled": true
+      },
+      "step4_customerCollection": {
+        "paymentNumber": "PAY-IN-PILOT-001",
+        "collectedCentavos": 5600000,
+        "remainingArSubledgerCentavos": 5600000,
+        "remainingArGlCentavos": 5600000,
+        "reconciled": true
+      },
+      "step5_to_7_purchaseAndAp": {
+        "billNumber": "BILL-PILOT-2026-001",
+        "journalEntryId": "46684eb3-fc24-42a4-9008-7be036a03d44",
+        "apSubledgerCentavos": 5600000,
+        "apGlControlCentavos": 5600000,
+        "reconciled": true
+      },
+      "step8_supplierPayment": {
+        "paymentNumber": "PAY-OUT-PILOT-001",
+        "disbursedCentavos": 5500000,
+        "ewtWithheldCentavos": 100000,
+        "remainingApSubledgerCentavos": 0,
+        "remainingApGlCentavos": 0,
+        "reconciled": true
+      },
+      "step9_to_10_inventoryAndCogs": {
+        "receiptJournalId": "b847117a-c7c3-4b5d-aa7f-af29e5a33eb5",
+        "issueJournalId": "cd6b3b0b-baf8-4559-8bd3-87b68450a33e",
+        "endingQuantityOnHand": 60,
+        "endingInventoryValuationCentavos": 6000000,
+        "inventoryGlAccount1080Centavos": 6000000,
+        "cogsGlAccount5010Centavos": 4000000,
+        "reconciled": true
+      },
+      "step11_payroll": {
+        "payrollRunNumber": "PR-PILOT-2026-10B",
+        "journalEntryId": "b2584dc3-8cfd-4404-b61f-5427bff2171d",
+        "grossPayCentavos": 1825000,
+        "mandatoryContributions2040Centavos": 123125,
+        "withholdingTax2035Centavos": 100785,
+        "netPayDisbursedCentavos": 1601090,
+        "reconciled": true
+      },
+      "step12_taxSchedules": {
+        "form2550Q": {
+          "invoiceCount": 1,
+          "billCount": 1,
+          "grossSalesCentavos": 11200000,
+          "vatableSalesCentavos": 10000000,
+          "outputVatCentavos": 1200000,
+          "grossPurchasesCentavos": 5600000,
+          "vatablePurchasesCentavos": 5000000,
+          "inputVatCentavos": 600000,
+          "netVatPayableCentavos": 600000,
+          "glOutputVatCentavos": 1200000,
+          "glInputVatCentavos": 600000,
+          "reconciledToGl": true
+        },
+        "form1601C": {
+          "payrollItemCount": 1,
+          "totalGrossCompensationCentavos": 1825000,
+          "mandatoryContributionsExemptCentavos": 123125,
+          "taxableCompensationCentavos": 1701875,
+          "recordedWithholdingTaxCentavos": 100785,
+          "statutoryValidatedWithholdingTaxCentavos": 100785,
+          "glWtcPayableCentavos": 100785,
+          "varianceRecordedVsStatutoryCentavos": 0,
+          "reconciledRecordedToGl": true
+        },
+        "form1601EQ": {
+          "paymentCount": 1,
+          "totalTaxBaseCentavos": 5600000,
+          "totalEwtWithheldCentavos": 100000,
+          "glEwtPayableCentavos": 100000,
+          "reconciledToGl": true,
+          "payees": [
+            {
+              "paymentId": "848efa3a-dc0b-4f9f-9a3c-30f8088d3a01",
+              "paymentNumber": "PAY-OUT-PILOT-001",
+              "paymentDate": "2026-10-18",
+              "vendorId": "07af22e2-6ed3-4777-846e-c2e85265de7e",
+              "vendorName": "BGC Cloud Infrastructure Corp.",
+              "vendorTin": "002-333-444-000",
+              "atc": "WC158",
+              "amountPaidCentavos": 5500000,
+              "withholdingTaxCentavos": 100000,
+              "journalEntryId": "e3e5902d-d126-4df9-8c57-01d43e7a89df",
+              "status": "POSTED"
+            }
+          ]
+        },
+        "form2316": {
+          "employeeCount": 1,
+          "employees": [
+            {
+              "employeeId": "36d263f6-42a1-45b5-909b-195fbd73a947",
+              "employeeNo": "EMP-PILOT-001",
+              "employeeName": "Juan Dela Cruz",
+              "tin": "111-222-333-000",
+              "periodsIncluded": 1,
+              "grossCompensationCentavos": 1825000,
+              "mandatoryContributionsCentavos": 123125,
+              "taxableCompensationCentavos": 1701875,
+              "taxWithheldRecordedCentavos": 100785,
+              "statutoryAnnualizedTaxDueCentavos": 0,
+              "yearEndAdjustmentCentavos": -100785
+            }
+          ]
+        },
+        "form2307Count": 1
+      },
+      "step14_journalReversal": {
+        "originalJournalId": "6c6f2ea5-3e19-417f-a0d2-6f622e817c4d",
+        "reversalJournalId": "776633de-8140-4277-af79-b0db24042a7d",
+        "account6030NetBalanceCentavos": 0,
+        "netZeroVerified": true
+      },
+      "step13_financialStatementsAndDashboard": {
+        "trialBalance": {
+          "totalDebitsCentavos": 106825000,
+          "totalCreditsCentavos": 106825000,
+          "isBalanced": true
+        },
+        "incomeStatement": {
+          "totalRevenueCentavos": 10000000,
+          "totalExpenseAndCogsCentavos": 10825000,
+          "netIncomeCentavos": -825000
+        },
+        "balanceSheet": {
+          "assetsBySubtypeCentavos": {
+            "ASSET": 38498910,
+            "RECEIVABLE": 5600000,
+            "OTHER_CURRENT_ASSET": 600000,
+            "INVENTORY": 6000000,
+            "FIXED_ASSET": 12000000
+          },
+          "liabilitiesBySubtypeCentavos": {
+            "PAYABLE": 323910,
+            "OTHER_CURRENT_LIABILITY": 1200000,
+            "LONG_TERM_LIABILITY": 12000000
+          },
+          "totalAssetsCentavos": 62698910,
+          "totalLiabilitiesCentavos": 13523910,
+          "paidInEquityCentavos": 50000000,
+          "currentPeriodEarningsCentavos": -825000,
+          "totalEquityCentavos": 49175000,
+          "totalLiabilitiesAndEquityCentavos": 62698910,
+          "differenceCentavos": 0,
+          "isBalanced": true
+        },
+        "dashboardVerification": {
+          "recognizedRevenueGrossCentavos": 11200000,
+          "recognizedExpenseGrossCentavos": 5600000,
+          "paidBillStillIncludedInExpenses": true,
+          "partiallyPaidInvoiceStillIncludedInRevenue": true,
+          "vatEstimate": {
+            "outputVat": 1200000,
+            "inputVat": 600000,
+            "ewtWithheld": 200000,
+            "netVatPayable": 600000,
+            "estimatedTaxLiability": 400000
+          },
+          "vat12Over112HelperCheckOn112000": 1200000
+        }
+      }
+    }
+  }
+}

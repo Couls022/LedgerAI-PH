@@ -1,0 +1,939 @@
+# LEDGERAI PH — FINAL FULL-SYSTEM DEEP AUDIT, SAFE REMEDIATION & PRODUCTION READINESS MASTER DIRECTIVE
+
+**PROJECT:** LedgerAI PH Enterprise Accounting, Payroll, ERP & Philippine Statutory Compliance Platform  
+**BASELINE:** v1.0.0-rc.1  
+**EXECUTION ENVIRONMENT:** Google AI Studio Browser / Linux Container (x86_64)  
+**DOCUMENT AUTHORITY:** Exactly ONE authoritative project master Markdown file  
+**MISSION:** Complete the full-system source-code audit, correct confirmed defects, establish end-to-end frontend/backend/database connectivity, consolidate project documentation, and bring LedgerAI PH to a verifiable production-ready state without damaging existing verified engines.
+
+---
+
+# 0. ABSOLUTE EXECUTION AUTHORITY
+
+Follow this directive as the governing instruction for the entire task.
+
+Do not substitute this task with:
+- A documentation-only review.
+- A UI-only redesign.
+- A superficial code scan.
+- A test-only exercise.
+- A new roadmap without source-code verification.
+- A list of recommendations without implementing confirmed fixes.
+- A declaration of production readiness without actual evidence.
+
+You MUST inspect the actual repository source code, trace real execution paths, identify defects, implement safe corrections, execute tests, and update the single authoritative master document.
+
+Do not stop after reading Markdown files.
+
+Do not ask the user to repeat requirements already stated in this directive.
+
+If the environment, permissions, or available tools prevent a task from being completed, record it as BLOCKED with the exact reason. Never fabricate completion.
+
+# 1. NON-NEGOTIABLE ENGINE PROTECTION
+
+The existing verified accounting, tax, security, database, and enterprise engines are protected.
+
+Before modifying any existing engine:
+
+1. Inspect its implementation and dependencies.
+2. Identify its existing invariants.
+3. Run its relevant baseline tests.
+4. Record its current behavior.
+5. Determine whether a reproducible defect actually exists.
+6. Make the smallest safe correction.
+7. Add regression coverage.
+8. Rerun the affected tests.
+9. Rerun relevant integration tests.
+
+NEVER:
+- Rewrite an entire engine merely to simplify the code.
+- Replace working business logic with mock implementations.
+- Delete existing accounting calculations to make tests pass.
+- Weaken security or validation checks.
+- Remove test assertions to hide failures.
+- Bypass tenant isolation.
+- Disable immutable journal protection.
+- Change accounting results merely to match dashboard values.
+- Change database schemas destructively without a documented migration and rollback strategy.
+- Introduce duplicate services or competing sources of truth.
+
+Preserve the following accounting and enterprise invariants:
+
+- Integer-centavo monetary precision.
+- Double-entry accounting: total debits must equal total credits.
+- Immutable posted journal entries.
+- Reversal and amendment instead of destructive modification of posted transactions.
+- Strict accounting-period locks.
+- Company-scoped tenant isolation.
+- Append-only audit evidence.
+- Maker-checker and segregation-of-duties enforcement.
+- Idempotent transaction posting.
+- Atomic database transactions.
+- Encryption and key-custody protections.
+- Consistent subledger-to-General-Ledger reconciliation.
+
+Previously verified requirements REQ-ACCT-INT-001 through REQ-ACCT-INT-007 must not be reopened without reproducible defect or regression evidence.
+
+# 2. FULL REPOSITORY INVENTORY — INSPECT THE ACTUAL CODE
+
+Inspect the complete repository structure.
+
+Do not limit inspection to the files listed in existing documentation.
+
+Inventory and inspect:
+
+## Frontend
+- All React application entry points.
+- All routes and route guards.
+- All primary and secondary modules.
+- All page components.
+- All reusable components.
+- All forms and modal dialogs.
+- All buttons and click handlers.
+- All input controls.
+- All tables and data grids.
+- All filters, pagination, sorting, and search.
+- All dashboard widgets.
+- All charts and financial summaries.
+- All client-side state stores and contexts.
+- All API clients and request wrappers.
+- All loading, error, empty, success, and retry states.
+- All navigation and sidebar definitions.
+- All permission-based visibility rules.
+
+## Backend
+- All Express application entry points.
+- All API routes and controllers.
+- All middleware.
+- All authentication and authorization logic.
+- All business services and domain engines.
+- All transaction-processing pipelines.
+- All accounting and tax calculations.
+- All background jobs and scheduled tasks.
+- All WebSocket or event handlers.
+- All error handlers.
+- All request and response schemas.
+- All company and period context resolution.
+
+## Database
+- All database initialization logic.
+- All schema definitions.
+- All migration files.
+- All tables, indexes, constraints, and triggers.
+- All repositories and data-access layers.
+- All raw SQL queries.
+- All Drizzle ORM queries.
+- All database transactions.
+- All tenant-scoping mechanisms.
+- All backup and restore mechanisms.
+- All encryption and database-key handling.
+
+## Testing and Build
+- All unit tests.
+- All integration tests.
+- All E2E tests.
+- All security tests.
+- All accounting tests.
+- All tax tests.
+- All migration tests.
+- All build scripts.
+- All TypeScript configurations.
+- All dependency manifests and lockfiles.
+- All environment configurations.
+
+Create an actual source-code inventory with file paths and their responsibilities.
+
+Do not claim complete inspection if any directory or file category remains uninspected.
+
+# 3. FULL UI/UX TO BACKEND/DATABASE CONNECTIVITY AUDIT
+
+This is a critical requirement.
+
+Every visible UI action must be traced from the frontend to its actual result.
+
+For every important button, form, tab, menu item, export, approval action, and table operation, determine:
+
+1. Which component renders it?
+2. Which callback or event handler executes?
+3. Which frontend state changes?
+4. Which API endpoint or backend service is called?
+5. Which validation is executed?
+6. Which permission is required?
+7. Which database table or query is involved?
+8. Is the operation transactional?
+9. What response is returned?
+10. Does the frontend refresh from authoritative backend data?
+11. Is the action idempotent where required?
+12. Is an audit record created where required?
+13. What happens when the operation fails?
+14. Does the UI display the correct result?
+
+Classify each action:
+
+- CONNECTED_AND_VERIFIED
+- CONNECTED_WITH_DEFECT
+- MOCK_OR_STATIC_DATA
+- FRONTEND_ONLY
+- BACKEND_ONLY
+- DISCONNECTED
+- PLACEHOLDER
+- BLOCKED
+- NOT_TESTED
+
+Do not treat a button as functional merely because it is visible or clickable.
+
+Do not treat a populated table as proof of database persistence.
+
+Do not treat a successful API response as proof that the displayed data is correct.
+
+## Required UI behavior
+
+All actions must have real and appropriate behavior.
+
+Examples:
+
+- Create must persist a valid record.
+- Edit must update the correct record.
+- Delete must follow the applicable retention and accounting rules.
+- Submit must validate and transition the correct workflow state.
+- Approve must enforce authorization, SoD, and approval rules.
+- Reject must require the appropriate reason and create an audit record.
+- Return for correction must preserve history and identify the responsible party.
+- Export must generate a real file from the correct dataset.
+- Refresh must retrieve current authoritative data.
+- Search must search the intended dataset.
+- Pagination must retrieve the correct page and total count.
+- Filters must affect the backend query or correctly filter the authoritative dataset.
+- Drill-down must open the actual originating record.
+- 360-degree journey must show the real transaction lifecycle.
+- Loading indicators must resolve to data, an empty state, or an actionable error.
+- Error states must never silently display misleading zero values.
+
+Remove or complete fake, decorative, and disconnected actions. Never silently leave a visible button without defined behavior.
+
+# 4. COMPLETE MODULE-BY-MODULE AUDIT
+
+Inspect all 16 canonical primary modules and their actual submodules.
+
+## 1. Dashboard
+Verify:
+- Cash position.
+- AR and AP balances.
+- Revenue and expenses.
+- Net income.
+- Financial ratios.
+- Alerts and notifications.
+- Period selection.
+- Company scope.
+- Drill-down navigation.
+- Refresh and cache behavior.
+
+All displayed financial values must originate from authoritative backend/accounting data.
+
+## 2. Sales & Receivables
+Verify:
+- Customer master data.
+- Sales quotations.
+- Sales orders.
+- Sales invoices.
+- Credit notes.
+- Customer collections.
+- Payment allocations.
+- AR aging.
+- Overdue balances.
+- Revenue recognition.
+- Output VAT.
+- Withholding credits.
+- GL posting and reversals.
+
+Required flow:
+
+Customer → Sales Order → Invoice → AR → Collection → Payment Allocation → GL → Tax Schedules → Financial Reports.
+
+## 3. Procurement & Payables
+Verify:
+- Vendor master data.
+- Purchase requests.
+- Purchase orders.
+- Goods Receipt Notes.
+- Supplier invoices.
+- Three-way matching.
+- Tolerance rules.
+- AP aging.
+- Payment processing.
+- Debit notes.
+- Supplier returns.
+- Input VAT.
+- Withholding tax.
+- GL posting and reversals.
+
+Required flow:
+
+Vendor → Purchase Order → GRN → Supplier Bill → AP → Payment → GL → Tax Schedules → Financial Reports.
+
+## 4. Inventory & Warehouse
+Verify:
+- Item and SKU master data.
+- Warehouse and location.
+- Inventory receipts.
+- Inventory issues.
+- Transfers.
+- Adjustments.
+- Returns.
+- Stock reservations.
+- FIFO costing.
+- Weighted Average Cost.
+- Inventory valuation.
+- COGS.
+- Inventory-to-GL reconciliation.
+
+Inventory transactions must not silently change posted financial records.
+
+## 5. Cash & Banking
+Verify:
+- Cash receipts.
+- Cash disbursements.
+- Petty cash.
+- Bank accounts.
+- Bank statement imports.
+- Bank transaction matching.
+- Outstanding checks.
+- Deposits in transit.
+- Unmatched transactions.
+- Reconciliation approval.
+- Reconciliation adjustments.
+- Cash-to-GL reconciliation.
+
+A reconciliation marked COMPLETED must have actual supporting reconciliation evidence.
+
+## 6. Accounting & General Ledger
+Verify:
+- Chart of Accounts.
+- Journal entries.
+- General Ledger.
+- General Journal.
+- Trial Balance.
+- Posting controls.
+- Opening balances.
+- Period locks.
+- Reversals.
+- FX revaluation.
+- Account schedules.
+- Audit trail.
+
+Resolve loading failures, empty datasets, incorrect filters, and account-mapping inconsistencies.
+
+## 7. Fixed Assets
+Verify:
+- Asset registration.
+- Acquisition.
+- Capitalization.
+- Depreciation.
+- Useful life.
+- Residual value.
+- Asset transfer.
+- Disposal.
+- Impairment where applicable.
+- Depreciation posting.
+- Fixed asset register reconciliation.
+
+## 8. Payroll & Human Resources
+Verify:
+- Employee master data.
+- Compensation.
+- Payroll periods.
+- Attendance inputs.
+- Earnings and deductions.
+- Overtime.
+- Leave.
+- SSS.
+- PhilHealth.
+- Pag-IBIG.
+- Withholding tax.
+- Payslips.
+- Payroll approvals.
+- Payroll GL posting.
+- Payroll reports.
+
+Preserve employee-data confidentiality and company access boundaries.
+
+## 9. Tax & BIR Compliance
+This is a high-priority module.
+
+Inspect all actual implementations for:
+
+- VAT.
+- EWT/CWT.
+- BIR Form 2550M/Q.
+- BIR Form 1702.
+- BIR Form 1601-C.
+- BIR Form 0619-E.
+- BIR Form 1601-EQ.
+- BIR Form 2307.
+- QAP/MAP.
+- SAWT.
+- SLSP.
+- Alphalist.
+- BIR account mapping.
+- ATC mapping.
+- Tax calendar.
+- Tax reconciliations.
+- Tax amendments.
+- Tax exports.
+- Offline statutory drafts.
+- Tax validation and audit trail.
+
+Verify that:
+- Tax forms use the correct authoritative accounting and tax datasets.
+- The selected company and reporting period are respected.
+- Tax calculations use correct effective dates.
+- Centavo rounding is consistent.
+- Missing mappings are surfaced as errors.
+- Exported files follow the actual required data format.
+- Preview values match final exported values.
+- Tax filing states cannot be falsely marked as filed or accepted.
+- No external BIR submission or approval is claimed unless actually integrated and confirmed.
+
+Do not invent tax rules. Use authoritative, versioned statutory rules and clearly document unresolved legal or CPA validation.
+
+## 10. Budget & Financial Planning
+Verify:
+- Budget preparation.
+- Department budgets.
+- Cost centers.
+- Forecasts.
+- Budget revisions.
+- Actual-versus-budget reports.
+- Variance analysis.
+- Approval controls.
+- GL integration.
+
+## 11. Documents & OCR
+Verify:
+- Document upload.
+- Encryption.
+- Document metadata.
+- OCR extraction.
+- Human review.
+- Confidence scores.
+- Document-to-transaction linking.
+- File integrity.
+- Retention.
+- Access controls.
+- Offline availability.
+- Backup and restore.
+
+OCR-extracted values must never silently become authoritative posted accounting data without required validation and approval.
+
+## 12. Reports & Analytics
+Verify:
+- General Ledger.
+- General Journal.
+- Trial Balance.
+- Balance Sheet.
+- Income Statement.
+- Cash Flow.
+- AR aging.
+- AP aging.
+- Inventory reports.
+- Payroll reports.
+- Tax reports.
+- Comparative reporting.
+- Drill-down.
+- Export.
+- Period and company filters.
+
+The UI must not display fabricated zero records when the backend is still loading or when a query fails.
+
+## 13. Approvals & Workflow
+Verify:
+- Approval policy.
+- Approval matrix.
+- Approval levels.
+- Approver assignment.
+- Pending queue.
+- Approve.
+- Reject.
+- Return for correction.
+- Supporting documents.
+- Approval history.
+- Escalation.
+- SLA.
+- SoD.
+- Permission checks.
+- Audit logging.
+
+A user must not approve their own transaction when segregation of duties prohibits it.
+
+## 14. Activity Center
+Verify:
+- Notifications.
+- Alerts.
+- Tasks.
+- Events.
+- Reminders.
+- Background job status.
+- Read/unread state.
+- User-specific access.
+
+## 15. Audit & Governance
+Verify:
+- Immutable audit logs.
+- Audit engagements.
+- Working papers.
+- Lead sheets.
+- Evidence attachments.
+- Forensic anomaly detection.
+- Cryptographic ledger integrity.
+- Audit exports.
+- Traceability.
+
+## 16. Master Data & Administration
+Verify:
+- Customer master.
+- Vendor master.
+- COA.
+- Tax codes.
+- ATC codes.
+- Organizational dimensions.
+- Departments.
+- Cost centers.
+- Locations.
+- RBAC.
+- Access matrix.
+- Company profiles.
+- Database vault.
+- Backup and recovery.
+- Multi-workstation LAN.
+- Enterprise configuration.
+
+Master data must be authoritative and reused consistently across dependent modules. Do not create duplicate customer, vendor, account, tax-code, or company records through disconnected module-specific implementations.
+
+# 5. DATA SOURCE OF TRUTH
+
+Establish and enforce a clear source-of-truth hierarchy:
+
+1. Database records and validated domain services are authoritative.
+2. Backend APIs expose validated business data.
+3. Frontend state reflects backend responses.
+4. UI components display the current authoritative state.
+
+The frontend must not independently fabricate financial or statutory values.
+
+Identify and eliminate duplicate or competing calculations where they cause inconsistent results.
+
+For each important financial or tax figure, identify:
+- Source table.
+- Source query or repository.
+- Domain calculation.
+- API endpoint.
+- Frontend consumer.
+- Reconciliation test.
+
+Company, branch, fiscal year, accounting period, currency, and permission scope must be applied consistently.
+
+Do not use mock data in production paths.
+
+Mock and synthetic data must be isolated from real company records.
+
+# 6. DATABASE AND API INTEGRITY
+
+Inspect every relevant database operation.
+
+Verify:
+- Company isolation.
+- Foreign keys and constraints.
+- Unique indexes.
+- Transaction boundaries.
+- Idempotency.
+- Concurrency.
+- Migration safety.
+- Query correctness.
+- Pagination.
+- Sorting.
+- Search.
+- Reporting cutoffs.
+- Error handling.
+- Retry behavior.
+- Backup consistency.
+
+For every critical transaction, verify atomicity across related records.
+
+A failed transaction must not leave partially posted accounting records.
+
+Never use shared SQLite database files over SMB/NFS as a multi-workstation write architecture. Preserve the authenticated server/API approach for centralized LAN operation.
+
+# 7. SECURITY AND RBAC
+
+Verify permissions at both UI and backend/API levels.
+
+A hidden UI action is not an authorization control.
+
+Test:
+- Unauthorized direct API calls.
+- Cross-company access.
+- Role escalation.
+- Permission changes.
+- Company Owner scope.
+- Maker-checker enforcement.
+- Sensitive document access.
+- Backup access.
+- Audit log tampering.
+- Session expiration.
+- Authentication failures.
+- Concurrent requests across companies.
+
+Preserve the principle that a Company Owner has broad functional access within their own company, without crossing company boundaries or bypassing mandatory accounting, immutable-history, and segregation-of-duties controls.
+
+Do not weaken any existing security boundary to make a UI workflow work.
+
+# 8. UI/UX REMEDIATION
+
+After confirming backend behavior, fix the UI/UX issues.
+
+Ensure:
+- Consistent navigation.
+- Correct active menu state.
+- Correct module hierarchy.
+- Consistent page titles and breadcrumbs.
+- Consistent button styles and action placement.
+- Clear primary and secondary actions.
+- Proper confirmation dialogs for sensitive operations.
+- Correct empty states.
+- Correct loading states.
+- Useful error messages.
+- Responsive tables.
+- Working filters and pagination.
+- Accessible form validation.
+- No overlapping controls.
+- No misleading badges or statuses.
+- No duplicate navigation entries.
+- No dead links or placeholder buttons.
+
+Preserve the existing visual design language unless a usability defect requires a change.
+
+Do not redesign the whole application unnecessarily.
+
+# 9. TESTING AND REGRESSION PROTECTION
+
+Before implementation:
+- Discover the actual test commands.
+- Run the relevant baseline tests.
+- Record failures accurately.
+- Identify whether failures are existing or newly introduced.
+
+For each confirmed defect:
+- Create or update a meaningful test.
+- Implement the smallest safe fix.
+- Run the affected tests.
+- Run relevant integration tests.
+- Run the full supported regression suite.
+- Run TypeScript checks.
+- Run linting if configured.
+- Run the supported production build.
+
+Add E2E tests for critical user journeys wherever the existing infrastructure supports them.
+
+Critical E2E journeys must include:
+
+1. Customer creation → Sales invoice → Collection → GL → AR reconciliation.
+2. Vendor creation → PO → GRN → Supplier bill → Payment → AP reconciliation.
+3. Inventory receipt → Stock valuation → Inventory GL → COGS.
+4. Cash receipt/disbursement → Bank reconciliation → GL.
+5. Payroll calculation → Approval → Payroll posting → Statutory schedules.
+6. Tax data → BIR form mapping → Validation → Export.
+7. Journal posting → Trial Balance → Financial statements.
+8. Approval submission → Approval → Audit history.
+9. Period closing → Rejected retroactive posting.
+10. Backup → Restore → Data-integrity verification.
+
+Do not claim a journey is verified if only its individual screens were tested.
+
+# 10. SINGLE MASTER MARKDOWN GOVERNANCE
+
+This requirement is mandatory.
+
+There must be exactly ONE authoritative project master Markdown document.
+
+Use the existing:
+
+LEDGERAI_ENTERPRISE_MASTER_ROADMAP.md
+
+as the canonical document unless actual repository evidence proves that another existing master is the authoritative project document.
+
+Do not create another competing master.
+
+The single master document must contain:
+
+1. Project identity and release baseline.
+2. Product scope and canonical module hierarchy.
+3. System architecture.
+4. Frontend/backend/database architecture.
+5. Source-of-truth rules.
+6. Accounting and statutory invariants.
+7. Module dependency and transaction flow maps.
+8. UI-to-API-to-database connectivity audit.
+9. RBAC and security requirements.
+10. Database and recovery requirements.
+11. Audit findings.
+12. Defects and corrective actions.
+13. Requirement IDs and acceptance criteria.
+14. Test evidence and actual results.
+15. Completed work.
+16. Partially completed work.
+17. Blocked and untested work.
+18. External CPA/BIR validation requirements.
+19. Deployment and release acceptance.
+20. Exact next action.
+
+Each requirement must contain:
+- Stable requirement ID.
+- Priority.
+- Module.
+- Dependencies.
+- Actual source file references.
+- Acceptance criteria.
+- Test references.
+- Actual status.
+- Evidence.
+- Next action.
+
+Use these statuses only:
+- VERIFIED
+- IMPLEMENTED_NOT_VERIFIED
+- PARTIALLY_VERIFIED
+- FAILED
+- BLOCKED
+- NOT_TESTED
+
+Update this same master document whenever a remediation is completed.
+
+Do not create new Markdown progress reports, audit reports, roadmaps, or duplicate checklists.
+
+## Markdown cleanup procedure
+
+Before deleting any Markdown file:
+
+1. Inventory every `.md` file.
+2. Read its actual contents.
+3. Identify its purpose.
+4. Search for references from source code, scripts, workflows, configuration, and other essential files.
+5. Identify whether it contains unique requirements, instructions, legal notices, licenses, or technical knowledge.
+6. Preserve essential information in the canonical master or retain the essential standalone file.
+7. Remove only redundant or obsolete documentation that is safe to remove.
+8. Verify that no required project instruction or tool integration was broken.
+
+IMPORTANT:
+The objective is exactly one authoritative project master—not indiscriminate deletion of every Markdown file.
+
+Preserve essential README files, license files, third-party notices, required agent instructions, and legally necessary documentation unless an equivalent safe replacement is confirmed.
+
+Do not create a new Markdown file for every completed task.
+
+# 11. IMPLEMENTATION ORDER
+
+Work in this order:
+
+PRIORITY 0 — Protect the baseline
+- Inventory the source.
+- Identify architecture.
+- Run baseline tests.
+- Record protected engine invariants.
+- Inventory Markdown files.
+
+PRIORITY 1 — Critical connectivity and data integrity
+- Trace frontend actions to backend and database.
+- Identify mock/static/disconnected paths.
+- Fix critical transaction failures.
+- Fix company and period scope.
+- Fix false financial values and misleading loading states.
+
+PRIORITY 2 — Core ERP end-to-end workflows
+- Sales and AR.
+- Procurement and AP.
+- Inventory and costing.
+- Cash and bank reconciliation.
+- Accounting and GL.
+
+PRIORITY 3 — Philippine tax and statutory
+- Tax engine.
+- BIR forms.
+- QAP/MAP.
+- SAWT/SLSP.
+- Tax mapping.
+- Validation and exports.
+
+PRIORITY 4 — Enterprise workflow and governance
+- Approvals.
+- RBAC.
+- Audit.
+- Documents/OCR.
+- Notifications.
+- Master data.
+
+PRIORITY 5 — Reports and analytics
+- Reconcile every report with authoritative source data.
+- Validate drill-down.
+- Validate exports.
+- Validate company and period filters.
+
+PRIORITY 6 — Release acceptance
+- Full regression.
+- Supported production build.
+- Backup/restore.
+- Release artifact integrity.
+- Operational runbook.
+- External validation preparation.
+
+Do not skip a higher-priority unresolved critical defect to work on cosmetic improvements.
+
+# 12. EXECUTION ENVIRONMENT RESTRICTION
+
+The current execution environment is Google AI Studio Browser running in a Linux/container environment.
+
+Permitted:
+- Full source-code inspection.
+- Source-code changes.
+- Database migration changes where safely testable.
+- Unit and integration tests.
+- Supported E2E tests.
+- TypeScript checks.
+- Linting.
+- Browser-compatible production builds.
+- Documentation consolidation.
+- Release preparation.
+
+STRICTLY PROHIBITED IN THIS ENVIRONMENT:
+- Building a Windows EXE installer.
+- Running NSIS packaging.
+- Claiming Windows installation acceptance.
+- Claiming Windows DPAPI acceptance.
+- Claiming Windows ACL acceptance.
+- Claiming Windows-native backup/restore acceptance.
+
+Windows-native REQ-WIN-001 must remain BLOCKED / NOT_TESTED until executed on an appropriate local Windows machine or Windows CI runner.
+
+Do not fabricate Windows test results.
+
+# 13. RELEASE READINESS RULES
+
+Do not declare the entire product production-ready merely because:
+- The application compiles.
+- The frontend renders.
+- The tests pass.
+- The database initializes.
+- The modules exist.
+- The screenshots look complete.
+
+Production readiness requires evidence of:
+- Correct transaction behavior.
+- Real frontend/backend/database connectivity.
+- Accurate financial and statutory calculations.
+- Reliable company isolation.
+- Secure authorization.
+- Correct workflow lifecycle.
+- Data integrity.
+- Backup and restore.
+- Usable error handling.
+- Reproducible deployment.
+- Operational acceptance.
+
+Clearly separate:
+- Internal software verification.
+- Controlled pilot readiness.
+- Independent CPA review.
+- Applicable BIR taxpayer-user registration or acknowledgment.
+- Windows-native deployment acceptance.
+
+Do not claim BIR approval, CPA sign-off, or external certification without actual evidence.
+
+# 14. FINAL DELIVERABLE AND COMPLETION REPORT
+
+At the end, provide a source-grounded completion report.
+
+It must contain:
+
+A. Repository Coverage
+- Directories inspected.
+- Source file categories inspected.
+- Any uninspected areas and exact reasons.
+
+B. Architecture and Connectivity
+- Frontend architecture.
+- Backend architecture.
+- Database architecture.
+- Major module dependency map.
+- Critical transaction flow maps.
+
+C. UI Action Audit
+- Connected and verified actions.
+- Disconnected actions.
+- Mock/static actions.
+- Fixed actions.
+- Remaining blocked actions.
+
+D. Engine Protection
+- Engines preserved.
+- Existing invariants tested.
+- Defects found.
+- Fixes made.
+- Regression evidence.
+
+E. Module Status
+- All 16 primary modules.
+- Their submodules.
+- Real integration status.
+- Actual remaining gaps.
+
+F. Documentation Governance
+- Markdown inventory.
+- Canonical master document.
+- Files consolidated.
+- Redundant files safely removed.
+- Essential files retained with reasons.
+- Confirmation that no competing master roadmap was created.
+
+G. Test and Build Results
+- Exact commands.
+- Actual test counts.
+- Actual failures.
+- Actual build results.
+- Unexecuted tests and reasons.
+
+H. Release Readiness
+- Verified capabilities.
+- Partially verified capabilities.
+- Blockers.
+- CPA/BIR external gates.
+- Windows-native acceptance status.
+
+I. Final Next Action
+- The single highest-priority remaining action.
+- Exact files or modules involved.
+- Acceptance criteria.
+
+# 15. FINAL COMMAND
+
+EXECUTE THE FULL AUDIT AND SAFE REMEDIATION NOW.
+
+Inspect the actual complete source code, not just the documentation.
+
+Trace all important UI actions through frontend, backend, and database.
+
+Fix confirmed integration and production defects without damaging verified engines.
+
+Consolidate the project knowledge into the single canonical master Markdown file.
+
+Remove only safely identified redundant documentation.
+
+Run and report actual regression evidence.
+
+Keep incomplete and externally dependent requirements honestly marked as incomplete.
+
+Do not create additional Markdown reports or competing roadmaps.
+
+Do not stop at recommendations when a safe, testable correction can be implemented.
+
+Do not claim success without evidence.
+
+**FINAL OBJECTIVE: LedgerAI PH must become a genuinely connected, accurate, secure, maintainable, and operationally reliable Philippine ERP/accounting platform—not merely a collection of attractive screens and implemented modules.**

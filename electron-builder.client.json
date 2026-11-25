@@ -1,0 +1,45 @@
+{
+  "appId": "com.ledgerai.ph.client",
+  "productName": "LedgerAI PH Client",
+  "directories": {
+    "output": "release-installers"
+  },
+  "extraMetadata": {
+    "name": "ledgerai-ph-client",
+    "productName": "LedgerAI PH Client",
+    "version": "1.0.0-rc.2",
+    "main": "dist/main.cjs"
+  },
+  "npmRebuild": false,
+  "afterPack": "packaging/windows/after-pack-client.cjs",
+  "win": {
+    "target": "nsis",
+    "icon": "packaging/windows/assets/app-icon.ico",
+    "artifactName": "LedgerAI-PH-Client-Setup.exe"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "LedgerAI PH Client"
+  },
+  "files": [
+    "dist/**/*",
+    "package.json",
+    "resources/ocr/traineddata/**/*",
+    "packaging/windows/service-config/**/*",
+    "packaging/windows/assets/app-icon.ico",
+    "!internal/**/*",
+    "!tools/**/*",
+    "!dist-authority/**/*",
+    "!**/authority-main.*",
+    "!**/authority-server.*",
+    "!**/*.key",
+    "!**/*.pem",
+    "!dist/**/*private*",
+    "!dist/**/*credentials*",
+    "!dist/**/*secret*",
+    "!config/**/*"
+  ]
+}

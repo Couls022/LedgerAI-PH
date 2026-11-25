@@ -1,0 +1,48 @@
+node_modules/
+coverage/
+.DS_Store
+*.log
+*.sqlite
+*.db
+.env*
+!.env.example
+
+# Internal authority keys and build outputs
+internal/authority-keys/*
+!internal/authority-keys/.gitkeep
+dist-authority/
+dist-installer/
+*.pem
+*.key
+authority_keys.json
+authority-credentials.json
+dist/
+
+# Generated release/build files
+release-installers/
+test-dist-installer/
+*.zip
+*.tgz
+*.tar.gz
+*.exe
+*.traineddata
+*.winmd
+scratch/
+
+# Local data & test directories
+data/
+documents/
+.antigravity/
+009-881-223-00000/
+009-992-334-00000/
+123-456-789-000/
+321-654-987-000/
+777-888-999-000/
+987-654-321-000/
+999-888-777-000/
+Makati City, Metro Manila/
+25517fb19fb6c397fd460ccf5f6257f520da96e6a7097b822ad08646502c9a00
+
+# Logs and temporary files
+*.txt
+*.png

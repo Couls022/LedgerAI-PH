@@ -1,0 +1,1308 @@
+# LEDGERAI PH — POST-IMPLEMENTATION ADVERSARIAL VERIFICATION & REMEDIATION
+## COMPREHENSIVE ENTERPRISE-WIDE SYSTEM AUDIT, DEFECT DISCOVERY, HARDENING & RELEASE READINESS VALIDATION
+### Target Baseline: v1.0.0-rc.1-stable
+
+You are performing the definitive post-implementation adversarial verification and remediation of LedgerAI PH.
+
+This is a continuation of the existing LedgerAI PH enterprise development, release freeze, controlled pilot, accounting validation, and deployment acceptance process.
+
+This assignment consolidates the previously established architecture, security, accounting, compliance, integration, operational, pilot, and release requirements into ONE comprehensive verification and remediation mandate.
+
+Do not create another development roadmap.
+
+Do not restart completed implementation phases.
+
+Do not assume that previous completion reports prove that the implementation is correct.
+
+Your primary responsibility is to challenge the existing implementation, identify hidden defects, verify actual runtime behavior where possible, remediate confirmed defects, and produce reproducible evidence.
+
+---
+
+# 1. AUTHORITATIVE PROJECT REFERENCES
+
+Inspect and reconcile the existing project documentation, including:
+
+1. `/LEDGERAI_ENTERPRISE_MASTER_ROADMAP.md`
+2. `/LEDGERAI_PH_RELEASE_CANDIDATE_FREEZE_v1.0.0.md`
+3. `/LEDGERAI_PH_PILOT_ACCEPTANCE_REGISTER_v1.0.0.md`
+4. `/LEDGERAI_PH_ACTUAL_PILOT_EXECUTION_REPORT_v1.0.0.md`
+5. `/LEDGERAI_PH_INDEPENDENT_CPA_REVIEW_PACKAGE_v1.0.0.md`
+6. `/LEDGERAI_PH_PILOT_VARIANCE_REGISTER_v1.0.0.md`
+7. `/LEDGERAI_PH_EXTERNAL_ACCEPTANCE_HANDOFF_v1.0.0.md`, if present.
+8. All existing architecture documents, security assessments, technical specifications, test reports, compliance references, and historical audit records.
+
+The actual source code, database schemas, migrations, runtime behavior, and executable tests are the primary evidence.
+
+Documentation is secondary evidence and must be checked against the actual implementation.
+
+If a referenced document does not exist, record it as missing. Do not invent its contents.
+
+## Frozen baseline
+
+- Release: `v1.0.0-rc.1-stable`
+- Architecture: Topology A — Centralized LAN API Server
+- Database: SQLite with WAL and existing migration history through migration 0014, subject to source verification.
+- Encryption: LAISENC2 AES-256-GCM envelope encryption with LAISENC1 backward compatibility.
+- Pilot company: `LGR-PH-2026-PILOT-CLEAN-01`
+- Existing reported development test baseline: 216 tests across 34 files.
+- Existing pilot scenarios: CPA-01 through CPA-06.
+- Existing reported pilot trial balance: ₱626,989.10 total debits and ₱626,989.10 total credits.
+- Existing Windows acceptance requirement: `REQ-WIN-001`.
+
+These are historical reported values, not assumptions that the current source or database still matches them. Verify each one.
+
+---
+
+# 2. ADVERSARIAL VERIFICATION RULES
+
+Apply these rules throughout the entire assignment.
+
+### 2.1 Never trust completion claims without evidence
+
+Challenge previous statements such as:
+
+- Fully implemented.
+- Enterprise-ready.
+- Production-ready.
+- Secure.
+- Fully integrated.
+- Fully compliant.
+- All tests passed.
+- Zero defects.
+- Fully isolated.
+- Fully encrypted.
+- Fully recoverable.
+
+For every important claim, identify the exact source files, functions, database structures, API routes, runtime tests, or execution evidence that support it.
+
+### 2.2 Search for negative cases
+
+Do not test only successful workflows.
+
+Actively attempt to discover:
+
+- Unauthorized access.
+- Cross-company access.
+- Permission escalation.
+- Invalid state transitions.
+- Duplicate transactions.
+- Double posting.
+- Missing accounting entries.
+- Incorrect tax calculations.
+- Stale concurrent updates.
+- Partial database writes.
+- Interrupted migrations.
+- Corrupted backups.
+- Invalid encryption metadata.
+- Missing resources.
+- Application crashes.
+- Data loss during recovery.
+- Incorrect report totals.
+- Silent fallback behavior.
+- Unhandled errors.
+- Inconsistent module state.
+
+### 2.3 Distinguish evidence levels
+
+Classify every finding as one of:
+
+1. `RUNTIME_VERIFIED`
+2. `AUTOMATED_TEST_VERIFIED`
+3. `SOURCE_INSPECTED`
+4. `DOCUMENTATION_ONLY`
+5. `EXTERNAL_VALIDATION_PENDING`
+6. `BLOCKED`
+7. `NOT_TESTED`
+
+Never convert source inspection or documentation into runtime verification.
+
+### 2.4 Preserve the frozen baseline
+
+Do not silently modify the release candidate.
+
+For every confirmed defect:
+
+- Assign a unique defect ID.
+- Record severity and priority.
+- Identify root cause.
+- Identify affected files and modules.
+- Explain accounting, security, compliance, or data-integrity impact.
+- Define the correction.
+- Implement the correction only when safe and supported by available evidence.
+- Add regression tests.
+- Record migration or compatibility impact.
+- Document the resulting source revision.
+
+Keep the original release baseline identifiable.
+
+Any corrected build must be treated as a separately identified candidate, not silently represented as the original frozen release.
+
+### 2.5 No fabricated evidence
+
+Never fabricate:
+
+- Test results.
+- Database records.
+- Runtime execution.
+- Windows installation results.
+- CPA approval.
+- Official regulatory approval.
+- BIR registration.
+- External system validation.
+- Cryptographic verification.
+- Production deployment.
+
+---
+
+# 3. PHASE A — SOURCE CODE, ARCHITECTURE & MODULE INTEGRITY AUDIT
+
+Inspect the entire application, including:
+
+- Client application.
+- Server application.
+- Electron main process.
+- Preload scripts.
+- API routes.
+- Authentication.
+- Authorization.
+- Database access layer.
+- Database schema.
+- Migration scripts.
+- Business logic.
+- Accounting engines.
+- Philippine tax engines.
+- Payroll engines.
+- OCR engine.
+- Reporting engine.
+- Backup and recovery.
+- Encryption and key management.
+- Synchronization.
+- Audit trail.
+- Dashboard.
+- Master data management.
+- Navigation and UI permission behavior.
+- Build configuration.
+- Release configuration.
+- External integrations.
+
+Look for:
+
+- Duplicate business logic.
+- Dead code.
+- Unused modules.
+- Incomplete implementations.
+- Placeholder functions.
+- TODO/FIXME markers.
+- Mock data in production paths.
+- Hardcoded values.
+- Fail-open behavior.
+- Missing input validation.
+- Missing transaction boundaries.
+- Inconsistent error handling.
+- Incorrect module dependencies.
+- Circular dependencies.
+- API routes bypassing shared security controls.
+- UI behavior inconsistent with backend authorization.
+- Modules that appear connected but do not share authoritative persisted data.
+
+Verify that the architecture is consistent with the documented centralized LAN model.
+
+Do not rewrite working modules merely to simplify the architecture.
+
+---
+
+# 4. PHASE B — ENTERPRISE RBAC, AUTHENTICATION & SEGREGATION OF DUTIES
+
+Perform an adversarial review of the complete RBAC implementation.
+
+## 4.1 Module visibility
+
+Verify the following rule:
+
+- If a user has no access to a module, that module must not be visible in their navigation or accessible through its routes.
+- If a user has access, visibility and functionality must depend on the exact permissions granted.
+- Frontend visibility must never replace backend authorization.
+
+## 4.2 Granular permissions
+
+Verify the role permission catalog and compatibility matrix.
+
+Check individual permissions such as:
+
+- View.
+- Create.
+- Edit.
+- Delete, where permitted.
+- Submit.
+- Review.
+- Approve.
+- Reject.
+- Post.
+- Reverse.
+- Export.
+- Import.
+- Print.
+- Configure.
+- Manage users.
+- Manage roles.
+- Manage permissions.
+- View audit records.
+
+Verify that permission combinations are valid and that incompatible grants are rejected or explicitly governed.
+
+## 4.3 Data scopes
+
+Test:
+
+- COMPANY_WIDE
+- DEPARTMENT
+- PROJECT
+- COST_CENTER
+- OWN_RECORDS
+- ASSIGNED_RECORDS
+
+Attempt to bypass each scope through:
+
+- Direct API calls.
+- Modified identifiers.
+- Query parameters.
+- Request headers.
+- Alternate API routes.
+- Bulk operations.
+- Export functions.
+- Related-record endpoints.
+
+## 4.4 Maker-checker and SoD
+
+Verify that:
+
+- A user cannot approve their own restricted transaction.
+- A user cannot bypass approval through direct posting endpoints.
+- Approval limits are enforced server-side.
+- Role changes do not silently authorize previously unauthorized operations.
+- Revoked permissions take effect correctly.
+- Privileged operations generate audit records.
+
+Inspect every sensitive workflow, not just the RBAC test suite.
+
+---
+
+# 5. PHASE C — MULTI-COMPANY ISOLATION & DATA GOVERNANCE
+
+Verify company isolation across:
+
+- CompanyManager.
+- Workspace Manifest.
+- Global Registry.
+- `manifest.json`.
+- `companies_registry.json`.
+- Tenant database.
+- Company classification.
+- Authentication context.
+- API routing.
+- File storage.
+- Document storage.
+- Backup storage.
+- OCR processing.
+- Reports.
+- Exports.
+- Audit history.
+- WebSocket events.
+
+Verify the supported classifications:
+
+- PRODUCTION
+- PILOT
+- DEVELOPMENT
+- TEST
+- STRESS_TEST
+- BENCHMARK
+- DISPOSABLE
+
+Test attempts to:
+
+- Spoof company IDs.
+- Change tenant headers.
+- Access another company's records.
+- Retrieve another company's documents.
+- Export another company's reports.
+- Trigger another company's backup.
+- Use a pilot company as a production company.
+- Mix synthetic data into real company books.
+- Bypass classification restrictions.
+
+Verify that company identity is derived from trusted authenticated context and validated against the authoritative company registry.
+
+Any cross-company data leakage is a critical defect.
+
+---
+
+# 6. PHASE D — DATABASE, MIGRATION & TRANSACTION INTEGRITY
+
+Perform a full database architecture audit.
+
+Inspect:
+
+- All Drizzle tables.
+- Foreign keys.
+- Unique constraints.
+- Check constraints.
+- Indexes.
+- Triggers.
+- Migration order.
+- Schema version.
+- Referential integrity.
+- Company ownership columns.
+- Soft-delete behavior.
+- Audit fields.
+- Version columns.
+- Transaction boundaries.
+
+## 6.1 Transaction coordinator
+
+Verify:
+
+- BEGIN IMMEDIATE behavior.
+- Nested SAVEPOINT handling.
+- Rollback behavior.
+- SQLITE_BUSY retry limits.
+- Retry safety.
+- No transaction function executes outside a transaction after a failure.
+- No asynchronous callback is incorrectly passed to synchronous SQLite transaction APIs.
+
+## 6.2 Migration rollback
+
+Create or execute dedicated migration rollback tests.
+
+Test:
+
+1. Database at version N.
+2. Start migration N+1.
+3. Perform a schema and data change.
+4. Inject a failure.
+5. Confirm rollback.
+6. Confirm schema version remains N.
+7. Confirm original data remains intact.
+8. Confirm unrelated company databases remain unaffected.
+9. Confirm a subsequent valid retry works.
+
+Do not substitute accounting transaction rollback tests for migration rollback tests.
+
+## 6.3 Concurrent updates
+
+Verify:
+
+- expectedVersion checks.
+- Atomic version increments.
+- HTTP 409 conflict handling.
+- Stale-write rejection.
+- No lost updates.
+- No duplicate postings.
+- No partial multi-table updates.
+
+Test realistic simultaneous workstation operations.
+
+SQLite WAL remains a single-writer architecture. Do not claim unrestricted multi-writer behavior.
+
+---
+
+# 7. PHASE E — PHILIPPINE ACCOUNTING ENGINE ADVERSARIAL AUDIT
+
+Inspect the complete accounting lifecycle.
+
+## 7.1 General ledger
+
+Test:
+
+- Journal entry creation.
+- Validation.
+- Approval.
+- Posting.
+- Reversal.
+- Amendment.
+- Period assignment.
+- Trial balance.
+- General ledger reports.
+- Financial statement generation.
+
+Verify:
+
+- Debit and credit equality.
+- Correct account mapping.
+- Correct accounting date.
+- Correct posting period.
+- No duplicate posting.
+- Posted transactions cannot be silently edited or deleted.
+- Corrections use controlled reversal or amendment workflows.
+
+## 7.2 Accounts receivable
+
+Test:
+
+- Customer invoices.
+- Credit notes.
+- Partial collections.
+- Overpayments.
+- Unapplied receipts.
+- Aging.
+- Customer statements.
+- Write-offs.
+- Reversals.
+- AR control-account reconciliation.
+
+## 7.3 Accounts payable
+
+Test:
+
+- Supplier bills.
+- Debit notes.
+- Partial payments.
+- Advances.
+- Withholding.
+- Payment allocation.
+- Aging.
+- Supplier statements.
+- AP control-account reconciliation.
+
+## 7.4 Cash and banking
+
+Test:
+
+- Cash receipts.
+- Cash disbursements.
+- Bank transfers.
+- Bank reconciliation.
+- Duplicate bank transactions.
+- Unmatched transactions.
+- Outstanding checks.
+- Outstanding deposits.
+- Bank charges.
+- Reconciliation adjustments.
+
+## 7.5 Inventory
+
+Test:
+
+- Goods receipt.
+- Stock issue.
+- Transfers.
+- Adjustments.
+- Returns.
+- Costing.
+- Inventory valuation.
+- Negative inventory controls.
+- Inventory-to-GL reconciliation.
+
+## 7.6 Fixed assets
+
+Test:
+
+- Acquisition.
+- Capitalization.
+- Useful life.
+- Residual value.
+- Depreciation.
+- Partial-period depreciation.
+- Disposal.
+- Accumulated depreciation.
+- Carrying value.
+- Fixed asset register reconciliation.
+
+## 7.7 Period close
+
+Test:
+
+- Open period.
+- Closing process.
+- Reopening restrictions.
+- Late transactions.
+- Adjusting entries.
+- Period locking.
+- Financial report consistency.
+- Unauthorized period modifications.
+
+---
+
+# 8. PHASE F — PHILIPPINE TAX, PAYROLL & STATUTORY COMPLIANCE
+
+Perform a version-aware adversarial audit of the Philippine statutory engines.
+
+Inspect:
+
+- VAT.
+- Non-VAT.
+- 8% income tax option, where supported.
+- BIR TRAIN withholding tax.
+- Expanded Withholding Tax.
+- Creditable Withholding Tax.
+- Form 2307.
+- Alphalist.
+- Applicable BIR returns and schedules.
+- SSS.
+- PhilHealth.
+- Pag-IBIG.
+- Payroll statutory deductions.
+- Payroll employer contributions.
+
+## 8.1 Tax calculation edge cases
+
+Test:
+
+- Zero values.
+- Minimum and maximum values.
+- Threshold boundaries.
+- Rates changing by effective date.
+- Multiple tax categories.
+- Tax-inclusive and tax-exclusive amounts.
+- Partial transactions.
+- Exempt transactions.
+- Zero-rated transactions.
+- Rounding boundaries.
+- Negative adjustments.
+- Reversals.
+- Amended transactions.
+- Period cutoffs.
+
+## 8.2 Statutory rule governance
+
+For every calculation, identify:
+
+- Official source.
+- Regulation or circular reference.
+- Effective date.
+- Applicable period.
+- Rule version.
+- Calculation method.
+- Rounding method.
+- Expected result.
+- Actual result.
+- Regression test.
+
+Verify SSS contribution brackets and all applicable payroll rules against dated official references.
+
+Do not assume that a historical contribution table remains current.
+
+Do not claim that internal calculations establish official regulatory approval.
+
+## 8.3 Compliance status distinction
+
+Clearly distinguish:
+
+- Software calculation correctness.
+- Internal test validation.
+- Accountant validation.
+- Official external validator testing.
+- BIR taxpayer registration.
+- CAS/CBA acknowledgment or other applicable regulatory filing.
+
+Never claim BIR approval or registration without official supporting evidence.
+
+---
+
+# 9. PHASE G — ENCRYPTION, KEY MANAGEMENT, BACKUP & DISASTER RECOVERY
+
+Perform a cryptographic and operational security audit of LAISENC2 and LAISENC1 compatibility.
+
+Inspect:
+
+- AES-256-GCM usage.
+- DEK generation.
+- KEK handling.
+- Key wrapping.
+- IV generation.
+- Authentication tags.
+- Container format.
+- Metadata.
+- Recovery envelope.
+- Legacy decryption.
+- Key versioning.
+- Key rotation, where supported.
+- Backup creation.
+- Backup verification.
+- Restore behavior.
+
+## 9.1 Metadata authentication
+
+Do not assume that external JSON metadata is authenticated simply because the payload uses AES-GCM.
+
+Verify whether relevant metadata fields are included in authenticated additional data or another authenticated construction.
+
+Test tampering with:
+
+- companyId.
+- keyId.
+- keyVersion.
+- keyMode.
+- container version.
+- wrap IV.
+- wrap tag.
+- wrapped DEK.
+- data IV.
+- data tag.
+- ciphertext.
+- metadata length.
+
+Distinguish:
+
+- Cryptographic authentication failure.
+- Key lookup failure.
+- Structural format rejection.
+- Application-level validation.
+
+## 9.2 Recovery tests
+
+Test:
+
+- Original machine recovery.
+- Different machine.
+- Different user.
+- Hostname change.
+- Missing key vault.
+- Corrupted key vault.
+- Incorrect recovery key.
+- Missing metadata.
+- Tampered backup.
+- Interrupted encryption.
+- Interrupted restore.
+- Crash during snapshot.
+- Legacy LAISENC1 restoration.
+
+Never destroy the only valid database or recovery material during testing.
+
+## 9.3 Plaintext working database
+
+Verify the protection of:
+
+- Active SQLite database.
+- WAL file.
+- SHM file.
+- Temporary files.
+- Logs.
+- Key vault.
+- Backup files.
+
+A `.lai` encrypted backup does not prove that the active working database is continuously encrypted.
+
+Document the actual data-at-rest exposure model.
+
+## 9.4 Windows ACL
+
+Verify actual Windows NTFS DACL enforcement.
+
+POSIX permissions such as 0700 and 0600 are not sufficient evidence of Windows ACL correctness.
+
+---
+
+# 10. PHASE H — CENTRALIZED LAN, SERVER LOCK & REAL-TIME SYNCHRONIZATION
+
+Verify the documented Topology A architecture:
+
+- One authoritative central API server.
+- SQLite database stored on the central server's local disk.
+- Workstations use authenticated HTTP and WebSocket communication.
+- Clients never directly open the authoritative SQLite database through SMB or NFS.
+
+Test:
+
+- Server startup.
+- Server shutdown.
+- Client reconnect.
+- Network interruption.
+- Reconnection.
+- Duplicate requests.
+- Concurrent edits.
+- Stale version conflicts.
+- Unauthorized WebSocket subscriptions.
+- Cross-company event leakage.
+- Server crash.
+- Lock recovery.
+- Stale lock detection.
+- PID reuse risk.
+- Partial or malformed lock files.
+
+Verify `.server_process.lock` ownership and recovery logic.
+
+Do not remove an active lock when process identity is uncertain.
+
+Where appropriate, use a unique process instance identifier and validate lock ownership rather than relying only on PID liveness.
+
+---
+
+# 11. PHASE I — OCR, DOCUMENT MANAGEMENT & RECORD JOURNEY 360
+
+## 11.1 OCR
+
+Verify:
+
+- Offline Tesseract.js WASM execution.
+- `eng.traineddata` resource loading.
+- Multi-page PDF parsing.
+- OCR confidence handling.
+- Low-confidence review.
+- Human verification.
+- Duplicate document detection.
+- Document-to-transaction linkage.
+- OCR provider identification.
+- No fabricated extraction values.
+
+Verify that missing dates remain missing rather than defaulting to current system dates.
+
+OCR extraction must never silently post unverified financial data to the general ledger.
+
+## 11.2 Document management
+
+Test:
+
+- Upload.
+- Download.
+- Preview.
+- Versioning.
+- Access control.
+- Company isolation.
+- Attachment integrity.
+- Document lifecycle.
+- Retention and deletion controls.
+
+## 11.3 Record Journey 360
+
+Verify that lifecycle information comes from actual persisted records.
+
+Inspect:
+
+- Overview.
+- Details.
+- Activity Journey.
+- Approval History.
+- Change History.
+- Related Records.
+- Documents & Attachments.
+- Audit Information.
+
+Verify that missing stages are not fabricated and that cross-company requests are rejected.
+
+---
+
+# 12. PHASE J — DASHBOARD, REPORTING & END-TO-END MODULE CONNECTIVITY
+
+Audit every major module for actual integration.
+
+Verify that dashboards and reports consume authoritative persisted data rather than hardcoded summaries or independent duplicate datasets.
+
+Trace representative transactions across:
+
+Source document
+→ OCR / document validation
+→ Master data
+→ Transaction entry
+→ Approval
+→ Posting
+→ Subledger
+→ General ledger
+→ Tax schedules
+→ Financial reports
+→ Audit trail
+→ Record Journey 360
+
+Test that changes propagate correctly and consistently.
+
+Verify that:
+
+- Dashboard totals reconcile with ledger data.
+- Reports use correct accounting periods.
+- Filters cannot bypass company scope.
+- Exports follow authorization rules.
+- Related modules use consistent transaction identifiers.
+- Deleted or reversed transactions are reflected correctly.
+- No stale cached financial totals are displayed as current.
+
+---
+
+# 13. PHASE K — PERFORMANCE, STABILITY & STRESS TESTING
+
+Perform controlled performance testing.
+
+Test:
+
+- Large transaction volumes.
+- Large company datasets.
+- Multiple concurrent workstation requests.
+- Long-running database operations.
+- Large OCR documents.
+- Large reports.
+- Backup creation.
+- Restore operations.
+- Application restart.
+- Memory and resource usage.
+- Repeated authentication and authorization checks.
+
+Use isolated STRESS_TEST or BENCHMARK company databases.
+
+Never inject stress-test data into the pilot company or production company books.
+
+Record:
+
+- Dataset size.
+- Test environment.
+- Number of concurrent users.
+- Execution duration.
+- Throughput.
+- Error rate.
+- Memory consumption.
+- Database lock behavior.
+- Recovery outcome.
+
+Do not invent performance targets or claim success without measured results.
+
+---
+
+# 14. PHASE L — USER EXPERIENCE, NAVIGATION & ENTERPRISE WORKFLOW
+
+Inspect the full application UI.
+
+Verify:
+
+- Primary and submodule navigation.
+- Module visibility based on permissions.
+- Role-specific actions.
+- Consistent loading states.
+- Empty states.
+- Validation messages.
+- Error handling.
+- Confirmation dialogs.
+- Approval interfaces.
+- Posting interfaces.
+- Reversal interfaces.
+- Search and filtering.
+- Pagination.
+- Export controls.
+- Record Journey navigation.
+- Multi-company switching.
+- Responsive layout.
+- Keyboard accessibility where supported.
+
+Ensure that visible actions correspond to real authorized backend capabilities.
+
+Identify buttons that do nothing, misleading status indicators, broken navigation, disconnected forms, and UI elements that imply a transaction succeeded before persistence is confirmed.
+
+Do not redesign the UI unnecessarily.
+
+---
+
+# 15. PHASE M — RELEASE CONFIGURATION & WINDOWS DEPLOYMENT READINESS
+
+Inspect:
+
+- package.json.
+- Electron version.
+- Node version.
+- Native dependencies.
+- better-sqlite3 rebuild configuration.
+- Electron main/preload outputs.
+- Server bundle.
+- Renderer bundle.
+- Resource paths.
+- OCR trained data.
+- ASAR configuration.
+- Native module unpacking.
+- Database locations.
+- User data locations.
+- Logs.
+- Key vault.
+- Backup locations.
+- NSIS configuration.
+- Uninstallation behavior.
+- Upgrade behavior.
+
+Verify that packaged resource paths do not depend on unreliable process.cwd() assumptions.
+
+Use the correct Electron resource and application paths.
+
+## Mandatory environment restriction
+
+Google AI Studio is a Linux/container environment.
+
+DO NOT:
+
+- Build Windows EXE installers there.
+- Run NSIS there.
+- Claim Windows native acceptance from Linux.
+- Claim Windows NTFS ACL verification without a real Windows environment.
+
+Prepare the exact Windows execution runbook.
+
+Keep `REQ-WIN-001` as `BLOCKED / NOT TESTED` until an actual Windows 10/11 x64 execution produces evidence for:
+
+1. Installer build.
+2. Installation.
+3. Native module loading.
+4. Application startup.
+5. Database initialization.
+6. Offline OCR.
+7. Backup and restore.
+8. Upgrade.
+9. NTFS ACL.
+10. Uninstallation and data preservation.
+
+---
+
+# 16. PHASE N — PILOT COMPANY CPA-01 THROUGH CPA-06 REVALIDATION
+
+Inspect the existing pilot records for:
+
+`LGR-PH-2026-PILOT-CLEAN-01`
+
+Do not create duplicate transactions or reset the database.
+
+Revalidate the persisted evidence for:
+
+- CPA-01 Opening Balances.
+- CPA-02 Purchase Bills with VAT/EWT.
+- CPA-03 Sales Invoices with VAT/CWT.
+- CPA-04 Payroll and Statutory Deductions.
+- CPA-05 Fixed Asset Depreciation.
+- CPA-06 Bank Reconciliation.
+
+Historical reported trial balance:
+
+- Debits: ₱626,989.10.
+- Credits: ₱626,989.10.
+
+Verify the actual persisted values and supporting records.
+
+Reconcile:
+
+- AR to account 1030.
+- AP to account 2010.
+- Inventory to account 1080.
+- Fixed assets to account 1510.
+
+Verify account mappings from the actual chart of accounts rather than assuming these codes are universally correct.
+
+Recheck:
+
+- Opening balances.
+- Tax calculations.
+- Payroll calculations.
+- Fixed asset depreciation.
+- Bank reconciliation.
+- Journal entries.
+- Trial balance.
+- Subledger balances.
+- Audit trail.
+- Application restart persistence.
+
+Do not claim independent CPA approval.
+
+Maintain `PENDING CPA REVIEW` until an actual independent CPA completes and documents the review.
+
+---
+
+# 17. PHASE O — REGULATORY AND EXTERNAL ACCEPTANCE GOVERNANCE
+
+Review the existing Philippine compliance documentation and source references.
+
+Inspect the claimed mappings to:
+
+- BIR RMC No. 5-2021.
+- BIR RMC No. 65-2025.
+- Applicable BIR CAS/CBA acknowledgment requirements.
+- SSS contribution rules.
+- PhilHealth contribution rules.
+- Pag-IBIG contribution rules.
+- BIR TRAIN.
+- VAT.
+- EWT/CWT.
+- Form 2307.
+- Alphalist.
+
+Verify dates, applicability, and source traceability.
+
+Do not assume the software is officially registered or approved.
+
+Maintain a clear distinction between:
+
+- Software implementation.
+- Internal calculation tests.
+- Accountant/CPA validation.
+- External system validation.
+- Taxpayer filing.
+- Official regulatory acknowledgment.
+
+Any requirement that depends on an external agency, independent CPA, or actual Windows environment must remain pending until evidence is available.
+
+---
+
+# 18. PHASE P — DEFECT SEVERITY & REMEDIATION GOVERNANCE
+
+Classify every confirmed defect:
+
+### CRITICAL
+- Cross-company data leakage.
+- Unauthorized posting or approval.
+- Data corruption.
+- Unrecoverable database loss.
+- Cryptographic compromise.
+- Material accounting misstatement.
+- Security bypass affecting privileged operations.
+
+### HIGH
+- Incorrect tax or payroll calculations.
+- Incorrect financial statements.
+- Duplicate posting.
+- Missing transaction records.
+- Broken recovery.
+- Incorrect permission enforcement.
+- Material concurrency defect.
+
+### MEDIUM
+- Incomplete workflows.
+- Reporting inconsistencies.
+- Incorrect noncritical calculations.
+- Audit trail gaps.
+- Significant usability failures.
+
+### LOW
+- Minor visual defects.
+- Noncritical usability issues.
+- Documentation inconsistencies.
+- Nonmaterial warnings.
+
+For each defect, document:
+
+- Defect ID.
+- Severity.
+- Priority.
+- Affected module.
+- Reproduction steps.
+- Expected behavior.
+- Actual behavior.
+- Root cause.
+- Business impact.
+- Security/compliance impact.
+- Proposed correction.
+- Implemented correction, if safe.
+- Regression test.
+- Verification evidence.
+- Remaining risk.
+
+Remediate confirmed CRITICAL and HIGH defects before recommending any production release.
+
+Do not change correct accounting behavior merely to make a test pass.
+
+---
+
+# 19. PHASE Q — REGRESSION, INTEGRATION & BUILD VERIFICATION
+
+After remediation, run the relevant tests.
+
+At minimum:
+
+- Existing unit tests.
+- Integration tests.
+- Accounting tests.
+- Tax tests.
+- Payroll tests.
+- RBAC tests.
+- Tenant isolation tests.
+- Concurrency tests.
+- Encryption tests.
+- Backup and recovery tests.
+- OCR tests.
+- Record Journey tests.
+- Migration tests.
+- Build and typecheck.
+
+Report exact:
+
+- Test command.
+- Test file count.
+- Individual test counts.
+- Passed tests.
+- Failed tests.
+- Skipped tests.
+- Pending tests.
+- Execution environment.
+- Duration.
+- Test report location.
+
+Do not reuse historical test counts as current execution results.
+
+Do not claim 100% success if any tests were skipped, blocked, or not executed.
+
+---
+
+# 20. PHASE R — REQUIRED FINAL DOCUMENTATION
+
+Update the existing canonical documents without creating another roadmap.
+
+Update:
+
+`/LEDGERAI_ENTERPRISE_MASTER_ROADMAP.md`
+
+Only when an actual requirement status, dependency, or defect needs updating.
+
+Update:
+
+`/LEDGERAI_PH_PILOT_ACCEPTANCE_REGISTER_v1.0.0.md`
+
+Create:
+
+`/LEDGERAI_PH_POST_IMPLEMENTATION_ADVERSARIAL_AUDIT_v1.0.0.md`
+
+Create:
+
+`/LEDGERAI_PH_POST_IMPLEMENTATION_DEFECT_REGISTER_v1.0.0.md`
+
+Create:
+
+`/LEDGERAI_PH_REMEDIATION_AND_REGRESSION_REPORT_v1.0.0.md`
+
+Create:
+
+`/LEDGERAI_PH_FINAL_RELEASE_READINESS_ASSESSMENT_v1.0.0.md`
+
+Preserve historical reports and stable requirement IDs.
+
+Do not archive or delete previous audit records.
+
+---
+
+# 21. FINAL ACCEPTANCE CLASSIFICATION
+
+Every requirement must use an explicit status:
+
+- PASS
+- FAIL
+- BLOCKED
+- NOT TESTED
+- PENDING CPA REVIEW
+- EXTERNAL VALIDATION PENDING
+
+Every PASS must have identifiable supporting evidence.
+
+Do not classify documentation-only claims as PASS for runtime-dependent requirements.
+
+The final report must separately assess:
+
+1. Source code integrity.
+2. Architecture integrity.
+3. RBAC and segregation of duties.
+4. Multi-company isolation.
+5. Database and migration integrity.
+6. Accounting correctness.
+7. Philippine statutory calculation correctness.
+8. Encryption and key management.
+9. Backup and disaster recovery.
+10. LAN concurrency and synchronization.
+11. OCR and document management.
+12. Dashboard and reporting integration.
+13. Performance and stability.
+14. UI and workflow correctness.
+15. Windows native installation.
+16. Pilot transaction execution.
+17. Independent CPA approval.
+18. External regulatory validation.
+19. Production readiness.
+
+## Final decision categories
+
+Choose only the category supported by evidence:
+
+- `DEVELOPMENT VERIFIED`
+- `INTERNAL PILOT VALIDATED`
+- `CONTROLLED PILOT ELIGIBLE`
+- `EXTERNAL ACCEPTANCE PENDING`
+- `PRODUCTION READINESS BLOCKED`
+- `PRODUCTION READY`
+
+Do not declare PRODUCTION READY while critical or high defects remain unresolved, or when mandatory external acceptance criteria remain outstanding.
+
+---
+
+# 22. EXECUTION ORDER
+
+Execute this assignment in the following order:
+
+1. Inventory the existing source and authoritative documents.
+2. Establish the exact baseline and environment.
+3. Perform the adversarial audit across all phases.
+4. Record all findings before changing code.
+5. Prioritize findings by severity.
+6. Remediate confirmed defects safely.
+7. Add targeted regression tests.
+8. Run the complete relevant verification suite.
+9. Recheck cross-module integration.
+10. Update the acceptance register and defect records.
+11. Prepare the final release-readiness assessment.
+
+Do not stop after producing an audit document if confirmed safe-to-fix defects can be corrected in the current environment.
+
+Do not attempt unsafe database mutations or destructive recovery tests against the only copy of pilot data.
+
+If an external environment or reviewer is required, prepare the exact execution instructions and mark the requirement pending.
+
+If the task exceeds the available execution environment or context, record the completed scope and remaining work explicitly. Do not claim full completion.
+
+---
+
+# 23. FINAL RESPONSE FORMAT
+
+At completion, provide:
+
+A. Executive summary.
+
+B. Exact baseline and source revision.
+
+C. Audit coverage by phase.
+
+D. Critical, high, medium, and low findings.
+
+E. Confirmed defects and implemented remediations.
+
+F. Regression test results with exact counts.
+
+G. Accounting and statutory validation results.
+
+H. Security and data-isolation results.
+
+I. Database, encryption, backup, and recovery results.
+
+J. Cross-module integration findings.
+
+K. Pilot CPA-01 through CPA-06 revalidation.
+
+L. Windows acceptance status.
+
+M. Independent CPA and external regulatory status.
+
+N. Updated documents and evidence locations.
+
+O. Remaining blockers and required external actions.
+
+P. Final release-readiness classification.
+
+For every important conclusion, identify whether it is runtime-verified, automated-test-verified, source-inspected, documentation-only, or externally pending.
+
+## FINAL GOVERNANCE DIRECTIVE
+
+This is an adversarial verification and remediation assignment, not a feature-expansion exercise.
+
+Preserve the existing architecture and completed functionality.
+
+Challenge previous implementation claims.
+
+Find hidden defects.
+
+Correct confirmed defects.
+
+Protect company data and accounting history.
+
+Maintain strict security, compliance, and auditability.
+
+Do not fabricate evidence.
+
+Do not create another master roadmap.
+
+Do not automatically promote the application to production.
+
+The final objective is to establish the actual technical, accounting, security, compliance, and operational condition of LedgerAI PH through reproducible evidence—and to remediate every confirmed defect that can safely be corrected before the final release decision.

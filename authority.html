@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LedgerAI PH Key License Generator</title>
+    <script>
+      (function() {
+        try {
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+              for (var i = 0; i < regs.length; i++) { regs[i].unregister(); }
+            });
+          }
+          if (typeof window !== 'undefined' && 'caches' in window) {
+            caches.keys().then(function(names) {
+              for (var i = 0; i < names.length; i++) { caches.delete(names[i]); }
+            });
+          }
+          window.addEventListener('error', function(e) {
+            if (e.target && e.target.tagName === 'LINK' && e.target.rel === 'stylesheet') {
+              var href = e.target.getAttribute('href');
+              if (href && !href.includes('?v=')) {
+                e.target.href = href + (href.includes('?') ? '&' : '?') + 'v=' + Date.now();
+              }
+            }
+          }, true);
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/entries/license-authority.tsx"></script>
+  </body>
+</html>

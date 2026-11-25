@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>LedgerAI PH — Philippine Accounting &amp; BIR Tax Platform</title>
+    <meta name="description" content="Enterprise Philippine double-entry accounting, BIR statutory tax compliance, multi-company financial ledger, payroll, inventory, and audit governance." />
+    <meta property="og:title" content="LedgerAI PH — Philippine Accounting &amp; BIR Tax Platform" />
+    <meta property="og:description" content="Enterprise Philippine double-entry accounting, BIR statutory tax compliance, multi-company financial ledger, payroll, inventory, and audit governance." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..600&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      // Self-healing: Immediately unregister any legacy service workers and clear stale caches
+      (function() {
+        try {
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+              for (var i = 0; i < regs.length; i++) { regs[i].unregister(); }
+            });
+          }
+          if (typeof window !== 'undefined' && 'caches' in window) {
+            caches.keys().then(function(names) {
+              for (var i = 0; i < names.length; i++) { caches.delete(names[i]); }
+            });
+          }
+          window.addEventListener('error', function(e) {
+            if (e.target && e.target.tagName === 'LINK' && e.target.rel === 'stylesheet') {
+              var href = e.target.getAttribute('href');
+              if (href && !href.includes('?v=')) {
+                e.target.href = href + (href.includes('?') ? '&' : '?') + 'v=' + Date.now();
+              }
+            }
+          }, true);
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="bg-[#F5F7FA] dark:bg-[#0B1120] text-[#0F172A] dark:text-[#F1F5F9] antialiased selection:bg-[#0F766E]/15 selection:text-[#0F172A] dark:selection:bg-[#38BDF8]/25 dark:selection:text-[#F8FAFC]">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

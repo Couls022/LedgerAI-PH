@@ -1,0 +1,1315 @@
+# LEDGERAI PH
+# FINAL MASTER ENTERPRISE ERP DEEP AUDIT, SYSTEM HARDENING & PRODUCTION READINESS DIRECTIVE
+
+## 0. PRIMARY MISSION
+
+Perform a complete, exhaustive, end-to-end technical and functional audit of the ENTIRE LedgerAI PH application.
+
+This is a comprehensive enterprise ERP assessment covering:
+
+1. Every primary module.
+2. Every submodule and nested navigation item.
+3. Every page, screen, tab, section, card, table, form, modal, drawer, dialog, dropdown, and interactive component.
+4. Every button, action, label, input, selector, filter, search, toggle, checkbox, badge, status, and contextual menu.
+5. Every frontend-to-backend integration.
+6. Every backend service, API, repository, business logic, and database operation.
+7. Every database table, relationship, constraint, index, migration, and transaction.
+8. Every calculation, accounting rule, Philippine tax rule, validation, and report-generation process.
+9. Every permission, role, authorization, company boundary, and data access restriction.
+10. Offline-first, standalone, local data processing, and hybrid synchronization behavior.
+11. Performance, scalability, concurrency, reliability, security, and production readiness.
+
+The target is a PROFESSIONAL, ENTERPRISE-GRADE, PRODUCTION-READY PHILIPPINE ERP SYSTEM.
+
+This application must reliably handle thousands of business records and transactions without incorrect computations, missing records, duplicate postings, broken relationships, data corruption, or inconsistent reports.
+
+Do not treat this as a visual redesign project.
+
+The goal is to establish a fully integrated ERP where frontend, backend, database, accounting engines, Philippine compliance engines, and the Source of Truth Engine operate as one consistent system.
+
+---
+
+# 1. STRICT AUDIT EXECUTION RULES
+
+Before changing anything:
+
+- Inspect the entire existing source code and repository structure.
+- Identify the actual framework, runtime, application architecture, backend architecture, and database implementation.
+- Inspect all existing modules and reusable components.
+- Inspect existing database schemas, migrations, indexes, services, hooks, state management, API routes, and business logic.
+- Identify existing engines and their dependencies.
+- Identify previously implemented features and completed phases.
+- Preserve working implementations and existing architectural contracts.
+- Reuse existing components instead of unnecessarily creating duplicates.
+- Identify legacy code, abandoned implementations, duplicate services, and conflicting logic.
+- Trace actual data flow instead of relying on component names or documentation.
+
+IMPORTANT:
+
+Do not assume that an existing feature works simply because:
+- Its page loads.
+- Its button is clickable.
+- Its modal opens.
+- Its API returns HTTP 200.
+- Its database table exists.
+- Its TypeScript compilation succeeds.
+- Its test passes without verifying actual persistence and business outcomes.
+
+Every feature must be verified through its complete execution lifecycle.
+
+Do not introduce unnecessary rewrites, artificial abstractions, duplicate engines, duplicate database structures, or breaking changes.
+
+Do not silently remove existing functionality.
+
+Do not fabricate test results, database records, performance results, or production readiness claims.
+
+---
+
+# 2. COMPLETE ERP MODULE COVERAGE
+
+Audit every existing module and recursively discover every actual submodule.
+
+Use the following 16 enterprise domains as the master coverage checklist. Preserve the existing canonical navigation architecture and map legacy routes to their proper destinations.
+
+## A. Dashboard
+- Executive Dashboard
+- Financial Overview
+- Operational Overview
+- KPI Monitoring
+- Revenue and Expense Summary
+- Cash Position
+- Receivables and Payables Summary
+- Inventory Overview
+- Tax and Compliance Alerts
+- Pending Approvals
+- Recent Activities
+- Alerts and Notifications
+- Customizable Dashboard Widgets
+
+## B. Sales and Accounts Receivable
+- Customer Management
+- Quotations
+- Sales Orders
+- Delivery Management
+- Sales Invoices
+- Credit Notes
+- Debit Notes
+- Customer Payments
+- Accounts Receivable
+- Customer Statements
+- Aging Analysis
+- Sales Returns
+- Discounts and Adjustments
+- Sales Reports
+
+## C. Procurement and Accounts Payable
+- Supplier Management
+- Purchase Requisitions
+- Purchase Orders
+- Goods Receipt
+- Supplier Invoices
+- Purchase Returns
+- Debit and Credit Adjustments
+- Supplier Payments
+- Accounts Payable
+- AP Aging
+- Supplier Statements
+- Procurement Reports
+
+## D. Inventory Management
+- Item Master
+- Product Categories
+- SKU Management
+- Units of Measurement
+- Warehouses and Locations
+- Stock Receipts
+- Stock Issues
+- Stock Transfers
+- Stock Adjustments
+- Inventory Reservations
+- Inventory Valuation
+- Batch and Serial Tracking
+- Reorder Management
+- Stock Count
+- Inventory Ledger
+- Inventory Reports
+
+## E. Cash and Banking
+- Cash Accounts
+- Bank Accounts
+- Cash Receipts
+- Cash Disbursements
+- Bank Transactions
+- Bank Reconciliation
+- Fund Transfers
+- Petty Cash
+- Check Management
+- Cash Position
+- Cash Flow
+- Banking Reports
+
+## F. Accounting and General Ledger
+- Chart of Accounts
+- General Ledger
+- Journal Entries
+- Journal Vouchers
+- Accounts Receivable Integration
+- Accounts Payable Integration
+- Sales Posting
+- Purchasing Posting
+- Inventory Posting
+- Cash and Banking Posting
+- Trial Balance
+- General Ledger Reports
+- Income Statement
+- Balance Sheet
+- Cash Flow Statement
+- Retained Earnings
+- Closing Entries
+- Period Closing
+- Fiscal Year Management
+- Reversals and Adjustments
+
+## G. Fixed Assets
+- Asset Register
+- Asset Categories
+- Asset Acquisition
+- Capitalization
+- Depreciation
+- Asset Transfers
+- Asset Revaluation
+- Asset Disposal
+- Asset Impairment
+- Asset Ledger
+- Fixed Asset Reports
+
+## H. Payroll and HR
+- Employee Master
+- Employment Information
+- Compensation
+- Payroll Processing
+- Attendance
+- Overtime
+- Leave Management
+- Payroll Adjustments
+- Deductions
+- Benefits
+- Payslips
+- Payroll Register
+- 13th Month Pay
+- Final Pay
+- Payroll Accounting Integration
+- Government Contribution Computations
+
+## I. Philippine Tax and BIR Compliance
+- Taxpayer and Company Registration
+- VAT
+- Non-VAT
+- 8% Income Tax
+- Percentage Tax
+- Expanded Withholding Tax
+- Final Withholding Tax
+- Compensation Withholding Tax
+- Creditable Withholding Tax
+- ATC Management
+- Tax Mapping
+- Input VAT
+- Output VAT
+- VAT Payable
+- Withholding Certificates
+- BIR Form Management
+- 1601-C
+- 1601-EQ
+- 1604-C
+- 1604-E
+- 1701
+- 1701A
+- 1702
+- 2550Q
+- 2551Q
+- 2307
+- Alphalist
+- Tax Returns and Schedules
+- Tax Reconciliation
+- Tax Calendar
+- Filing Readiness
+- BIR Compliance Reports
+
+Audit actual supported forms and rules. Do not mark unsupported or unverified BIR functionality as production-ready.
+
+## J. Budget and Financial Planning
+- Budget Setup
+- Department Budgets
+- Cost Centers
+- Budget Allocation
+- Budget Revisions
+- Budget vs Actual
+- Forecasting
+- Variance Analysis
+- Financial Planning Reports
+
+## K. Document Management and OCR
+- Document Repository
+- Upload and Import
+- Document Classification
+- OCR Processing
+- OCR Review and Correction
+- Data Extraction
+- Document Validation
+- Duplicate Detection
+- Document Linking
+- Document Versioning
+- Document Search
+- Document Retention
+- Audit Trail
+- Offline Document Access
+
+## L. Reports and Analytics
+- Financial Reports
+- Operational Reports
+- Sales Reports
+- Purchasing Reports
+- Inventory Reports
+- Tax Reports
+- Payroll Reports
+- Audit Reports
+- Custom Reports
+- Report Filters
+- Drill-Down
+- Export
+- Print
+- Report Scheduling where supported
+
+## M. Approvals and Workflow
+- Approval Matrix
+- Approval Rules
+- Approval Levels
+- Submission
+- Review
+- Approval
+- Rejection
+- Return for Correction
+- Delegation
+- Escalation
+- Segregation of Duties
+- Approval History
+- Workflow Notifications
+
+## N. Activity and Notifications
+- User Activities
+- System Events
+- Notifications
+- Alerts
+- Tasks
+- Reminders
+- Workflow Events
+- Read and Unread States
+- Notification Preferences
+
+## O. Audit and Governance
+- Audit Trail
+- User Access Logs
+- Financial Audit Logs
+- Transaction History
+- Change History
+- Approval History
+- Security Events
+- Data Integrity Monitoring
+- System Health
+- Compliance Monitoring
+- Audit Export
+
+## P. Master Data and Administration
+- Company Management
+- Branch Management
+- Department Management
+- User Management
+- Role Management
+- RBAC Permission Catalog
+- Live User Access
+- Role Assignment
+- Multiple Roles
+- User Removal and Deactivation
+- Company and Data Isolation
+- Fiscal Periods
+- Currency Configuration
+- Tax Configuration
+- System Settings
+- Database Management
+- Backup and Restore
+- Import and Export
+- License and Installation Management
+
+IMPORTANT: This list is a coverage baseline, not permission to invent unfinished modules. Discover actual implementation, identify missing functionality, and document discrepancies.
+
+---
+
+# 3. COMPLETE FRONTEND UI/UX AUDIT
+
+Inspect EVERY page and every interactive element.
+
+## 3.1 Visual Consistency
+Verify:
+- Professional enterprise visual hierarchy.
+- Consistent typography and font sizing.
+- Consistent spacing and alignment.
+- Standardized colors and semantic status indicators.
+- Consistent border radius, shadows, and elevation.
+- Proper responsive behavior.
+- Consistent sidebar and navigation behavior.
+- Consistent headers, breadcrumbs, and page titles.
+- Proper light/dark theme behavior if supported.
+- Accessible contrast and readable text.
+- No unnecessary visual clutter.
+
+## 3.2 Buttons and Actions
+
+Inspect every button individually.
+
+Verify:
+- Correct label.
+- Correct icon.
+- Correct placement.
+- Correct enabled/disabled state.
+- Correct permission requirements.
+- Correct click behavior.
+- Correct loading state.
+- Correct success feedback.
+- Correct error feedback.
+- Prevention of duplicate submissions.
+- Prevention of accidental repeated transactions.
+- Proper confirmation for destructive actions.
+- Correct backend execution.
+- Correct database persistence.
+- Correct screen refresh after completion.
+
+No decorative or nonfunctional buttons.
+
+No fake Save, Submit, Approve, Post, Delete, Export, Import, Print, Refresh, or Search actions.
+
+## 3.3 Forms and Inputs
+
+Audit every field:
+- Required and optional rules.
+- Field types and formats.
+- Numeric precision.
+- Decimal handling.
+- Date validation.
+- Currency handling.
+- Philippine tax identification fields where applicable.
+- Dropdown data sources.
+- Searchable selectors.
+- Autocomplete.
+- Cross-field validation.
+- Duplicate detection.
+- Inline error messages.
+- Dirty-state handling.
+- Unsaved-change protection.
+- Save and cancel behavior.
+
+Forms must prevent invalid business records from reaching the database.
+
+## 3.4 Tables and Data Grids
+
+Verify:
+- Server-side or efficient local pagination.
+- Sorting.
+- Filtering.
+- Search.
+- Column visibility.
+- Row selection.
+- Bulk actions.
+- Empty states.
+- Loading states.
+- Error states.
+- Large dataset handling.
+- Correct totals.
+- Accurate pagination counts.
+- Consistent date and amount formatting.
+
+Never load unlimited records unnecessarily.
+
+## 3.5 UX Behavior
+
+Every page must have predictable behavior.
+
+Verify:
+- Navigation without unnecessary reloads.
+- No broken routes.
+- No blank screens.
+- No stale data after saving.
+- No duplicate requests.
+- No unexpected state resets.
+- Proper modal and drawer lifecycle.
+- Keyboard navigation.
+- Clear feedback.
+- Smooth transitions without blocking business operations.
+- Correct behavior when offline.
+- Recovery after application restart.
+
+---
+
+# 4. FRONTEND–BACKEND–DATABASE CONNECTIVITY AUDIT
+
+This is one of the highest-priority requirements.
+
+Trace every business operation from its frontend interaction to its final persisted database state.
+
+For each operation, establish:
+
+USER ACTION
+→ FRONTEND VALIDATION
+→ STATE MANAGEMENT
+→ SERVICE / REPOSITORY
+→ BACKEND BUSINESS LOGIC
+→ AUTHORIZATION
+→ DATABASE TRANSACTION
+→ PERSISTED RECORD
+→ RESPONSE
+→ FRONTEND STATE UPDATE
+→ RELATED MODULE REFRESH
+→ AUDIT LOG
+
+Test the complete lifecycle for:
+- Create
+- Read
+- Update
+- Delete
+- Archive
+- Restore
+- Submit
+- Review
+- Approve
+- Reject
+- Post
+- Reverse
+- Cancel
+- Import
+- Export
+- Reconcile
+
+Verify that successful actions actually appear in the correct UI and database.
+
+Specifically investigate:
+- Records reporting successful creation but not appearing in lists.
+- Incorrect field mapping.
+- Incorrect API response handling.
+- Missing invalidation or refresh of cached data.
+- Stale frontend state.
+- Missing database commits.
+- Partial transaction failures.
+- Incorrect company or tenant filtering.
+- Inconsistent IDs and foreign keys.
+- Duplicate records.
+- Unhandled exceptions.
+- Silent failures.
+
+Every displayed value must have a traceable source.
+
+Every persisted value must have a clear owner and business purpose.
+
+No hardcoded production data or fake frontend-only persistence.
+
+---
+
+# 5. SOURCE OF TRUTH ENGINE — CRITICAL FOUNDATION
+
+Establish one authoritative source of truth for every business entity and financial fact.
+
+Do not allow different modules to independently calculate or maintain conflicting values.
+
+Create a documented Source of Truth Registry.
+
+For each entity, define:
+- Canonical owner module.
+- Canonical database table or entity.
+- Authoritative service.
+- Primary identifier.
+- Relationships.
+- Validation rules.
+- Calculation owner.
+- Downstream consumers.
+- Update rules.
+- Audit requirements.
+- Offline behavior.
+- Synchronization behavior.
+
+Examples:
+
+Customer Master → Customer Management.
+
+Supplier Master → Supplier Management.
+
+Item Master → Inventory Master.
+
+Chart of Accounts → Accounting.
+
+Journal Posting → General Ledger Posting Engine.
+
+Tax Rules → Philippine Tax Engine.
+
+Tax Computation → Authoritative Tax Calculation Service.
+
+Inventory Valuation → Inventory Valuation Engine.
+
+Asset Depreciation → Fixed Asset Engine.
+
+Payroll Computation → Payroll Calculation Engine.
+
+Financial Statements → Reporting and Accounting Aggregation Engine.
+
+Approval Decisions → Approval Workflow Engine.
+
+User Permissions → RBAC Authorization Engine.
+
+Company Identity → Authoritative Company Registry.
+
+## 5.1 Financial Source of Truth
+
+All financial computations must use centralized, deterministic business logic.
+
+Never allow the frontend to become the authority for:
+- Tax calculations.
+- Journal posting.
+- Account balances.
+- Inventory valuation.
+- Depreciation.
+- Payroll calculations.
+- Financial statement totals.
+- Approval decisions.
+
+The frontend may preview computations, but authoritative validation and posting must occur in the trusted business layer.
+
+## 5.2 Accounting Integrity
+
+Enforce:
+- Double-entry accounting.
+- Debit equals credit.
+- Balanced journal entries.
+- Immutable posted transactions.
+- Reversal-based correction.
+- Idempotent posting.
+- Unique posting references.
+- Period locking.
+- Fiscal year restrictions.
+- Correct transaction dates.
+- Correct posting dates.
+- Correct account mappings.
+- Correct source document references.
+
+No direct alteration of posted financial history.
+
+## 5.3 Calculation Integrity
+
+Use decimal-safe arithmetic and appropriate monetary precision.
+
+Never use ordinary floating-point arithmetic for authoritative financial calculations without a validated decimal strategy.
+
+Define:
+- Rounding method.
+- Decimal precision.
+- Currency precision.
+- Tax rounding rules.
+- Allocation rules.
+- Residual handling.
+- Negative value handling.
+- Null and missing-value behavior.
+
+All calculations must be deterministic and reproducible.
+
+---
+
+# 6. PHILIPPINE ERP AND TAX COMPLIANCE
+
+The system is exclusively designed for Philippine business operations.
+
+Audit all applicable local business and statutory requirements.
+
+Verify:
+- PHP currency.
+- Asia/Manila timezone.
+- Philippine date conventions.
+- BIR tax classifications.
+- VAT and Non-VAT treatment.
+- 8% income tax eligibility and computation.
+- Percentage tax.
+- Withholding tax.
+- ATC mappings.
+- BIR forms and schedules.
+- Alphalist data.
+- Tax period handling.
+- Fiscal year handling.
+- Tax reconciliation.
+- Financial reporting.
+- Required invoice and document information.
+- Payroll-related Philippine statutory computations where implemented.
+
+Establish versioned tax rules with effective dates.
+
+Never hardcode changing tax rates or compliance rules across unrelated components.
+
+Separate tax rule configuration from calculation execution.
+
+Validate computations against documented official rules and independently prepared expected results.
+
+Clearly identify:
+- Verified rules.
+- Unverified rules.
+- Unsupported forms.
+- Pending external validation.
+- Known compliance limitations.
+
+Do not claim BIR certification or filing capability without actual applicable validation and authorization.
+
+---
+
+# 7. DATABASE ARCHITECTURE AND DATA INTEGRITY
+
+Audit the entire database.
+
+## 7.1 Schema
+- Table definitions.
+- Column types.
+- Primary keys.
+- Foreign keys.
+- Unique constraints.
+- Not-null constraints.
+- Check constraints.
+- Relationships.
+- Normalization.
+- Duplicate entities.
+- Orphan records.
+- Migration consistency.
+
+## 7.2 Performance
+- Query execution.
+- Missing indexes.
+- Composite indexes.
+- Query plans.
+- N+1 queries.
+- Unnecessary joins.
+- Large scans.
+- Pagination efficiency.
+- Aggregation performance.
+- Transaction duration.
+
+## 7.3 Data Integrity
+- Referential integrity.
+- Atomic transactions.
+- Rollback.
+- Idempotency.
+- Concurrency control.
+- Optimistic or pessimistic locking where appropriate.
+- Unique business references.
+- Soft deletion consistency.
+- Audit history.
+- Backup integrity.
+- Restore integrity.
+
+## 7.4 Offline Standalone Architecture
+
+Verify that the application operates correctly without internet access.
+
+Test:
+- First launch.
+- Database initialization.
+- Local authentication.
+- Local company access.
+- Local CRUD.
+- Financial calculations.
+- Reports.
+- Document storage.
+- Application restart.
+- Device or machine restart.
+- Backup and restore.
+- Offline database integrity.
+
+Internet availability must not become an unnecessary dependency for core local ERP operations.
+
+## 7.5 Hybrid Synchronization
+
+If the existing system supports remote or hybrid synchronization, audit:
+- Sync queue.
+- Retry strategy.
+- Conflict resolution.
+- Duplicate prevention.
+- Event ordering.
+- Idempotency.
+- Sync checkpoints.
+- Failed operation recovery.
+- Data reconciliation.
+- Network interruption.
+- Interrupted synchronization.
+- Local and remote consistency.
+
+Never overwrite newer valid business records with older synchronized data.
+
+Do not claim real-time synchronization when the actual behavior is deferred or queued synchronization.
+
+---
+
+# 8. SECURITY, RBAC AND COMPANY ISOLATION
+
+Audit all frontend and backend authorization.
+
+A hidden UI element is not a security boundary.
+
+Every protected API, route, service, and database operation must independently enforce authorization.
+
+## 8.1 RBAC Requirements
+
+Support:
+- Custom roles.
+- Multiple roles per user.
+- Module permissions.
+- Submodule permissions.
+- Action-level permissions.
+- View.
+- Create.
+- Edit.
+- Delete.
+- Submit.
+- Approve.
+- Reject.
+- Post.
+- Reverse.
+- Export.
+- Print.
+- Manage permissions.
+
+Permission Catalog must be interactive and connected to actual authorization enforcement.
+
+Important accepted behavior:
+
+- A checked full-access module grant means the module is visible and fully accessible.
+- An unchecked grant means the module is inaccessible and not visible.
+- Granular custom grants must allow restricted access, such as view-only, edit-only where valid, and specifically authorized actions.
+- Parent visibility must not automatically grant child-module access.
+- Child permissions must be independently enforced.
+- Direct routes and API calls must be protected.
+- Unauthorized backend data must not be exposed to the frontend.
+
+Preserve the established Company Owner and Administrator authority model and existing role constraints.
+
+Implement and verify:
+- Live User Access.
+- Role assignment.
+- Permission changes.
+- Multiple roles.
+- User removal and deactivation.
+- Immediate permission updates.
+- Audit history.
+
+## 8.2 Segregation of Duties
+
+Prevent incompatible actions where required.
+
+Examples:
+- Creating and approving the same transaction.
+- Preparing and approving restricted financial entries.
+- Unauthorized posting.
+- Unauthorized period reopening.
+
+All exceptions must be explicitly authorized and logged.
+
+---
+
+# 9. CROSS-MODULE INTEGRATION AUDIT
+
+This ERP must operate as one connected business system, not isolated CRUD modules.
+
+Test complete workflows.
+
+### Sales to Accounting
+Quotation → Sales Order → Delivery → Invoice → AR → Payment → Cash/Bank → Journal Entry → General Ledger → Financial Statements.
+
+### Procurement to Accounting
+Purchase Requisition → Purchase Order → Goods Receipt → Supplier Invoice → AP → Payment → Cash/Bank → Journal Entry → General Ledger.
+
+### Inventory to Accounting
+Stock Receipt → Stock Ledger → Valuation → Cost of Goods Sold → Inventory Posting → General Ledger.
+
+### Tax to Accounting
+Sales and Purchases → Tax Classification → Tax Computation → Tax Schedules → Reconciliation → Statutory Reports.
+
+### Payroll to Accounting
+Employee Data → Payroll Computation → Payroll Register → Deductions → Contributions → Journal Posting → General Ledger.
+
+### Fixed Assets to Accounting
+Acquisition → Capitalization → Depreciation → Asset Ledger → Journal Posting → Financial Statements.
+
+### Documents to Transactions
+Document Upload → OCR → Extraction → Review → Validation → Business Entity Linking → Transaction Creation → Audit Trail.
+
+### Approval to Execution
+Transaction Creation → Submission → Approval Matrix → Authorization → Posting → Notifications → Audit Trail.
+
+Every workflow must preserve correct references, amounts, statuses, and audit history.
+
+No duplicate calculations or inconsistent financial totals between connected modules.
+
+---
+
+# 10. ENTERPRISE STRESS TEST AND DRY-RUN REQUIREMENTS
+
+Do not limit testing to small sample datasets.
+
+Create isolated synthetic test environments and reproducible datasets.
+
+Suggested test profiles:
+
+| Test Profile | Dataset |
+|---|---:|
+| Basic functional | 100 records |
+| Medium volume | 1,000 records |
+| Large volume | 10,000 records |
+| Heavy volume | 50,000 records |
+| Extended volume | 100,000 records |
+
+Scale according to actual hardware and application architecture.
+
+Test:
+- Customer records.
+- Supplier records.
+- Inventory items.
+- Stock movements.
+- Sales invoices.
+- Purchase invoices.
+- Journal entries.
+- Payments.
+- Tax transactions.
+- Documents.
+- Audit logs.
+- Reports.
+
+## 10.1 Concurrent Operations
+
+Simulate multiple authorized users and concurrent operations.
+
+Test:
+- Simultaneous data entry.
+- Concurrent updates.
+- Duplicate submission.
+- Concurrent posting.
+- Inventory stock contention.
+- Period closing while transactions are pending.
+- Approval conflicts.
+- Database lock handling.
+- Synchronization conflicts.
+
+## 10.2 Long-Running Tests
+
+Test:
+- Continuous transaction creation.
+- Repeated save and update.
+- Repeated reports.
+- Large imports.
+- Application restarts.
+- Interrupted transactions.
+- Database growth.
+- Memory consumption.
+- CPU utilization.
+- Resource cleanup.
+
+## 10.3 Expected Results
+
+Measure:
+- Average response time.
+- P95 and P99 latency.
+- Throughput.
+- Query execution time.
+- Database lock duration.
+- Memory usage.
+- CPU usage.
+- Error rate.
+- Failed transactions.
+- Duplicate records.
+- Data integrity violations.
+
+Do not invent performance thresholds. Establish measurable acceptance targets based on the actual deployment hardware and business requirements.
+
+Every stress test must verify data integrity after execution, not just speed.
+
+---
+
+# 11. TESTING AND QUALITY ASSURANCE
+
+Run comprehensive testing.
+
+### Frontend
+- Component tests.
+- Interaction tests.
+- Form validation tests.
+- Navigation tests.
+- State management tests.
+- Accessibility tests where applicable.
+
+### Backend
+- Unit tests.
+- Service tests.
+- API integration tests.
+- Authorization tests.
+- Business rule tests.
+- Transaction tests.
+
+### Database
+- Migration tests.
+- Constraint tests.
+- Rollback tests.
+- Referential integrity tests.
+- Performance tests.
+- Backup and restore tests.
+
+### Accounting and Tax
+- Golden test datasets.
+- Expected computation comparisons.
+- Rounding tests.
+- Boundary tests.
+- Negative-value tests.
+- Missing-data tests.
+- Duplicate-posting tests.
+- Reversal tests.
+- Period-lock tests.
+
+### End-to-End
+Test complete workflows from frontend interaction through persisted database changes and downstream reports.
+
+### Regression
+Preserve previously working functionality.
+
+Run the complete relevant regression suite after each implementation phase.
+
+---
+
+# 12. PERFORMANCE AND FRONTEND SMOOTHNESS
+
+Ensure the ERP remains responsive even with thousands of records.
+
+Audit:
+- Unnecessary rerenders.
+- Expensive calculations on the UI thread.
+- Memory leaks.
+- Large component trees.
+- Excessive state updates.
+- Duplicate API calls.
+- Blocking operations.
+- Inefficient table rendering.
+- Large document previews.
+- Heavy reports.
+- Excessive database reads.
+
+Use appropriate:
+- Pagination.
+- Virtualization.
+- Memoization.
+- Background processing.
+- Indexed queries.
+- Caching with invalidation.
+- Lazy loading.
+- Efficient data selectors.
+
+Do not optimize blindly. Measure before and after.
+
+Prioritize correctness over superficial animation or visual effects.
+
+---
+
+# 13. DOCUMENTATION AND ERROR HANDLING
+
+Every critical service must have understandable error handling.
+
+No silent failures.
+
+Provide actionable error messages without exposing sensitive technical information.
+
+Log sufficient diagnostic context.
+
+Document:
+- Architecture.
+- Module ownership.
+- Source of Truth Registry.
+- Database relationships.
+- Service dependencies.
+- API contracts.
+- Business rules.
+- Accounting flows.
+- Tax computation flows.
+- Offline behavior.
+- Synchronization behavior.
+- Recovery procedures.
+
+---
+
+# 14. REQUIRED AUDIT DELIVERABLES
+
+Before implementing changes, produce the following reports.
+
+### Deliverable 1 — Executive System Assessment
+- Current overall architecture.
+- Actual implementation status.
+- Critical findings.
+- Major risks.
+- Production-readiness assessment.
+
+### Deliverable 2 — Complete Module Inventory
+For all 16 enterprise domains:
+- Main module.
+- Submodules.
+- Individual pages.
+- UI components.
+- Buttons and actions.
+- Frontend implementation.
+- Backend implementation.
+- Database dependencies.
+- Integration dependencies.
+- Actual functional status.
+
+### Deliverable 3 — UI/UX Audit Matrix
+Every page and interactive element with its:
+- Expected behavior.
+- Actual behavior.
+- Defect.
+- Severity.
+- Recommended correction.
+
+### Deliverable 4 — Frontend/Backend Connectivity Matrix
+Map every business operation to:
+- UI component.
+- Service.
+- API or backend function.
+- Database table.
+- Validation.
+- Authorization.
+- Persistence result.
+- Downstream integration.
+
+### Deliverable 5 — Source of Truth Registry
+Document all authoritative business entities, calculations, engines, database ownership, and dependencies.
+
+### Deliverable 6 — Database Health Report
+Identify:
+- Schema problems.
+- Missing constraints.
+- Missing indexes.
+- Duplicate structures.
+- Orphan records.
+- Migration problems.
+- Performance bottlenecks.
+- Integrity risks.
+
+### Deliverable 7 — Accounting and Philippine Tax Validation
+Document each computation and its test evidence.
+
+### Deliverable 8 — Security and RBAC Assessment
+Document module visibility, granular permissions, backend enforcement, company isolation, and segregation of duties.
+
+### Deliverable 9 — Stress Test and Dry-Run Results
+Include dataset size, hardware profile, concurrent workload, measurements, failures, and integrity verification.
+
+### Deliverable 10 — Master Defect Register
+Classify every finding:
+
+- CRITICAL — Data loss, incorrect financial output, unauthorized access, corruption, or major accounting integrity failure.
+- HIGH — Broken core workflow, incorrect calculation, failed persistence, or serious module integration issue.
+- MEDIUM — Incorrect behavior, performance degradation, incomplete functionality, or significant UX defect.
+- LOW — Minor visual, usability, or noncritical consistency issue.
+
+Include severity, affected module, root cause, dependencies, proposed correction, and verification method.
+
+### Deliverable 11 — Evidence-Based Production Readiness Scorecard
+Separate:
+- Implemented.
+- Functionally verified.
+- Integration verified.
+- Stress tested.
+- Security verified.
+- Production verified.
+- Not yet verified.
+
+Never mark an item PASS based solely on source-code inspection.
+
+---
+
+# 15. PHASE GENERATION — BASED ON ACTUAL AUDIT FINDINGS
+
+After completing the entire audit, create a prioritized implementation roadmap.
+
+Do not create arbitrary phases in advance.
+
+Generate phases based on:
+- Actual defects.
+- Technical dependencies.
+- Severity.
+- Data integrity risks.
+- Business criticality.
+- Required architecture changes.
+- Test coverage.
+- Existing completed functionality.
+
+Recommended implementation ordering:
+
+Foundation:
+- Source of Truth.
+- Database integrity.
+- Core backend services.
+- Transaction consistency.
+- Company isolation.
+- Security and RBAC.
+
+Core ERP:
+- Master Data.
+- Sales and AR.
+- Procurement and AP.
+- Inventory.
+- Cash and Banking.
+- General Ledger.
+
+Financial and Compliance:
+- Tax Engine.
+- Fixed Assets.
+- Payroll.
+- Budget.
+- Financial Reporting.
+
+Enterprise Operations:
+- Documents and OCR.
+- Approvals and Workflow.
+- Audit and Governance.
+- Dashboard and Analytics.
+
+Final Hardening:
+- Performance.
+- Offline reliability.
+- Hybrid synchronization.
+- Stress testing.
+- Security regression.
+- Production packaging and deployment verification.
+
+This is a suggested dependency order only. The actual phase sequence must follow audit findings and existing architecture.
+
+For every phase, define:
+1. Phase objective.
+2. Exact modules affected.
+3. Defects addressed.
+4. Root causes.
+5. Files and services affected.
+6. Database changes.
+7. Dependencies.
+8. Implementation steps.
+9. Acceptance criteria.
+10. Unit and integration tests.
+11. End-to-end tests.
+12. Regression tests.
+13. Rollback strategy.
+14. Evidence required for completion.
+
+Complete one phase at a time.
+
+After each phase:
+- Run its complete test suite.
+- Run affected regression tests.
+- Verify database integrity.
+- Verify connected modules.
+- Verify offline operation where applicable.
+- Verify build and compilation.
+- Document completed work and remaining defects.
+
+Do not declare a phase complete until its acceptance criteria are met.
+
+Do not proceed past a blocking critical failure without resolving it or explicitly documenting an approved containment decision.
+
+---
+
+# 16. NON-NEGOTIABLE ENGINEERING STANDARDS
+
+1. Preserve working existing features.
+2. Do not introduce duplicate sources of truth.
+3. Do not duplicate business logic across frontend and backend.
+4. Do not use floating-point arithmetic as the authoritative financial calculation method.
+5. Do not allow unauthorized direct API access.
+6. Do not allow cross-company data leakage.
+7. Do not silently lose failed transactions.
+8. Do not allow duplicate financial posting.
+9. Do not modify posted financial history directly.
+10. Do not expose inaccessible data through frontend queries.
+11. Do not create fake functionality.
+12. Do not fabricate test results.
+13. Do not mark untested functionality as production-ready.
+14. Do not break offline standalone operation.
+15. Do not sacrifice accounting accuracy for UI performance.
+16. Do not introduce unnecessary dependencies.
+17. Do not rewrite stable modules without a documented reason.
+18. Every financial and operational transaction must have traceability.
+19. Every critical operation must be recoverable or have a documented failure strategy.
+20. Every completed change must have reproducible verification evidence.
+
+---
+
+# 17. FINAL ACCEPTANCE CRITERIA
+
+LedgerAI PH may only be classified as PRODUCTION-READY when all critical requirements have passed verification.
+
+Required outcomes:
+
+- Every module and submodule is inventoried.
+- Every implemented UI action has verified behavior.
+- Every business operation has complete frontend-to-database connectivity.
+- Every critical entity has an authoritative source of truth.
+- Accounting computations are independently validated.
+- Philippine tax computations are validated against applicable rules.
+- Database integrity is maintained.
+- RBAC is enforced at the backend.
+- Company isolation is verified.
+- Offline standalone operation is verified.
+- Hybrid synchronization is verified where implemented.
+- Large-volume dry runs are successful.
+- Concurrency and failure recovery are tested.
+- Reports reconcile with authoritative accounting records.
+- Regression tests pass.
+- Production build is successful.
+- Deployment and recovery procedures are documented.
+
+Use explicit statuses:
+
+PASS — Verified with reproducible evidence.
+
+PARTIAL — Implemented but incompletely verified.
+
+FAIL — Verified defect or failed requirement.
+
+NOT IMPLEMENTED — Feature does not yet exist.
+
+NOT VERIFIED — Insufficient evidence to determine correctness.
+
+---
+
+# 18. FINAL EXECUTION INSTRUCTION
+
+START WITH A COMPLETE SYSTEM DISCOVERY AND AUDIT.
+
+Do not immediately start modifying random files.
+
+First understand the actual application, its existing architecture, existing modules, completed implementations, database, and business dependencies.
+
+Then complete the full audit and generate the consolidated findings.
+
+After that, produce the dependency-based implementation roadmap and begin execution phase by phase.
+
+The goal is not simply to make LedgerAI PH look finished.
+
+The goal is to make LedgerAI PH operate as a reliable, accurate, secure, scalable, offline-capable, professional Philippine Enterprise ERP.
+
+Every screen must work.
+Every button must perform its intended action.
+Every permission must be enforced.
+Every transaction must be traceable.
+Every database record must be consistent.
+Every computation must be accurate.
+Every connected module must use the correct authoritative data.
+Every failure must be handled safely.
+
+FINAL PRINCIPLE:
+
+**ONE ERP. ONE CONSISTENT SOURCE OF TRUTH. COMPLETE DATA INTEGRITY. ACCURATE PHILIPPINE ACCOUNTING. VERIFIED END-TO-END OPERATIONS. ENTERPRISE-LEVEL RELIABILITY.**
+
+Begin with the audit. Report actual evidence. Build the phases from the findings. Execute and verify each phase before declaring completion.

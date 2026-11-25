@@ -1,0 +1,20 @@
+{
+  "payload": {
+    "licenseId": "LIC-9430C79D",
+    "productId": "LEDGERAI-PH",
+    "companyId": "LGR-PH-2026-COR-00-A72BD841",
+    "activationKey": "ACT-089B66EC4079",
+    "planType": "PRO",
+    "status": "ACTIVE",
+    "issuedAt": "2026-08-12T08:43:54.992Z",
+    "expirationDate": "2025-01-01T00:00:00.000Z",
+    "type": "SUBSCRIPTION",
+    "entitlements": {
+      "users": 5,
+      "ocr": true,
+      "ai": true
+    },
+    "schemaVersion": 1
+  },
+  "signature": "BL9h58MRotQnKahyJe2rEVmbXDsYHs/mHax8PatH+Cm/5b2pJnidrI1aus+1yNmpvNPbwTK/KYtmDlEnzDxRfYg/yGxUcwkb/6p1uKjWIEoBqkQksf9cmJaiJSvXFAU7rOocjqL2zQZpYRLByOy59wef2EM078k6KYtvuktJPuDmgE81p942ZhJyhesmHAazmnlzx36HDFGQ6kh/uRPBgvQ+nDzKJxZzaixuI+Ip1H8cdnAbM4TtCZ9888cSfIC0tmpHQD1JVgG48VSk0R9c6SSGnIhOawyLFGUh1Jfz+1g7KKAZWrVDZz/C7spUdkbijb795pGn21HOmS1KugEAcg=="
+}

@@ -1,0 +1,75 @@
+{
+  "productName": "LedgerAI PH",
+  "releaseCandidateVersion": "1.0.0-rc.2",
+  "freezeState": "FROZEN_RELEASE_CANDIDATE_SUCCESSOR",
+  "freezeRecordedAt": "2026-11-15T08:19:00Z",
+  "handoffControlVerifiedAt": "2026-11-15T08:19:00Z",
+  "sourceControl": {
+    "gitRepositoryPresent": false,
+    "gitCommit": null,
+    "gitTag": null,
+    "note": "Workspace has no .git repository; baseline identity is anchored cryptographically via SHA-256 manifests."
+  },
+  "frozenBaselineHashes": {
+    "compositeSourceTreeSha256": "2571af3a1547978f95118e26909832d3d7d6575cd1df61d290bd7141c8db2f81",
+    "compositeSourceTreeScope": "find src electron packaging tools -type f | sort | xargs sha256sum | sha256sum",
+    "bunLockSha256": "7853d769ceb1749e3a071076eb9ebfb8a6778d09ab7ae8b1340e550bbd644c14",
+    "packageJsonSha256": "37a87ba15b65202c038e0b09120a41468a8030a5562f45f95472e41443cd974c",
+    "metadataJsonSha256": "e1e65af120852652e6a7b1768e5cfcce0404c0f5faa38eaa6b8c0b19a3db2a6c",
+    "serverTsSha256": "f3eb0b3ffec60fc3b78d39b6481b6239b23dd5b565dff1c89377e24076f61f21",
+    "sourceArchiveSha256": "1abccf9977d11508ec62ba33365260fa367ec796041de2b965032a9e377ccd93",
+    "buildArtifactsArchiveSha256": "529552a3b5f3b4a38743c0736bfe435e98241afc72540a06cc8481e0465518d4"
+  },
+  "buildEnvironment": {
+    "os": "Linux x86_64 (Google AI Studio container)",
+    "nodeVersion": "v22.23.2",
+    "npmVersion": "10.9.8",
+    "electronTarget": "^43.4.0",
+    "electronBuilderTarget": "^26.15.3",
+    "betterSqlite3Target": "^13.0.3",
+    "windowsNsisExecutedInContainer": false
+  },
+  "externalGates": {
+    "internalEngineeringVerification": "PASSED",
+    "controlledPilotLinuxLan": "APPROVED_FOR_CONTROLLED_PILOT",
+    "gate8IndependentCpaParallelRun": {
+      "status": "PENDING_EXTERNAL_VALIDATION",
+      "package": "LEDGERAI_PH_INDEPENDENT_CPA_REVIEW_PACKAGE_v1.0.0.md",
+      "internalBaselinePilotCompanyId": "LGR-PH-2026-PILOT-CLEAN-01",
+      "signOffPopulated": false
+    },
+    "gate9BirCasCbaRegistration": {
+      "status": "PENDING_EXTERNAL_SUBMISSION",
+      "package": "BIR_REGISTRATION_READINESS.md",
+      "acknowledgmentCertificateIssued": false
+    },
+    "gate10WindowsNativeAcceptance": {
+      "requirementId": "REQ-WIN-001",
+      "status": "BLOCKED / PENDING NATIVE WINDOWS EXECUTION",
+      "package": "LEDGERAI_PH_WINDOWS_ACCEPTANCE_EXECUTION_PACKAGE_v1.0.0.md",
+      "win01ToWin20Executed": "0/20"
+    },
+    "gate11CommercialGeneralAvailability": {
+      "status": "HOLD",
+      "blockingGates": [
+        "Gate 8 (Independent CPA Parallel Run)",
+        "Gate 9 (Applicable BIR CAS/CBA Registration)",
+        "Gate 10 (REQ-WIN-001 Windows Native Acceptance)"
+      ]
+    }
+  },
+  "changeControlPolicy": {
+    "baselineMutable": false,
+    "requiredFieldsPerDefect": [
+      "Defect ID",
+      "Severity",
+      "Reproduction evidence",
+      "Affected release artifact",
+      "Root cause",
+      "Approved corrective action",
+      "Regression test results",
+      "New source-tree and artifact checksums",
+      "New release candidate identification where required"
+    ]
+  }
+}

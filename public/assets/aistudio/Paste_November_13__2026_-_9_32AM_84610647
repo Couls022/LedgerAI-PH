@@ -1,0 +1,910 @@
+# LEDGERAI PH — MASTER IMPLEMENTATION DIRECTIVE
+## P0/P1 ACCOUNTING REMEDIATION, FULL-STACK INTEGRATION, PHILIPPINE TAX ACCURACY, LEDGER AGENT AI & SYSTEM-WIDE PRODUCTION READINESS
+
+## EXECUTION MODE
+
+This is an implementation directive based on the previous source-level Accounting Module Integration Audit.
+
+The previous audit identified seven confirmed defect areas:
+
+- COA-01 — Opening Balance Disconnection.
+- COA-02 — Inactive and Parent Account Posting Bypasses.
+- COA-03 — Conflicting COA Control-Account Numbering.
+- JE-01 — Journal Period Synchronization, Validation and Idempotency.
+- TB-01 — Incomplete Trial Balance Frontend.
+- PER-01 — Cross-Module Accounting Period Lock Enforcement.
+- FX-01 — Missing and Miswired Unrealized Foreign Exchange Revaluation.
+
+The audit also reported 8/8 isolated integration tests passing, but no production source files were modified during that audit.
+
+Your responsibility is now to implement the confirmed defects and complete the required regression and end-to-end acceptance tests.
+
+Do not restart the entire project or rewrite working modules.
+
+Preserve existing architecture, completed accounting controls, encrypted company database design, offline-first behavior, and verified functionality.
+
+Use the existing `LEDGERAI_ENTERPRISE_MASTER_ROADMAP.md` as the single source of truth.
+
+Do not create another competing roadmap.
+
+---
+
+# PHASE 1 — P0 ACCOUNTING FOUNDATION REMEDIATION
+
+## REQ-ACCT-INT-001 — COA OPENING BALANCE INTEGRATION
+
+Problem:
+`accounts.openingBalance` is currently stored separately from posted journal lines and is therefore missing from the General Ledger, Trial Balance, Balance Sheet, and Ledger Integrity calculations.
+
+Implement a proper opening-balance accounting workflow.
+
+Requirements:
+
+1. Creating an account with a nonzero opening balance and applicable as-of date must create or update an authorized, balanced `OPENING_BALANCE` journal entry.
+2. Opening balances must be posted through the authoritative accounting posting service.
+3. Use a controlled Opening Balance Equity account.
+4. Support opening-balance adjustments through auditable correction entries.
+5. Prevent duplicate opening-balance posting.
+6. Preserve the original opening-balance source reference.
+7. Respect company, accounting period, currency, and posting permissions.
+8. Do not silently overwrite posted opening balances.
+9. Ensure opening balances are reflected consistently in:
+   - General Journal.
+   - General Ledger.
+   - Trial Balance.
+   - Balance Sheet.
+   - Account Schedule.
+   - Ledger Integrity Scanner.
+   - Ledger Agent AI.
+
+Before implementing the migration, inspect existing accounts and historical opening-balance records.
+
+Do not blindly repost historical opening balances.
+
+Create a safe migration and reconciliation strategy that prevents double counting.
+
+Acceptance:
+A test account with an opening balance of ₱75,000 must produce the correct persisted opening journal and appear in all applicable accounting reports.
+
+## REQ-ACCT-INT-002 — GENERAL JOURNAL PERIOD SYNC AND POSTING INTEGRITY
+
+Fix the following confirmed defects:
+
+1. Updating `entryDate` must recalculate the corresponding `accountingPeriodId`.
+2. Reject invalid or nonexistent accounting periods.
+3. Enforce exact integer-centavo debit and credit equality.
+4. Remove inconsistent 0.01 floating-point tolerance.
+5. Enforce source-posting idempotency using company ID, source type, and source ID.
+6. Add appropriate database uniqueness protection where compatible with existing transaction lifecycle.
+7. Add period lock validation to `voidJournalEntry`.
+8. Inspect and safely remove duplicate Express route declarations after the existing router export.
+9. Preserve optimistic locking and immutable posted transactions.
+10. Preserve 1-to-1 reversal lineage and correction history.
+
+Important:
+
+Do not convert integer centavo accounting fields to floating-point monetary storage.
+
+All monetary comparisons must use exact integer arithmetic.
+
+Do not silently modify existing posted journals.
+
+Acceptance:
+- Cross-period draft journal date changes update the correct accounting period.
+- One-centavo imbalance is rejected.
+- Duplicate source posting cannot create duplicate GL entries.
+- Voiding in a locked period is correctly blocked.
+- Existing reversal and immutability tests continue to pass.
+
+## REQ-ACCT-INT-003 — DEDICATED TRIAL BALANCE LEDGER
+
+Replace the current incomplete `GenericReportView` implementation with a dedicated Trial Balance workspace.
+
+The backend already returns opening, movement, and closing figures. Preserve the authoritative backend calculations.
+
+The frontend must display:
+
+- Account Code.
+- Account Name.
+- Account Type.
+- Opening Debit.
+- Opening Credit.
+- Period Debit.
+- Period Credit.
+- Closing Debit.
+- Closing Credit.
+- Closing Net Balance.
+
+Include:
+
+- Total debit and credit rows.
+- Zero-balance account toggle.
+- Accounting period selection.
+- Date filters.
+- Account filters.
+- Search.
+- General Ledger drill-down.
+- Export.
+- Accurate empty and error states.
+- Server-side pagination.
+
+Default page size: 20 records.
+
+Allow 10, 20, 50, and 100 records per page.
+
+Pagination must preserve filters and use actual backend queries.
+
+The totals must reflect the complete filtered population, not merely the visible page.
+
+Acceptance:
+The Trial Balance must reconcile exactly with the authoritative General Ledger for the same company, period, and reporting basis.
+
+## REQ-ACCT-INT-004 — CENTRALIZED ACCOUNTING PERIOD LOCK
+
+Implement consistent role normalization and period validation across all posting pathways.
+
+Fix:
+
+- `COMPANY_OWNER` versus `Company Owner` mismatch.
+- `COMPANY_ADMINISTRATOR` versus `Company Administrator` mismatch.
+- Hardcoded `Bookkeeper` role in accounting services.
+- Tax filing and tax adjustment period lock bypass.
+- Fixed asset creation period lock bypass.
+- Year-End Close certification and version gaps.
+- Duplicate year-end close handling.
+
+Requirements:
+
+1. Use one authoritative period validation service.
+2. Resolve actual authenticated user identity, role, and company context server-side.
+3. Do not hardcode actor roles.
+4. Enforce period lock in all financially relevant posting services.
+5. Enforce lock checks through backend APIs, not just frontend controls.
+6. Preserve controlled reopening and maker-checker requirements.
+7. Generate immutable SHA-256 close certification snapshots for Year-End Close.
+8. Preserve historical certification records.
+9. Prevent duplicate year-end closing operations.
+10. Support authorized adjustment workflows without bypassing immutable accounting rules.
+
+Test all relevant posting pathways:
+
+- General Journal.
+- Sales and Receivables.
+- Procurement and Payables.
+- Inventory.
+- Fixed Assets.
+- Payroll.
+- Tax Filings.
+- Tax Adjustments.
+- Cash and Banking.
+- Foreign Exchange Revaluation.
+
+Acceptance:
+A HARD_CLOSED period must reject unauthorized posting attempts through every applicable API and business service.
+
+Company Owner authority must be recognized consistently without weakening authentication, company isolation, maker-checker, or posted-record immutability.
+
+## REQ-ACCT-INT-005 — ACTUAL PERIOD-END UNREALIZED FX REVALUATION ENGINE
+
+This is a critical missing accounting capability.
+
+The existing realized FX calculator must remain separate from unrealized period-end revaluation.
+
+Do not route unrealized revaluation into `postCustomerCollectionForex`.
+
+Implement a proper FX revaluation engine.
+
+Required capabilities:
+
+- Functional currency configuration.
+- Foreign currency account classification.
+- Monetary and non-monetary classification.
+- Foreign-currency AR balances.
+- Foreign-currency AP balances.
+- Foreign-currency bank and cash balances.
+- Approved exchange-rate source.
+- Rate effective date and provenance.
+- Reporting-date revaluation.
+- Revaluation preview.
+- Revaluation batch persistence.
+- Approval and posting lifecycle where configured.
+- Unrealized FX gain and loss calculation.
+- Unrealized FX Gain account.
+- Unrealized FX Loss account.
+- Generated journal entries.
+- Reversal and subsequent-period handling.
+- Revaluation history.
+- Duplicate-run prevention.
+- Audit trail.
+- Period Close integration.
+- General Ledger integration.
+- Trial Balance integration.
+
+Create appropriate persistence structures, including `fx_revaluation_runs`, only after inspecting existing schemas and migration conventions.
+
+### FX calculation controls
+
+For applicable monetary items, calculate:
+
+Reporting-date functional-currency value minus existing functional-currency carrying amount.
+
+Determine the appropriate gain or loss direction and accounting entry according to the approved accounting policy.
+
+Do not revalue all foreign-currency transactions indiscriminately.
+
+Do not silently use a hardcoded fallback rate such as 56.00 when a rate is missing.
+
+Missing or invalid rates must produce a clear validation error or an explicitly configured approved fallback policy.
+
+Never invent an exchange rate.
+
+Separate realized settlement differences from unrealized reporting-date revaluation.
+
+Acceptance:
+A test foreign-currency AR or AP balance must generate the correct unrealized adjustment journal, appear in GL and Trial Balance, and be traceable to the revaluation batch.
+
+Repeated revaluation must not create duplicate adjustments.
+
+---
+
+# PHASE 2 — P1 ACCOUNT AND COA INTEGRITY
+
+## REQ-ACCT-INT-006 — UNIFORM ACCOUNT POSTING ELIGIBILITY
+
+Enforce consistent validation for:
+
+- ACTIVE account status.
+- Correct company ownership.
+- Valid account type.
+- Posting eligibility.
+- Non-parent/header account restrictions.
+- Appropriate control-account usage.
+
+Apply the same rules to:
+
+- Journal creation.
+- Journal editing.
+- Journal posting.
+- Journey 360 editing.
+- AccountingEngine posting.
+- Automated business transaction posting.
+
+Inactive accounts must not be used for new unauthorized postings.
+
+Historical transactions must remain readable and auditable.
+
+Add COA pagination, search, and active/inactive filters.
+
+## REQ-ACCT-INT-007 — UNIFIED CONTROL ACCOUNT RESOLUTION
+
+Eliminate conflicting hardcoded account-number assumptions.
+
+The audit identified competing sets:
+
+- 1010 / 1030 / 2010 / 2020.
+- 1100 / 1200 / 2000 / 2200.
+
+Inspect every existing account lookup and mapping.
+
+Implement a shared company-specific control-account resolver based on authoritative account metadata and flags, such as:
+
+- Cash account.
+- Receivable control account.
+- Payable control account.
+- Inventory control account.
+- Tax control account.
+- Revenue account.
+- Expense account.
+- FX gain/loss account.
+- Equity account.
+
+Preserve compatibility with existing company COAs.
+
+Do not automatically rename, merge, or delete historical accounts.
+
+Provide controlled mapping and migration procedures with reconciliation evidence.
+
+Acceptance:
+All relevant submodules resolve the correct company control accounts consistently.
+
+---
+
+# PHASE 3 — FULL-STACK UI/UX, FRONTEND, BACKEND AND DATABASE INTEGRATION
+
+This requirement applies to the entire LedgerAI PH application.
+
+All screens and functions must operate through the complete integration chain:
+
+UI/UX → Frontend → API → Backend Service → Business Engine → Database → Backend Response → Frontend State → UI/UX.
+
+Audit all primary modules and submodules.
+
+For every important screen, identify:
+
+- Frontend component.
+- Route and API endpoint.
+- Backend service.
+- Business engine.
+- Database tables and relationships.
+- Permission enforcement.
+- Persisted output.
+- UI response.
+
+Verify:
+
+1. Every button performs its advertised operation.
+2. Every displayed financial figure originates from authoritative data.
+3. Frontend calculations do not replace backend financial engines.
+4. Database changes persist correctly.
+5. Page refresh returns the actual persisted state.
+6. Filters and searches query the correct records.
+7. Loading, empty, success, error, and unauthorized states work.
+8. No hardcoded records or fake counters are presented as actual business data.
+9. Company and branch isolation is consistently enforced.
+10. All financial changes are auditable.
+
+Do not create duplicate business engines or unnecessarily rewrite completed modules.
+
+---
+
+# PHASE 4 — PHILIPPINE BIR TAX ENGINE ACCURACY
+
+The Philippine Tax Engine must be the authoritative tax computation source for LedgerAI PH.
+
+Conduct a detailed rule and calculation validation.
+
+Review:
+
+- VAT-inclusive and VAT-exclusive computations.
+- Output VAT.
+- Input VAT.
+- Zero-rated sales.
+- Exempt sales.
+- VAT adjustments.
+- Percentage tax.
+- CREATE Act applicability and effective periods.
+- 8% income tax eligibility and computation.
+- Purely self-employed and mixed-income treatment.
+- Graduated income tax.
+- Withholding tax.
+- Compensation withholding.
+- EWT and CWT.
+- ATC mapping.
+- Applicable BIR returns.
+- Form 2307.
+- Form 1601-C.
+- Applicable 2550 series.
+- Applicable alphalists.
+- Tax periods.
+- Effective dates.
+- Rounding and centavo precision.
+- Tax-to-GL reconciliation.
+
+### Mandatory validation requirements
+
+For every rule:
+
+1. Identify the authoritative legal or BIR issuance.
+2. Identify its effective date.
+3. Identify the applicable taxpayer type.
+4. Verify thresholds, rates, exemptions, and conditions.
+5. Independently calculate expected results.
+6. Compare with the backend tax engine.
+7. Verify tax schedules.
+8. Verify GL posting.
+9. Verify frontend display.
+10. Add regression tests.
+
+Revalidate previously reported statutory data, including SSS, PhilHealth, Pag-IBIG, and applicable tax rules.
+
+Do not assume that previously reported rates are automatically current or applicable to all taxpayers.
+
+Never silently apply a tax rule when taxpayer registration details or required information are missing.
+
+Flag unsupported or ambiguous cases for clarification.
+
+Require independent Philippine CPA review and applicable BIR validation before claiming regulatory acceptance.
+
+---
+
+# PHASE 5 — LEDGER AGENT AI ASSISTANT ACCURACY
+
+The Ledger Agent AI must use the same authoritative accounting records and validated backend engines as the rest of the system.
+
+The AI must not create conflicting independent tax or accounting calculations.
+
+Required data flow:
+
+User Question → Intent Recognition → Company and Period Context → RBAC Authorization → Authoritative Backend Query → Accounting or Tax Engine → Database Records → Validated Result → AI Explanation.
+
+Evaluate:
+
+- Cash and bank balances.
+- Revenue and expenses.
+- Profit and loss.
+- Trial Balance.
+- General Ledger.
+- Accounts Receivable.
+- Accounts Payable.
+- Aging.
+- Inventory valuation.
+- COGS.
+- Fixed assets.
+- Depreciation.
+- Payroll.
+- VAT.
+- Percentage tax.
+- 8% income tax.
+- Graduated income tax.
+- EWT and CWT.
+- Tax schedules.
+- Tax-to-GL reconciliation.
+- Pending approvals.
+- Accounting period status.
+- Financial trends.
+- Budget versus actual.
+
+### AI accuracy benchmark
+
+Build at least 100 independent evaluation cases.
+
+Each case must record:
+
+- Test ID.
+- User question.
+- Company and period context.
+- Expected intent.
+- Expected source records.
+- Independently calculated expected amount.
+- Actual AI response.
+- Numerical difference.
+- Provenance.
+- Permission result.
+- Pass/fail.
+
+Test English, Filipino, and Taglish.
+
+Include multi-turn questions, ambiguous periods, missing dates, centavo conversion, and follow-up context.
+
+The AI must identify its source tables, record counts, reporting cutoff, and applicable calculation basis.
+
+It must distinguish verified facts from assumptions and recommendations.
+
+It must not fabricate missing figures or claim cloud functionality while operating offline.
+
+It must not post, approve, reverse, or modify accounting records through unauthorized conversational instructions.
+
+Re-run the AI benchmark after the accounting and tax remediation is complete.
+
+The AI must reconcile with the corrected authoritative engines.
+
+---
+
+# PHASE 6 — COMPANY OWNER FULL ACCESS DEFECT
+
+Fix the confirmed Company Owner access restriction.
+
+The authenticated Company Owner must have full functional access to all modules, submodules, secondary tools, reports, and authorized company operations within their own company.
+
+This includes:
+
+- Tax & BIR Compliance.
+- BIR Statutory Returns & eFiling.
+- VAT & Withholding Schedules.
+- Alphalist & SAWT/SLSP.
+- BIR Form & GL Account Mapping.
+- Offline Statutory Engine.
+- Tax Codes & ATCs.
+- EWT/CWT Ledger.
+- GL Reconciliations.
+- BIR Tax Calendar.
+- Audit Exceptions.
+- All other company modules and nested workspaces.
+
+Resolve the incorrect `tax:view` denial and similar role normalization issues.
+
+Enforce actual user identity, role, and company membership server-side.
+
+Do not implement a frontend-only bypass.
+
+Preserve:
+
+- Authentication.
+- Tenant isolation.
+- Encryption.
+- Database integrity.
+- Immutable posted records.
+- Audit logs.
+- Mandatory approval and maker-checker controls.
+
+Company Owner access must not grant access to other companies' confidential records or bypass mandatory accounting safeguards.
+
+Test sidebar navigation, direct routes, APIs, business services, and actual database-backed operations.
+
+---
+
+# PHASE 7 — APPROVAL INBOX AND WORKFLOW END-TO-END ACCEPTANCE
+
+Preserve the existing Approval Inbox implementation.
+
+Revalidate all supported transaction types.
+
+Specifically confirm the Purchase Requisition lifecycle:
+
+DRAFT → SUBMITTED → APPROVED / RETURNED / REJECTED → CONVERTED_TO_PO.
+
+Verify:
+
+- Actual actionable approval queue.
+- Correct approver assignment.
+- Sequential and parallel approvals.
+- Approval limits.
+- Maker-checker.
+- Segregation of Duties.
+- Company and branch isolation.
+- Delegation.
+- SLA.
+- Rejection reasons.
+- Return for correction.
+- Resubmission.
+- Duplicate prevention.
+- Authorized posting.
+- Approval history.
+- Activity Center integration.
+- Journey 360 integration.
+- GL and subledger effects.
+
+The previous report claimed 22/22 approval tests passed. Preserve the suite and add regressions only where necessary.
+
+Do not represent sample rows or frontend-only counters as real approvals.
+
+---
+
+# PHASE 8 — SYSTEM-WIDE UI/UX AND DATA MANAGEMENT IMPROVEMENTS
+
+Apply consistent improvements to all data-heavy modules and submodules.
+
+## A. Pagination
+
+Default: 20 records per page.
+
+Allow:
+
+- 10 records.
+- 20 records.
+- 50 records.
+- 100 records.
+
+Include:
+
+- Current page.
+- Total pages.
+- Total filtered records.
+- First page.
+- Previous.
+- Next.
+- Last page.
+
+Use real server-side pagination for large datasets.
+
+Preserve search, sorting, and active filters across page navigation.
+
+Totals and financial aggregates must reflect the complete filtered dataset, not only the visible page.
+
+## B. Filters and Search
+
+Provide compact filters where applicable:
+
+- Transaction reference.
+- Customer and supplier.
+- Employee.
+- Description.
+- Status.
+- Transaction type.
+- Branch and department.
+- Date range.
+- Amount range.
+- Accounting period.
+- Assigned approver.
+
+Use expandable advanced filters when necessary.
+
+## C. Long Forms
+
+Reduce excessive vertical scrolling.
+
+Use logical sections, tabs, accordions, step-based workflows, and two-column field layouts where appropriate.
+
+Preserve all fields, validation rules, and unsaved form state.
+
+## D. Vertical and Horizontal Scrolling
+
+Use one clear primary vertical scroll owner per page.
+
+Constrain horizontal overflow to the relevant table or content area.
+
+Preserve access to all columns and fields.
+
+Avoid unnecessary nested scrollbars.
+
+## E. Scrollbar Auto-Hide
+
+Preserve the previously implemented scrollbar improvements.
+
+Requirements:
+
+- Scroll indicators appear when overflow exists and become visible on hover or active scrolling.
+- Independent scroll regions remain independent.
+- Keyboard and touchpad users can operate scrolling.
+- Scrollbars remain discoverable and accessible.
+- Event listeners and timers are cleaned up.
+- Reduced-motion and light/dark modes work correctly.
+
+Do not hide scrollbars in a way that makes content inaccessible.
+
+## F. Content Density
+
+Provide:
+
+- Compact.
+- Comfortable.
+- Spacious.
+
+Use Comfortable by default.
+
+Density changes must not alter business logic, accounting results, or stored values.
+
+---
+
+# PHASE 9 — REMOVE UNNECESSARY USER-FACING ENTERPRISE LABELS
+
+Conduct a system-wide terminology review.
+
+Remove or simplify unnecessary user-facing terminology containing:
+
+- Enterprise.
+- Enterprise Hub.
+- Enterprise Journey.
+- Enterprise Orchestration.
+- Enterprise Governance.
+- Enterprise Coverage.
+- Enterprise ERP.
+- Enterprise 360°.
+
+Use clean, professional business terminology.
+
+This is a presentation-only change.
+
+Do not remove, disable, or weaken:
+
+- Approval workflows.
+- RBAC.
+- SoD.
+- Encryption.
+- Audit trails.
+- Multi-company support.
+- Accounting engines.
+- Governance controls.
+- Analytics.
+- Reporting.
+- Security features.
+
+Preserve internal database names, APIs, service identifiers, and requirement IDs.
+
+Run regression tests proving that all underlying functionality remains intact.
+
+---
+
+# PHASE 10 — COMPLETE DRY-RUN AND INTEGRATION ACCEPTANCE
+
+Use isolated synthetic company data only.
+
+Do not modify original Deskguard Solutions, preview, pilot, or production business records.
+
+Build a repeatable accounting test dataset covering:
+
+- COA and opening balances.
+- Manual journals.
+- Sales transactions.
+- Purchase transactions.
+- AR and AP.
+- Inventory.
+- Fixed assets.
+- Payroll.
+- Tax transactions.
+- Bank reconciliation.
+- Approval workflows.
+- Foreign-currency transactions.
+- FX revaluation.
+- Multiple accounting periods.
+- Soft Close.
+- Hard Close.
+- Authorized reopening.
+
+Run these end-to-end scenarios:
+
+1. Create a COA account.
+2. Record its opening balance.
+3. Verify the opening journal.
+4. Post a transaction.
+5. Verify the General Ledger.
+6. Verify the Trial Balance.
+7. Verify the Balance Sheet and Income Statement.
+8. Change a draft journal date across periods.
+9. Test exact one-centavo imbalance rejection.
+10. Test duplicate source posting prevention.
+11. Test closed-period posting rejection.
+12. Test tax filing period enforcement.
+13. Test fixed-asset period enforcement.
+14. Execute FX revaluation.
+15. Verify the generated unrealized FX journal.
+16. Verify FX adjustment in the Trial Balance.
+17. Perform period closing.
+18. Verify immutable close certification.
+19. Re-run Ledger Agent AI queries.
+20. Verify all results against independent calculations.
+
+For every scenario, preserve transaction references, company ID, period, API responses, database state, journal lines, and reconciliation evidence.
+
+---
+
+# PHASE 11 — REGRESSION, PERFORMANCE AND SECURITY
+
+Run all existing relevant test suites before and after implementation.
+
+Add tests for each confirmed defect.
+
+Verify:
+
+- Exact centavo accounting.
+- Atomic posting.
+- Idempotency.
+- Concurrency safety.
+- Immutable posted records.
+- Reversal lineage.
+- Company isolation.
+- RBAC.
+- Company Owner authority.
+- Period locks.
+- Approval controls.
+- FX rate validation.
+- Tax calculation accuracy.
+- AI data provenance.
+- Server-side pagination.
+- UI state persistence.
+- Scroll behavior.
+- Responsive layouts.
+
+Do not report tests as passed merely because test files exist.
+
+Execute the tests and provide actual results.
+
+For performance benchmarks, distinguish sequential latency from concurrent load testing.
+
+Do not fabricate production-scale performance claims.
+
+---
+
+# PHASE 12 — IMPLEMENTATION ORDER AND CHANGE CONTROL
+
+Implement in the following order:
+
+P0:
+1. COA opening-balance integration.
+2. Journal period synchronization, exact centavo validation, idempotency, and void controls.
+3. Cross-module period lock enforcement.
+4. Dedicated Trial Balance frontend.
+5. True unrealized FX revaluation engine.
+
+P1:
+6. COA posting eligibility.
+7. Unified control-account resolution.
+8. Company Owner full access.
+9. Tax Engine rule and calculation validation.
+10. Ledger Agent AI evaluation and integration.
+11. Approval workflow end-to-end validation.
+12. System-wide UI/UX pagination, filters, forms, and scroll improvements.
+13. User-facing Enterprise label cleanup.
+
+Prioritize critical accounting correctness and security over visual improvements.
+
+Do not unnecessarily refactor verified completed components.
+
+Before changing a completed feature, identify a reproducible defect or missing acceptance requirement.
+
+For every change:
+
+1. Inspect existing implementation.
+2. Identify exact affected files and functions.
+3. Identify related database tables and migrations.
+4. Implement the smallest safe correction.
+5. Add regression tests.
+6. Run focused tests.
+7. Run related integration tests.
+8. Run typecheck and lint.
+9. Verify existing behavior.
+10. Update the canonical roadmap.
+
+If a dependency is not ready, report it instead of implementing an unsafe workaround.
+
+---
+
+# PHASE 13 — FINAL CONSOLIDATED REPORT
+
+Provide a single evidence-based report containing:
+
+1. Completed P0 remediation.
+2. Completed P1 remediation.
+3. Exact changed files and functions.
+4. Database migrations.
+5. API and backend changes.
+6. Frontend and UX changes.
+7. Accounting reconciliation results.
+8. Tax calculation accuracy results.
+9. FX revaluation results.
+10. Company Owner access test results.
+11. Approval workflow results.
+12. Ledger Agent AI benchmark.
+13. Pagination and scrolling acceptance results.
+14. Security and isolation tests.
+15. Performance results.
+16. Remaining defects and blockers.
+17. CPA/BIR external validation requirements.
+18. Windows acceptance requirements.
+19. Exact next recommended task.
+
+Use these classifications:
+
+- VERIFIED.
+- IMPLEMENTED — NOT FULLY VALIDATED.
+- PARTIALLY IMPLEMENTED.
+- DEFECT CONFIRMED.
+- NOT IMPLEMENTED.
+- BLOCKED.
+- EXTERNAL VALIDATION REQUIRED.
+
+Update the existing `LEDGERAI_ENTERPRISE_MASTER_ROADMAP.md` only.
+
+Do not create a competing roadmap.
+
+---
+
+# EXECUTION ENVIRONMENT RESTRICTION
+
+The current environment is Google AI Studio browser running in a Linux/container environment.
+
+Do not build Windows EXE installers or run NSIS here.
+
+Do not claim actual Windows DPAPI, ACL, installation, upgrade, or uninstall acceptance without Windows execution.
+
+Windows installer packaging and native acceptance remain:
+
+PENDING LOCAL WINDOWS / WINDOWS CI EXECUTION.
+
+Browser-compatible source changes, migrations, tests, typechecks, lint, and supported builds may be performed here.
+
+---
+
+# FINAL ACCEPTANCE STANDARD
+
+LedgerAI PH must operate as one coherent, accurate, and traceable accounting and business system.
+
+The Chart of Accounts, General Journal, General Ledger, Trial Balance, Accounting Periods, and FX Revaluation must use consistent authoritative accounting records.
+
+All financially relevant modules must respect the same company, currency, accounting period, posting, and security controls.
+
+The Philippine Tax Engine must produce independently validated results for supported taxpayer scenarios.
+
+Ledger Agent AI must explain and analyze validated accounting and tax results without inventing or contradicting financial information.
+
+Approval workflows must route actual transactions to authorized users and preserve their complete lifecycle.
+
+The Company Owner must have full functional access within their own company without bypassing security boundaries or immutable accounting controls.
+
+All UI/UX functions must be connected to the actual frontend, backend, business engines, and database.
+
+The interface must be clean, compact, searchable, paginated, accessible, and practical for everyday company operations.
+
+Do not declare production readiness based on test counts, implementation summaries, screenshots, or successful builds alone.
+
+The final standard is reproducible end-to-end business execution, independent financial reconciliation, verified tax computations, secure company operations, and documented external acceptance requirements.

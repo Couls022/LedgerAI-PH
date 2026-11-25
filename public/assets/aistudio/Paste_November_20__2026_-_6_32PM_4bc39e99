@@ -1,0 +1,1122 @@
+# LEDGERAI PH — FULL ENTERPRISE CLIENT-SERVER TRANSFORMATION & SYSTEM-WIDE IMPLEMENTATION MANDATE
+
+## PROJECT: LEDGERAI PH
+## TARGET: ENTERPRISE ON-PREMISES MULTI-COMPANY ERP PLATFORM
+## PRIORITY: CRITICAL ARCHITECTURAL IMPLEMENTATION
+## SCOPE: ENTIRE APPLICATION
+## EXECUTION METHOD: AUDIT → ARCHITECT → IMPLEMENT → INTEGRATE → TEST → VERIFY → DOCUMENT
+
+---
+
+# 1. PROJECT OBJECTIVE
+
+Transform LedgerAI PH into a centralized, enterprise-grade, on-premises ERP platform that supports multiple companies, multiple users, multiple client computers, and browser-based access through a central office server.
+
+The intended architecture:
+
+- One Windows PC acts as the central LedgerAI PH server.
+- The server hosts the authoritative application backend, company registry, databases, documents, and storage.
+- The server runs automatically in the background when Windows starts.
+- Other computers and laptops connect through the same office LAN or Wi-Fi network.
+- Users access LedgerAI PH using Chrome, Edge, Firefox, or other supported browsers.
+- Users authenticate using their individual accounts.
+- Users can select, open, and switch between authorized company profiles.
+- Company databases remain centralized on the server.
+- Client computers do not need to install or receive the complete LedgerAI PH application or company database files.
+
+This must be implemented as an integrated architecture, not as a separate disconnected application.
+
+Preserve existing LedgerAI PH accounting functionality, Philippine Tax Engine, Compliance Rule Engine, Document Management, OCR, AI capabilities, RBAC, audit trails, database lifecycle, and enterprise security.
+
+Do not unnecessarily rewrite or replace existing working modules.
+
+---
+
+# 2. TARGET SYSTEM ARCHITECTURE
+
+Implement a centralized client-server architecture.
+
+## A. CENTRAL SERVER — PC 1
+
+The computer where LedgerAI PH is installed becomes the authoritative application server.
+
+Responsibilities:
+
+1. Host the LedgerAI PH backend API.
+2. Host the browser-accessible frontend.
+3. Manage the central company registry.
+4. Manage all registered company databases.
+5. Manage company-specific documents and attachments.
+6. Handle authentication and authorization.
+7. Enforce company-level RBAC.
+8. Process accounting transactions.
+9. Manage database connections and concurrency.
+10. Handle OCR and AI processing requests.
+11. Manage backup, restore, and archive operations.
+12. Maintain audit logs and security monitoring.
+13. Provide LAN access to authorized client computers.
+14. Maintain centralized storage and database integrity.
+
+The central server must be the authoritative source of company data.
+
+## B. CLIENT COMPUTERS
+
+Other PCs and laptops connect using a supported web browser.
+
+Client requirements:
+
+- No complete LedgerAI PH installation required.
+- No direct database access.
+- No shared SQLite database folders.
+- No database file distribution.
+- No direct access to server filesystem.
+- No local copies of other companies' databases.
+- All authorized operations pass through authenticated server APIs.
+
+Client computers should only receive the application interface and data required for the currently authorized operations.
+
+## C. CENTRALIZED DATA FLOW
+
+Architecture:
+
+CLIENT BROWSER
+→ LAN / Wi-Fi
+→ CENTRAL LEDGERAI PH SERVER
+→ AUTHENTICATION & AUTHORIZATION
+→ COMPANY REGISTRY
+→ COMPANY DATABASE
+→ COMPANY-SPECIFIC DOCUMENT STORAGE
+
+All data operations must be executed and validated by the central server.
+
+---
+
+# 3. WINDOWS SERVER INSTALLER & BACKGROUND SERVICE
+
+The Windows installer must support deploying LedgerAI PH as a centralized office server.
+
+## Required Installation Modes
+
+Implement deployment options:
+
+1. SERVER MODE
+   - Installs and configures the central LedgerAI PH server.
+   - Hosts application backend and frontend.
+   - Manages central company databases and storage.
+   - Enables authorized LAN access.
+
+2. SINGLE-PC MODE
+   - Supports existing standalone/local desktop usage.
+   - Preserves existing company database lifecycle and local workflows.
+
+3. SERVER + LOCAL DESKTOP MODE
+   - Runs the central server.
+   - Allows the same PC to use LedgerAI PH through its local browser or supported desktop interface.
+
+4. CLIENT ACCESS MODE
+   - Provides browser-based access instructions.
+   - Does not install the complete application or company databases on client computers.
+
+## Background Service Requirements
+
+Implement a properly managed Windows background service.
+
+Requirements:
+
+- Automatically start when Windows boots.
+- Run independently of the desktop interface.
+- Continue operating when the browser is closed.
+- Continue operating when the LedgerAI PH desktop window is closed.
+- Support graceful shutdown.
+- Support automatic recovery after unexpected service termination.
+- Provide server health checks.
+- Provide service status monitoring.
+- Provide controlled start, stop, restart, and maintenance operations.
+- Prevent multiple instances from starting against the same database storage.
+- Preserve database integrity during shutdown and restart.
+
+Do not require a user to manually open the LedgerAI PH desktop application to activate the server.
+
+## Server Dashboard
+
+Provide an administrative Server Management Dashboard showing:
+
+- Server status.
+- Server hostname.
+- Local IP address.
+- Configured LAN hostname.
+- Listening port.
+- Active client connections.
+- Active authenticated sessions.
+- Registered company count.
+- Database storage usage.
+- Document storage usage.
+- Available disk space.
+- Backup status.
+- Last successful backup.
+- Service uptime.
+- Server health.
+- Recent server errors.
+- Network connectivity.
+
+Only authorized administrators can manage server settings.
+
+---
+
+# 4. LAN ACCESS & FRIENDLY WEB ADDRESS
+
+The central server must be accessible to computers connected to the same authorized office network.
+
+Support:
+
+- Ethernet connections.
+- Office Wi-Fi.
+- Wired desktop computers.
+- Wireless laptops.
+- Other authorized devices within the same network.
+
+## Local Access Address
+
+Provide a user-friendly hostname instead of requiring users to memorize an IP address.
+
+Preferred example:
+
+http://ledgerai.local
+
+Alternative:
+
+http://ledgerai-server.local
+
+Direct fallback:
+
+http://SERVER_LOCAL_IP:PORT
+
+The hostname must resolve to the central server through an appropriately configured local DNS or mDNS mechanism.
+
+Do not assume that .local automatically works on every network.
+
+Provide proper hostname registration and troubleshooting procedures.
+
+## Network Requirements
+
+- Support static IP or DHCP reservation recommendations.
+- Detect server network changes.
+- Handle temporary connectivity loss.
+- Support client reconnection.
+- Avoid exposing database ports directly.
+- Restrict service access to trusted private networks.
+- Configure Windows Firewall for the required application port only.
+- Never expose unrestricted administrative services to the LAN.
+- Do not enable public internet access by default.
+
+## Network Access Modes
+
+PRIVATE LAN MODE:
+- Office Wi-Fi and Ethernet clients only.
+- Default deployment configuration.
+- No public internet exposure.
+
+AUTHORIZED REMOTE ACCESS MODE:
+- Optional remote access through a secure VPN.
+- Encrypted communication.
+- MFA where configured.
+- Explicit access policies.
+- No direct public exposure of database services.
+
+---
+
+# 5. CENTRALIZED MULTI-COMPANY REGISTRY
+
+Implement a centralized Company Registry.
+
+This registry must be the authoritative directory of all company profiles managed by LedgerAI PH.
+
+Each company must have:
+
+- Unique Company ID.
+- Company Name.
+- Registered Business Name.
+- Database Reference.
+- Dedicated Storage Reference.
+- Taxpayer Classification.
+- VAT / Non-VAT Status.
+- BIR Registration Information.
+- Company Profile.
+- Company Status.
+- Access Permission Assignments.
+- Archive Status.
+- Database Health Status.
+- Creation Timestamp.
+- Last Modified Timestamp.
+
+Physical database paths and storage paths must remain server-side.
+
+Do not expose physical database paths to browser clients.
+
+## Multiple Company Support
+
+The system must support multiple independent company databases.
+
+Examples:
+
+- ABC Trading Corporation.
+- XYZ Construction Inc.
+- DEF Services.
+- Other client companies managed by an accounting firm.
+
+Each company must retain independent:
+
+- Accounting transactions.
+- Chart of Accounts.
+- General Ledger.
+- Subledgers.
+- Financial Statements.
+- Tax Profiles.
+- BIR Compliance Records.
+- Documents.
+- Bank Accounts.
+- Users and permissions where configured.
+- Audit Trails.
+- Backup and Archive Records.
+
+Company data must never be mixed.
+
+---
+
+# 6. COMPANY SELECTION LANDING PAGE
+
+After authentication, provide a centralized Company Selection Workspace when no valid company preference exists.
+
+The interface should provide:
+
+- Authorized Company Profiles.
+- Recently Opened Companies.
+- My Company Shortcuts.
+- Search Company.
+- Open Existing Company.
+- Company Profile Information.
+- Last Opened Information.
+- Company Status.
+- Open Company action.
+- Switch Company functionality.
+
+Only companies the authenticated user is authorized to access must appear.
+
+Do not automatically expose all registered company profiles to every employee.
+
+## Company Selection Experience
+
+The expected experience:
+
+1. User opens the LedgerAI PH local web address.
+2. User authenticates.
+3. User sees the authorized Company Selection Workspace if no valid company preference exists.
+4. User selects a company.
+5. LedgerAI PH validates company authorization.
+6. The selected company becomes the user's persistent company preference for that browser profile.
+7. User enters the selected company's workspace.
+
+Provide a professional enterprise interface consistent with LedgerAI PH design standards.
+
+---
+
+# 7. CRITICAL REQUIREMENT — PERSISTENT COMPANY SELECTION
+
+This is a mandatory user experience requirement.
+
+Once a company profile has been selected, that company must remain the default destination for the specific browser profile or workstation.
+
+Closing the browser must not reset the selected company.
+
+Restarting the computer must not reset the selected company.
+
+Refreshing the application must not reset the selected company.
+
+The user must not be forced to select the company every time the browser is opened.
+
+## EXPECTED BEHAVIOR
+
+FIRST-TIME ACCESS:
+
+1. Open browser.
+2. Visit http://ledgerai.local.
+3. Authenticate.
+4. Select ABC Trading Corporation.
+5. Open ABC Trading workspace.
+
+BROWSER CLOSED:
+
+The browser is closed completely.
+
+SUBSEQUENT ACCESS:
+
+1. Open browser again.
+2. Visit http://ledgerai.local.
+3. LedgerAI PH identifies the previously selected company preference.
+4. Immediately display the ABC Trading Corporation login page.
+5. User enters credentials.
+6. Server authenticates the user.
+7. Server validates company authorization.
+8. Open ABC Trading Corporation workspace.
+
+The Company Selection Landing Page must not appear again unless the user explicitly switches companies or the saved company becomes unavailable or unauthorized.
+
+## Persistent Preference Storage
+
+Implement browser-specific company selection persistence.
+
+Requirements:
+
+- Store the selected Company ID, never an untrusted physical database path.
+- Persist across browser restarts.
+- Persist across computer restarts.
+- Keep company preferences isolated by browser profile and workstation.
+- Do not store passwords in browser storage.
+- Do not store authentication tokens in ordinary localStorage.
+- Use secure, appropriately scoped browser storage for non-sensitive company preferences.
+- Revalidate the company reference against the authoritative server registry.
+- Enforce company authorization after every authentication.
+- Handle invalid or unavailable company references safely.
+
+The company preference and authentication session must be independent.
+
+IMPORTANT:
+
+Persistent company selection does not mean persistent authentication.
+
+If the session expires or browser authentication is terminated, the user must authenticate again.
+
+Never bypass MFA or existing authentication policies.
+
+---
+
+# 8. MULTIPLE USERS & INDEPENDENT COMPANY WORKSPACES
+
+Different employees must be able to open different authorized companies simultaneously.
+
+Example:
+
+PC 2 — User A:
+ABC Trading Corporation.
+
+Laptop 1 — User B:
+XYZ Construction Inc.
+
+Laptop 2 — User C:
+DEF Services.
+
+PC 3 — User D:
+ABC Trading Corporation.
+
+All users access the same central server.
+
+However, each client must maintain its own:
+
+- Active Company Context.
+- Selected Company Preference.
+- Authentication Session.
+- User Permissions.
+- Recent Company History.
+- Company Shortcuts.
+- User Preferences.
+
+A company selection on one workstation must not automatically change the selected company on another workstation.
+
+Do not implement a single global active company variable for the entire server.
+
+Company context must be isolated per authenticated session and request.
+
+---
+
+# 9. SWITCH COMPANY FUNCTIONALITY
+
+Implement a persistent Switch Company action within the LedgerAI PH interface.
+
+The user must be able to change companies without logging out of the entire application.
+
+Expected flow:
+
+1. User is working in ABC Trading.
+2. User clicks Switch Company.
+3. Display the authorized Company Selection Workspace.
+4. User selects XYZ Construction.
+5. Validate access.
+6. Safely handle pending and unsaved transactions.
+7. Release the previous company context.
+8. Load the new company context.
+9. Update the browser-specific persistent Company ID preference.
+10. Redirect to the newly selected company workspace.
+
+If the selected company's authentication requires reauthentication, display its login page.
+
+If the current authenticated session remains valid and the user has permission, switching may continue without requiring a complete application logout.
+
+Never expose the previous company's cached financial data after switching.
+
+Clear or isolate:
+
+- Company-specific application state.
+- Company-specific cached queries.
+- Company-specific documents.
+- Financial dashboard data.
+- Company-specific API context.
+- Temporary company selections.
+
+Record company-switching activities in the audit trail.
+
+---
+
+# 10. COMPANY SHORTCUTS & RECENT HISTORY
+
+Preserve and integrate the existing Company Database Lifecycle and Shortcut History functionality.
+
+Implement:
+
+- Central Company Registry.
+- User-Specific Shortcuts.
+- Recently Opened Companies.
+- Reopen Existing Company.
+- Open Existing Company.
+- Remove Shortcut.
+- Remove Recent History.
+- Archive Company.
+- Restore Company.
+- Permanently Delete Company.
+
+IMPORTANT DISTINCTION:
+
+Removing a shortcut must never delete the underlying company database.
+
+Removing recent history must never delete company data.
+
+Reopening a shortcut must locate the existing company registry entry and reopen the correct company database.
+
+Permanent company deletion must require:
+- Specific authorization.
+- Explicit confirmation.
+- Appropriate audit logging.
+- Protected company safeguards.
+- Database integrity validation.
+
+Preserve existing company profiles and databases.
+
+---
+
+# 11. AUTHENTICATION, RBAC & COMPANY ACCESS
+
+Integrate the existing LedgerAI PH enterprise authentication and RBAC implementation.
+
+Do not create an incompatible parallel permission system.
+
+Preserve the existing:
+
+- Role Permission Catalog.
+- Permission Compatibility Matrix.
+- Custom Role Configuration.
+- Company Access Permissions.
+- User Management.
+- Company Ownership Rules.
+- Separation of Duties.
+- Administrative Authority.
+- Audit Trail.
+
+## Company Visibility and Authorization
+
+Company visibility must be permission-based.
+
+If a user has no access to a company, it must not appear in the user's company selection list.
+
+If a user has access, the available operations must still depend on assigned permissions.
+
+Examples:
+
+- View Only.
+- Create.
+- Edit.
+- Approve.
+- Post.
+- Export.
+- Manage.
+- Full Access.
+
+Visibility does not automatically grant full operational access.
+
+All authorization must be enforced server-side.
+
+Do not rely on hiding frontend components as a security control.
+
+---
+
+# 12. CENTRALIZED DATABASE ARCHITECTURE
+
+The central server must exclusively manage authoritative company database operations.
+
+IMPORTANT:
+
+Do not simply share SQLite or SQLCipher database files over a network drive for simultaneous client access.
+
+Browser clients must never directly open or modify database files.
+
+All operations must go through the central backend.
+
+## Database Requirements
+
+Preserve the existing SQLite-first and SQLCipher architecture where appropriate.
+
+Evaluate the existing architecture for:
+
+- Concurrent database writes.
+- Transaction isolation.
+- Database connection management.
+- Write serialization where necessary.
+- Busy timeout and retry handling.
+- Atomic operations.
+- Database locking.
+- Recovery after unexpected termination.
+- Backup consistency.
+- Database encryption.
+- Tenant isolation.
+
+Implement a safe centralized database access layer.
+
+The server must be responsible for all authoritative database reads and writes.
+
+Do not migrate database engines or introduce an unnecessary second database system without a documented technical justification and migration plan.
+
+## Concurrent Transactions
+
+Multiple employees must be able to work simultaneously.
+
+Implement:
+
+- Safe transaction management.
+- Conflict detection.
+- Consistent journal posting.
+- Idempotent transaction processing.
+- Duplicate submission prevention.
+- Atomic accounting operations.
+- Appropriate concurrency control.
+- Server-side validation.
+- Audit logging.
+
+Ensure Trial Balance and Financial Statements remain consistent during concurrent activity.
+
+---
+
+# 13. CENTRALIZED DOCUMENT & FILE STORAGE
+
+All company documents must remain on the central server.
+
+Implement company-specific storage isolation.
+
+Cover:
+
+- Documents.
+- Attachments.
+- OCR Files.
+- Bank Statements.
+- Financial Reports.
+- Tax Documents.
+- Compliance Evidence.
+- Audit Documentation.
+- Archives.
+- Backups.
+
+Clients must not receive unrestricted storage access.
+
+Documents must be accessed through authenticated and authorized application APIs.
+
+Preserve existing document references and OCR processing workflows.
+
+Implement secure upload, download, preview, and export operations.
+
+---
+
+# 14. SYSTEM-WIDE NATIVE FOLDER PICKER STANDARD
+
+Correct the existing custom folder-browser implementation.
+
+The current custom in-app folder browser is not the intended user experience.
+
+Whenever a user clicks:
+
+- Choose Folder.
+- Browse Folder.
+- Select Folder.
+- Change Folder.
+- Backup Folder Location.
+- Company Data Folder Location.
+
+The actual native operating system folder selection dialog must open immediately in supported desktop environments.
+
+## Electron Implementation
+
+For Electron desktop environments, use:
+
+`dialog.showOpenDialog()`
+
+With:
+
+`properties: ['openDirectory']`
+
+Use an appropriate dialog title and a valid initial directory when available.
+
+Implement one centralized:
+
+`NativeFolderPickerService`
+
+Secure architecture:
+
+Renderer → Preload API → Secure IPC → Main Process → Native OS Folder Dialog.
+
+Do not expose unrestricted filesystem access to the renderer.
+
+## Company Setup Integration
+
+Specifically correct:
+
+Workspace Storage Folders:
+
+1. Company Data Folder.
+2. Backup Folder.
+
+Keep the existing settings layout and selected path display.
+
+Only replace the custom folder-selection interaction.
+
+The native dialog must open immediately when the user clicks Choose Folder.
+
+## System-Wide Coverage
+
+Audit all modules and integrate the centralized service wherever directory selection is required:
+
+- Company Management.
+- Database Management.
+- Document Management.
+- Accounting & Finance.
+- Bank Reconciliation.
+- Philippine Tax & Compliance.
+- BIR Document Storage.
+- OCR Processing.
+- AI Document Management.
+- Backup & Restore.
+- Archive Management.
+- Import & Export.
+- System Administration.
+- Diagnostics.
+
+Do not use an in-app custom folder browser as the primary folder-selection interface.
+
+## Browser Client Considerations
+
+Browser clients must use appropriate browser-supported file and directory selection capabilities when applicable.
+
+Do not claim that a browser can invoke an arbitrary native operating system folder dialog with the same privileges as an Electron main process.
+
+For server-side storage configuration, directory selection must be performed by the authorized server administrator through a supported server-side management interface.
+
+Do not allow remote browser clients to select arbitrary server filesystem paths.
+
+---
+
+# 15. NETWORK RESILIENCE & SERVER AVAILABILITY
+
+Implement reliable client-server connectivity.
+
+Requirements:
+
+- Server health monitoring.
+- Client connection status.
+- Automatic reconnection.
+- Network interruption handling.
+- Request timeout handling.
+- Safe retry mechanisms.
+- Duplicate transaction prevention.
+- Session expiration handling.
+- Server maintenance notifications.
+- Graceful handling when the server is unavailable.
+
+When PC 1 is shut down, clients must clearly report that the central server is unavailable.
+
+Do not silently switch to a different company database or another data source.
+
+Preserve the existing offline-first capabilities where applicable, but do not introduce uncontrolled local copies of authoritative company databases.
+
+Any future offline synchronization must have a separately designed conflict-resolution and data-integrity model.
+
+---
+
+# 16. BACKUP, RESTORE & DISASTER RECOVERY
+
+The central server must manage company database backups and document storage backups.
+
+Implement:
+
+- Scheduled backups.
+- Manual backups.
+- Company-specific backups.
+- Full system backups.
+- Backup verification.
+- Backup integrity checks.
+- Restore validation.
+- Recovery procedures.
+- Backup retention policies.
+- Backup destination management.
+- Backup audit history.
+
+Support secure restoration without overwriting unrelated companies.
+
+Ensure company registry references remain valid after restoration.
+
+Do not consider a backup successful merely because a backup file was created.
+
+Verify its integrity.
+
+---
+
+# 17. SECURITY & NETWORK PROTECTION
+
+Mandatory enterprise security controls:
+
+- Secure authentication.
+- Server-side RBAC.
+- Tenant isolation.
+- Company context validation.
+- Secure IPC.
+- Secure session management.
+- CSRF protection where applicable.
+- Input validation.
+- API authorization.
+- Rate limiting where appropriate.
+- Audit logging.
+- Secure file handling.
+- Database encryption.
+- Encryption key protection.
+- Restricted filesystem access.
+- Private network firewall configuration.
+
+Do not expose:
+- Database files.
+- Database encryption keys.
+- Server filesystem paths.
+- Administrative secrets.
+- Other companies' documents.
+- Unrestricted backend endpoints.
+
+Use encrypted communication wherever supported and configure trusted local HTTPS certificates for production LAN deployments where practical.
+
+---
+
+# 18. PRESERVE EXISTING LEDGERAI PH FUNCTIONALITY
+
+This transformation must not break existing accounting and enterprise modules.
+
+Preserve and verify:
+
+- Philippine Tax Engine.
+- VAT.
+- Non-VAT.
+- 8% Income Tax.
+- Withholding Tax.
+- ATC.
+- BIR Compliance.
+- Chart of Accounts.
+- General Ledger.
+- Accounts Receivable.
+- Accounts Payable.
+- Cash & Banking.
+- Bank Reconciliation.
+- Inventory.
+- Fixed Assets.
+- Financial Statements.
+- Trial Balance.
+- Financial Reports.
+- Document Management.
+- OCR Engine.
+- AI Assistant.
+- Compliance Rule Engine.
+- Audit Platform.
+- RBAC.
+- Company Lifecycle.
+- Backup and Restore.
+- Archive and Recovery.
+
+Verify that every module operates correctly under the centralized company context.
+
+All accounting transactions must remain associated with the correct company.
+
+---
+
+# 19. MANDATORY AUDIT & COVERAGE MATRICES
+
+Before implementation, inspect the actual source code.
+
+Produce the following documentation:
+
+1. CLIENT_SERVER_ARCHITECTURE_AUDIT.md
+2. CENTRALIZED_DATABASE_ARCHITECTURE.md
+3. COMPANY_REGISTRY_COVERAGE_MATRIX.md
+4. COMPANY_SWITCHING_COVERAGE_MATRIX.md
+5. PERSISTENT_COMPANY_SELECTION_MATRIX.md
+6. RBAC_COMPANY_ACCESS_MATRIX.md
+7. NATIVE_FOLDER_PICKER_COVERAGE_MATRIX.md
+8. SERVER_INSTALLER_REQUIREMENTS.md
+9. LAN_NETWORK_ACCESS_CONFIGURATION.md
+10. SECURITY_AND_TENANT_ISOLATION_AUDIT.md
+11. MULTI_USER_CONCURRENCY_TEST_MATRIX.md
+12. BACKUP_AND_DISASTER_RECOVERY_PLAN.md
+
+Each coverage matrix must identify:
+
+- Module.
+- Submodule.
+- Actual Source File.
+- Existing Component.
+- Current Behavior.
+- Required Behavior.
+- Backend Integration.
+- Database Integration.
+- Security Validation.
+- Test Coverage.
+- Implementation Status.
+- Evidence.
+
+Do not invent file locations, test results, or completed implementations.
+
+---
+
+# 20. AUTOMATED TESTING & ACCEPTANCE
+
+Create and execute appropriate unit, integration, security, and end-to-end tests.
+
+## A. SERVER TESTING
+
+- Server startup.
+- Server shutdown.
+- Background service lifecycle.
+- Service recovery.
+- API availability.
+- Network access.
+- Client connections.
+- Multiple simultaneous clients.
+- Database connection management.
+
+## B. MULTI-COMPANY TESTING
+
+- Company registry.
+- Company selection.
+- Company switching.
+- Company-specific database loading.
+- Company isolation.
+- User-specific shortcuts.
+- Recent company history.
+- Reopening existing company profiles.
+- Archive and recovery.
+- Persistent company selection.
+
+## C. PERSISTENCE TESTING
+
+- Browser closure.
+- Browser reopening.
+- Computer restart.
+- Browser refresh.
+- Session expiration.
+- Company preference preservation.
+- Workstation isolation.
+- Browser profile isolation.
+- Company switching updates.
+
+## D. SECURITY TESTING
+
+- Unauthorized company access.
+- Cross-company data leakage.
+- Direct API manipulation.
+- Unauthorized database access.
+- Filesystem access restrictions.
+- Session security.
+- RBAC enforcement.
+- Tenant isolation.
+
+## E. ACCOUNTING REGRESSION TESTING
+
+- Journal entries.
+- General Ledger.
+- Subledger reconciliation.
+- Trial Balance.
+- Financial Statements.
+- Tax calculations.
+- Bank Reconciliation.
+- Concurrent transaction posting.
+- Dashboard calculations.
+
+## F. NATIVE FOLDER PICKER TESTING
+
+- Native directory dialog invocation.
+- Directory selection.
+- Cancellation.
+- Invalid directory.
+- Permission denial.
+- Path preservation.
+- Secure IPC.
+- Module integration.
+
+Use actual runtime verification where possible.
+
+Mocked tests must never be represented as actual native Windows acceptance tests.
+
+---
+
+# 21. IMPLEMENTATION EXECUTION RULES
+
+Follow the mandatory execution workflow:
+
+AUDIT
+→ IDENTIFY
+→ ARCHITECT
+→ IMPLEMENT
+→ INTEGRATE
+→ TEST
+→ VERIFY
+→ DOCUMENT
+→ ACCEPTANCE
+
+Rules:
+
+1. Inspect the existing repository before modifying it.
+2. Reuse existing working architecture wherever possible.
+3. Do not create duplicate backend services.
+4. Do not create a parallel authentication system.
+5. Do not bypass existing RBAC.
+6. Do not weaken existing tenant isolation.
+7. Do not delete existing company databases.
+8. Do not reset user configurations.
+9. Do not break standalone functionality.
+10. Do not fabricate test results.
+11. Add automated regression tests for every significant change.
+12. Fix identified regressions before declaring completion.
+13. Update technical documentation.
+14. Provide evidence for completed integrations.
+
+Do not stop after producing a plan.
+
+Implement all supported changes in the repository, in controlled phases, with actual source-code modifications and verification.
+
+If the implementation is too large for one execution cycle, divide it into controlled batches and maintain a clear completion ledger.
+
+Do not mark unfinished batches as completed.
+
+---
+
+# 22. EXECUTION ENVIRONMENT COMPLIANCE
+
+The current development environment is Google AI Studio browser-based development.
+
+STRICT RESTRICTIONS:
+
+- Do not fabricate Windows native runtime verification.
+- Do not claim a Windows service is running if it has not been executed.
+- Do not claim native Windows folder-picker acceptance without actual Windows testing.
+- Do not attempt Windows EXE/NSIS installer packaging inside the browser environment.
+- Do not fabricate installer outputs.
+
+Complete all supported work:
+
+- Source-code changes.
+- Architecture.
+- Backend implementation.
+- Frontend implementation.
+- Database integration.
+- Secure IPC integration where supported.
+- Automated tests.
+- TypeScript checks.
+- Regression testing.
+- Browser-compatible builds.
+- Documentation.
+
+Defer native Windows service installation, native folder-picker verification, installer packaging, and Windows deployment acceptance to a local Windows development environment or appropriate CI runner.
+
+Clearly classify each requirement as:
+
+- IMPLEMENTED AND VERIFIED.
+- IMPLEMENTED BUT NOT RUNTIME VERIFIED.
+- NOT IMPLEMENTED.
+- BLOCKED BY EXECUTION ENVIRONMENT.
+- NOT TESTED.
+
+---
+
+# 23. FINAL ACCEPTANCE CRITERIA
+
+LedgerAI PH Enterprise Client-Server Transformation is accepted only when:
+
+1. One PC can operate as the central LedgerAI PH server.
+2. The server can run in the Windows background.
+3. The server can start automatically with Windows.
+4. Authorized LAN clients can access the system through browsers.
+5. A friendly local hostname is available.
+6. All company databases remain centrally controlled.
+7. Multiple companies can be registered and managed.
+8. Users can select authorized company profiles.
+9. Different clients can open different companies simultaneously.
+10. Each browser profile remembers its selected company.
+11. Closing and reopening the browser preserves company selection.
+12. The previously selected company's login page appears automatically.
+13. Authentication is still required according to session policies.
+14. Company switching updates the persistent company preference.
+15. Company shortcuts and recent history remain user-specific.
+16. Removing shortcuts never deletes company databases.
+17. Company data remains isolated.
+18. All operations enforce server-side RBAC.
+19. Documents and attachments remain centrally stored.
+20. Concurrent transactions preserve accounting integrity.
+21. Backup and restore operations remain reliable.
+22. Existing LedgerAI PH modules continue working.
+23. Native Folder Picker uses the actual OS dialog in supported desktop environments.
+24. Relevant automated regression tests pass.
+25. Documentation and evidence are synchronized.
+
+---
+
+# 24. FINAL PRODUCT VISION
+
+The final product must operate as:
+
+LEDGERAI PH — CENTRALIZED ON-PREMISES MULTI-COMPANY ENTERPRISE ERP
+
+ONE CENTRAL SERVER
+→ MULTIPLE AUTHORIZED CLIENT COMPUTERS
+→ MULTIPLE USERS
+→ MULTIPLE COMPANY PROFILES
+→ INDIVIDUAL BROWSER COMPANY PREFERENCES
+→ CENTRALIZED DATABASES
+→ SECURE COMPANY-SPECIFIC ACCESS
+
+EXPECTED USER EXPERIENCE:
+
+OPEN BROWSER
+→ ACCESS LEDGERAI PH LOCAL HOSTNAME
+→ AUTOMATICALLY DISPLAY PREVIOUSLY SELECTED COMPANY LOGIN PAGE
+→ AUTHENTICATE
+→ OPEN COMPANY WORKSPACE
+→ USE ERP MODULES
+→ SWITCH COMPANY WHEN NECESSARY
+
+The company preference remains persistent until the user explicitly switches companies or the selected company becomes unavailable or unauthorized.
+
+All company data remains centralized on the server.
+
+The server remains the authoritative source of truth.
+
+Client computers receive only the authorized application functionality and data required for their operations.
+
+FINAL DIRECTIVE:
+
+Do not treat this as a cosmetic UI enhancement.
+
+This is a fundamental enterprise architecture transformation of LedgerAI PH.
+
+Inspect the existing application, implement the architecture carefully, preserve existing accounting functionality and data integrity, execute available tests, resolve discovered defects, and provide a comprehensive evidence-based implementation and acceptance report.
+
+Do not declare enterprise readiness based on compilation alone.
+
+Require actual integration, security, multi-company, concurrency, and runtime verification appropriate to the execution environment.

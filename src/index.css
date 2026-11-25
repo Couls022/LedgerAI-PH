@@ -1,0 +1,574 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  /* Distinctive Editorial Financial Typography */
+  --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Sovereign Ledger Light Theme — Calm alabaster canvas, crisp surfaces, zero eye-strain glare */
+  --color-canvas: #F5F7FA;
+  --color-surface: #FFFFFF;
+  --color-surface-elevated: #FFFFFF;
+  --color-surface-muted: #EEF2F6;
+  --color-surface-subtle: #F8FAFC;
+
+  --color-border: #E2E8F0;
+  --color-border-subtle: #EDF2F7;
+  --color-border-strong: #CBD5E1;
+
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #334155;
+  --color-text-muted: #64748B;
+  --color-text-subtle: #94A3B8;
+
+  /* Brand Accents — Sovereign Cobalt & Philippine Emerald-Teal (replaces harsh neon violet) */
+  --color-brand: #1D4ED8;
+  --color-brand-hover: #1E40AF;
+  --color-brand-subtle: #EFF6FF;
+  --color-brand-border: #BFDBFE;
+  --color-accent: #0F766E;
+  --color-accent-subtle: #F0FDFA;
+
+  /* Semantic Status Colors (WCAG AA Compliant) */
+  --color-success: #0F766E;
+  --color-success-bg: #ECFDF5;
+  --color-success-border: #A7F3D0;
+  --color-success-text: #065F46;
+
+  --color-warning: #B45309;
+  --color-warning-bg: #FFFBEB;
+  --color-warning-border: #FDE68A;
+  --color-warning-text: #92400E;
+
+  --color-danger: #BE123C;
+  --color-danger-bg: #FFF1F2;
+  --color-danger-border: #FECDD3;
+  --color-danger-text: #9F1239;
+
+  --color-info: #0369A1;
+  --color-info-bg: #F0F9FF;
+  --color-info-border: #BAE6FD;
+  --color-info-text: #075985;
+
+  /* Auto-hide Scrollbar Tokens */
+  --scrollbar-thumb-idle: transparent;
+  --scrollbar-thumb-hover: #94A3B8;
+  --scrollbar-thumb-active: #1D4ED8;
+  --scrollbar-track: transparent;
+}
+
+.dark {
+  /* Sovereign Ledger Dark Theme — Deep midnight slate, soft luminance contrast, zero halo glare */
+  --color-canvas: #0B1120;
+  --color-surface: #11192B;
+  --color-surface-elevated: #162238;
+  --color-surface-muted: #1B2942;
+  --color-surface-subtle: #0F172A;
+
+  --color-border: #1E2D45;
+  --color-border-subtle: #172338;
+  --color-border-strong: #334766;
+
+  --color-text-primary: #F1F5F9;
+  --color-text-secondary: #CBD5E1;
+  --color-text-muted: #94A3B8;
+  --color-text-subtle: #64748B;
+
+  /* Brand Accents — Optically compensated for dark surfaces */
+  --color-brand: #3B82F6;
+  --color-brand-hover: #2563EB;
+  --color-brand-subtle: #172554;
+  --color-brand-border: #1E40AF;
+  --color-accent: #14B8A6;
+  --color-accent-subtle: #042F2E;
+
+  /* Dark Status Tokens */
+  --color-success: #10B981;
+  --color-success-bg: #064E3B40;
+  --color-success-border: #065F46;
+  --color-success-text: #6EE7B7;
+
+  --color-warning: #F59E0B;
+  --color-warning-bg: #78350F40;
+  --color-warning-border: #92400E;
+  --color-warning-text: #FCD34D;
+
+  --color-danger: #FB7185;
+  --color-danger-bg: #88133740;
+  --color-danger-border: #9F1239;
+  --color-danger-text: #FDA4AF;
+
+  --color-info: #38BDF8;
+  --color-info-bg: #0C4A6E40;
+  --color-info-border: #075985;
+  --color-info-text: #7DD3FC;
+
+  --scrollbar-thumb-idle: transparent;
+  --scrollbar-thumb-hover: #475569;
+  --scrollbar-thumb-active: #3B82F6;
+  --scrollbar-track: transparent;
+}
+
+html, body, #root {
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+  background-color: var(--color-canvas);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, .font-display {
+  font-family: var(--font-display);
+}
+
+/* Page Layout Fluid Container */
+.page-container {
+  width: 100%;
+  max-width: 1720px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Numeric & Monospace Tabular Alignment for Financial Rigor */
+.font-mono,
+.tabular-nums,
+[data-numeric="true"] {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "zero" 1;
+  letter-spacing: -0.01em;
+}
+
+/* Single-line control protection so buttons/labels never collide or stack awkwardly */
+.control-nowrap {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Mobile Safe-Area Support */
+.pb-safe {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+/* Smooth Compositor-Only Micro-Transitions & Modern Slide/Drawer Motion System */
+@keyframes ledgerFadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ledgerFlyoutSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes ledgerDrawerSlideRight {
+  from {
+    opacity: 0.6;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes ledgerDrawerSlideLeft {
+  from {
+    opacity: 0.6;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes ledgerModalScaleIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.975);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes ledgerBackdropFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .btn-interactive,
+  .card-hover,
+  .nav-item {
+    transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 160ms ease,
+      border-color 160ms ease,
+      background-color 160ms ease,
+      color 160ms ease,
+      box-shadow 180ms ease;
+  }
+
+  .card-lift:hover {
+    transform: translateY(-2px);
+  }
+
+  .motion-page-enter {
+    animation: ledgerFadeSlideUp 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .motion-flyout-enter {
+    transform-origin: left center;
+    animation: ledgerFlyoutSlideIn 190ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .motion-drawer-right {
+    animation: ledgerDrawerSlideRight 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .motion-drawer-left {
+    animation: ledgerDrawerSlideLeft 230ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .motion-modal-enter {
+    animation: ledgerModalScaleIn 210ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .motion-backdrop-enter {
+    animation: ledgerBackdropFade 180ms ease-out both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Interactive Drag-to-Resize Table Column Handles (Enterprise Spreadsheet Feel) */
+.col-resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: col-resize;
+  user-select: none;
+  touch-action: none;
+  z-index: 25;
+}
+
+.col-resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 20%;
+  bottom: 20%;
+  right: 2px;
+  width: 2px;
+  border-radius: 9999px;
+  background-color: transparent;
+  transition: background-color 140ms ease, top 140ms ease, bottom 140ms ease;
+}
+
+th:hover > .col-resize-handle::after {
+  background-color: rgba(148, 163, 184, 0.45);
+}
+
+.col-resize-handle:hover::after,
+.col-resize-handle.is-dragging::after {
+  top: 6%;
+  bottom: 6%;
+  background-color: #2563EB;
+}
+
+.dark .col-resize-handle:hover::after,
+.dark .col-resize-handle.is-dragging::after {
+  background-color: #38BDF8;
+}
+
+body.is-col-resizing,
+body.is-col-resizing * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
+/* Ensure table cells truncate cleanly only when resized narrow, without breaking rows */
+table[data-col-resize-enhanced="true"] th,
+table[data-col-resize-enhanced="true"] td {
+  overflow-wrap: anywhere;
+}
+
+/* Enterprise Cross-Browser Auto-Hide Scrollbar System (REQ-UX-SCROLLBAR-001) */
+.scroll-region,
+.scrollbar-custom,
+.scrollbar-auto,
+[data-scroll-region="true"],
+#main-scroll-viewport {
+  scrollbar-gutter: auto;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.2s ease-in-out;
+}
+
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb-idle);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.scroll-region:hover,
+.scroll-region:focus-within,
+.scroll-region.is-scrolling,
+.scrollbar-custom:hover,
+.scrollbar-custom:focus-within,
+.scrollbar-custom.is-scrolling,
+.scrollbar-auto:hover,
+.scrollbar-auto:focus-within,
+.scrollbar-auto.is-scrolling,
+[data-scroll-region="true"]:hover,
+[data-scroll-region="true"]:focus-within,
+[data-scroll-region="true"].is-scrolling,
+#main-scroll-viewport:hover,
+#main-scroll-viewport:focus-within,
+#main-scroll-viewport.is-scrolling,
+.overflow-auto:hover,
+.overflow-auto:focus-within,
+.overflow-auto.is-scrolling,
+.overflow-y-auto:hover,
+.overflow-y-auto:focus-within,
+.overflow-y-auto.is-scrolling,
+.overflow-x-auto:hover,
+.overflow-x-auto:focus-within,
+.overflow-x-auto.is-scrolling {
+  scrollbar-color: var(--scrollbar-thumb-hover) transparent;
+}
+
+.scroll-region:hover::-webkit-scrollbar-thumb,
+.scroll-region:focus-within::-webkit-scrollbar-thumb,
+.scroll-region.is-scrolling::-webkit-scrollbar-thumb,
+.scrollbar-custom:hover::-webkit-scrollbar-thumb,
+.scrollbar-custom:focus-within::-webkit-scrollbar-thumb,
+.scrollbar-custom.is-scrolling::-webkit-scrollbar-thumb,
+.scrollbar-auto:hover::-webkit-scrollbar-thumb,
+.scrollbar-auto:focus-within::-webkit-scrollbar-thumb,
+.scrollbar-auto.is-scrolling::-webkit-scrollbar-thumb,
+[data-scroll-region="true"]:hover::-webkit-scrollbar-thumb,
+[data-scroll-region="true"]:focus-within::-webkit-scrollbar-thumb,
+[data-scroll-region="true"].is-scrolling::-webkit-scrollbar-thumb,
+#main-scroll-viewport:hover::-webkit-scrollbar-thumb,
+#main-scroll-viewport:focus-within::-webkit-scrollbar-thumb,
+#main-scroll-viewport.is-scrolling::-webkit-scrollbar-thumb,
+.overflow-auto:hover::-webkit-scrollbar-thumb,
+.overflow-auto:focus-within::-webkit-scrollbar-thumb,
+.overflow-auto.is-scrolling::-webkit-scrollbar-thumb,
+.overflow-y-auto:hover::-webkit-scrollbar-thumb,
+.overflow-y-auto:focus-within::-webkit-scrollbar-thumb,
+.overflow-y-auto.is-scrolling::-webkit-scrollbar-thumb,
+.overflow-x-auto:hover::-webkit-scrollbar-thumb,
+.overflow-x-auto:focus-within::-webkit-scrollbar-thumb,
+.overflow-x-auto.is-scrolling::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+::-webkit-scrollbar-thumb:hover,
+::-webkit-scrollbar-thumb:active {
+  background-color: var(--scrollbar-thumb-active) !important;
+}
+
+/* Sticky Table Header & Scroll Shadow Utilities */
+.sticky-table-header th {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background-color: #F8FAFC;
+  box-shadow: 0 1px 0 0 rgba(15, 23, 42, 0.08);
+}
+
+.dark .sticky-table-header th {
+  background-color: #162238;
+  box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.06);
+}
+
+/* Sticky First Column Pinning */
+.sticky-col-first {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  background-color: inherit;
+  box-shadow: 1px 0 0 0 rgba(15, 23, 42, 0.08);
+}
+
+.sticky-header-first {
+  position: sticky;
+  left: 0;
+  top: 0;
+  z-index: 30;
+  background-color: inherit;
+  box-shadow: 1px 1px 0 0 rgba(15, 23, 42, 0.08);
+}
+
+/* System-Wide Table Data Density Modes (REQ-UX-DENSITY-001) */
+.density-compact th {
+  padding-top: 0.375rem !important;
+  padding-bottom: 0.375rem !important;
+  padding-left: 0.5rem !important;
+  padding-right: 0.5rem !important;
+  font-size: 0.65rem !important;
+}
+.density-compact td {
+  padding-top: 0.375rem !important;
+  padding-bottom: 0.375rem !important;
+  padding-left: 0.5rem !important;
+  padding-right: 0.5rem !important;
+  font-size: 0.725rem !important;
+}
+
+.density-comfortable th {
+  padding-top: 0.65rem !important;
+  padding-bottom: 0.65rem !important;
+  padding-left: 0.75rem !important;
+  padding-right: 0.75rem !important;
+  font-size: 0.6875rem !important;
+}
+.density-comfortable td {
+  padding-top: 0.65rem !important;
+  padding-bottom: 0.65rem !important;
+  padding-left: 0.75rem !important;
+  padding-right: 0.75rem !important;
+  font-size: 0.75rem !important;
+}
+
+.density-spacious th {
+  padding-top: 0.95rem !important;
+  padding-bottom: 0.95rem !important;
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
+  font-size: 0.75rem !important;
+}
+.density-spacious td {
+  padding-top: 0.95rem !important;
+  padding-bottom: 0.95rem !important;
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
+  font-size: 0.8125rem !important;
+}
+
+/* Accessible Focus Outlines */
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+/* Table Utilities */
+.table-header-cell {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  padding: 0.75rem 1rem;
+  white-space: nowrap;
+}
+
+.table-body-cell {
+  padding: 0.75rem 1rem;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+/* Official BIR Form 2307 Print Isolation Rules */
+@page {
+  size: letter portrait;
+  margin: 8mm;
+}
+
+.bir-2307-print-only {
+  display: none;
+}
+
+@media print {
+  html,
+  body,
+  #root {
+    background: #ffffff !important;
+    color: #000000 !important;
+    min-height: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body.printing-bir-2307 * {
+    visibility: hidden;
+  }
+
+  body.printing-bir-2307 .bir-2307-print-only,
+  body.printing-bir-2307 .bir-2307-print-only * {
+    visibility: visible !important;
+  }
+
+  body.printing-bir-2307 .bir-2307-print-only {
+    display: block !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    z-index: 99999 !important;
+  }
+
+  .bir-2307-page-break {
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .bir-2307-page-break:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}

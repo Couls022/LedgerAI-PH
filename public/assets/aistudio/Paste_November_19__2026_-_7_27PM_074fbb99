@@ -1,0 +1,1443 @@
+# LEDGERAI PH
+# FINAL ENTERPRISE-WIDE SYSTEM COMPLETION, REMEDIATION & PRODUCTION READINESS MANDATE
+## Version 1.0.0-rc.2 — Enterprise Production Readiness Program
+
+**Execution Environment:** Google AI Studio Browser / Linux Container  
+**Target Application:** LedgerAI PH — Philippine Accounting and ERP Platform  
+**Primary Objective:** Complete, validate, secure, and prepare the entire ERP for real Philippine business operations.
+
+---
+
+# SECTION 1 — MASTER EXECUTION DIRECTIVE
+
+You are assigned to perform the final comprehensive enterprise implementation, remediation, integration, verification, and readiness certification of LedgerAI PH.
+
+This is a complete system-wide mandate.
+
+The objective is to make LedgerAI PH function as a fully integrated Philippine ERP and accounting platform suitable for real companies and real business operations.
+
+This is NOT:
+- A UI redesign only.
+- A collection of decorative buttons.
+- A mock implementation.
+- A documentation-only exercise.
+- A test-only exercise.
+- A superficial code cleanup.
+- A feature demonstration using fabricated business data.
+
+Every implemented feature must be connected to its actual frontend, backend, database, authorization, validation, audit, and business workflow.
+
+MANDATORY ARCHITECTURE:
+
+User Interface
+→ Frontend Components
+→ Frontend State and API Services
+→ Authenticated Backend Routes
+→ Domain Business Logic
+→ Validation and Authorization
+→ Database Transactions
+→ Audit Trail
+→ Register and Subledger Updates
+→ General Ledger Posting
+→ Reports and Dashboards
+→ 360° Journey
+→ Verified User Feedback
+
+No feature is considered complete merely because its screen renders or its button responds.
+
+## Non-negotiable rules
+
+1. Inspect the entire repository before implementation.
+2. Inspect actual database schemas and existing business logic.
+3. Preserve all completed and verified functionality.
+4. Reuse established architecture and services.
+5. Do not create duplicate engines or competing master systems.
+6. Do not replace working implementations with generic placeholders.
+7. Do not use hardcoded business data as production sources of truth.
+8. Do not use mock responses as proof of actual integration.
+9. Do not weaken existing automated tests.
+10. Do not silently discard existing company data.
+11. Do not bypass authentication, RBAC, tenant isolation, audit, or financial safeguards.
+12. Do not mark an item VERIFIED without actual execution evidence.
+13. Do not claim production approval based solely on successful builds or automated tests.
+
+Follow:
+
+**AUDIT → ROOT CAUSE → IMPLEMENT → INTEGRATE → TEST → VERIFY → REGRESSION → CERTIFY**
+
+---
+
+# SECTION 2 — REPOSITORY AND ARCHITECTURE DISCOVERY
+
+Perform a complete repository-wide audit.
+
+Inspect:
+
+- Application architecture.
+- Frontend modules and components.
+- Backend routes and services.
+- Database schemas and relationships.
+- Migrations.
+- Authentication and authorization.
+- RBAC and permission catalog.
+- Company and tenant lifecycle.
+- Accounting engines.
+- Tax engines.
+- Posting services.
+- Register and subledger architecture.
+- Reporting and dashboard services.
+- 360° Journey implementations.
+- Ledger Agent and knowledge base.
+- Document and OCR processing.
+- Offline and synchronization mechanisms.
+- Backup and restore.
+- Encryption and key management.
+- Audit and diagnostic systems.
+- Build and test pipelines.
+
+Identify incomplete, disconnected, duplicated, inconsistent, or unsafe implementations.
+
+Create a repository-wide defect register.
+
+For every defect document:
+
+- Defect ID.
+- Severity.
+- Affected module.
+- Affected files.
+- Observed behavior.
+- Expected behavior.
+- Root cause.
+- Required remediation.
+- Actual implementation.
+- Automated tests.
+- Browser verification.
+- Financial or database evidence.
+- Remaining blockers.
+- Final status.
+
+Severity:
+
+- P0 — Critical security, financial integrity, data loss, or production blocker.
+- P1 — Major operational or compliance defect.
+- P2 — Significant functional defect.
+- P3 — Usability or lower-risk improvement.
+
+Do not hide unresolved defects by changing their severity.
+
+---
+
+# SECTION 3 — MASTER UI/UX AND FULL-STACK FUNCTIONALITY
+
+Audit every module and submodule.
+
+Ensure consistent, enterprise-grade UI/UX across the entire application.
+
+Every visible control must have a real business function.
+
+Required UI states:
+
+- Initial loading.
+- Loading.
+- Empty.
+- Populated.
+- Validation error.
+- Backend error.
+- Permission denied.
+- Pending approval.
+- Approved.
+- Rejected.
+- Posted.
+- Reversed.
+- Archived.
+- Inactive.
+- Soft deleted.
+- Restored.
+- Read-only.
+- Offline.
+- Synchronization pending.
+- Synchronization failed.
+
+Implement appropriate:
+
+- Search.
+- Filters.
+- Sorting.
+- Pagination.
+- Detail drawers.
+- Forms.
+- Confirmation dialogs.
+- Bulk actions where appropriate.
+- Status badges.
+- Error messages.
+- Notifications.
+- Keyboard accessibility.
+- Responsive layouts.
+- Consistent navigation.
+
+Do not create decorative buttons or controls with no working API integration.
+
+Preserve unsaved form values where safe.
+
+Show success only after confirmed backend persistence.
+
+Every form must have actual frontend and backend validation.
+
+---
+
+# SECTION 4 — UNIVERSAL COA SOURCE OF TRUTH
+
+The Chart of Accounts must serve as the authoritative account source throughout the ERP.
+
+Inspect and complete the centralized account engine:
+
+`src/shared/coaAccountUtils.ts`
+
+Validate all account eligibility functions and their actual consumers.
+
+Requirements:
+
+1. Every valid company-owned account must be discoverable.
+2. Every compatible account must appear in every appropriate selector.
+3. No arbitrary first-account or second-account limitation.
+4. No hardcoded production account arrays.
+5. Support standard and custom account codes.
+6. Use actual database primary keys.
+7. Enforce active, postable, leaf, classification, and business-purpose eligibility.
+8. Enforce company and tenant isolation.
+9. Refresh compatible selectors after account changes.
+10. Preserve historical account references.
+
+Support:
+
+- Zero-COA company onboarding.
+- COA templates where explicitly selected.
+- Manual COA creation.
+- COA import.
+- Account hierarchy.
+- Custom account codes.
+- Account detail types.
+- Normal balance.
+- Account classifications.
+- Tax and BIR mappings.
+- Bank registry relationships.
+
+## COA lifecycle management
+
+Fully implement:
+
+- Add.
+- View.
+- Edit.
+- Deactivate.
+- Reactivate.
+- Archive.
+- Restore.
+- Remove from List.
+- Restore to List.
+- Soft Delete.
+- Restore Soft Deleted.
+- Permanent Delete when eligible.
+
+All actions must be connected to actual frontend, backend, and database operations.
+
+Permanent deletion must be blocked when protected financial or business dependencies exist.
+
+Never delete posted accounting history through cascading operations.
+
+## COA acceptance
+
+Create multiple custom accounts in an isolated company and verify that all compatible accounts appear in the correct selectors.
+
+Test bank, cash, revenue, expense, purchase, inventory, fixed asset, payroll, tax, and other applicable account types.
+
+Verify actual account IDs, backend validation, GL postings, and financial reports.
+
+Update:
+
+`COA_SELECTOR_COVERAGE_MATRIX.md`
+
+---
+
+# SECTION 5 — ENTERPRISE-WIDE RECORD LIFECYCLE MANAGEMENT
+
+Implement one shared lifecycle architecture with module-specific business validation.
+
+Supported lifecycle states:
+
+- ACTIVE
+- INACTIVE / DEACTIVATED
+- REMOVED_FROM_LIST
+- SOFT_DELETED
+- ARCHIVED
+- PERMANENTLY_DELETED
+
+These states must have distinct behavior.
+
+## A. ARCHIVE
+
+When archived:
+
+- Persist ARCHIVED state.
+- Remove from normal operational lists.
+- Preserve original record ID.
+- Preserve relationships and historical information.
+- Make available in the corresponding dedicated Archive Inbox.
+- Make available in Central Archive Management.
+- Record actor, timestamp, reason, and retention metadata.
+- Start a 30-calendar-day retention period.
+
+## B. REMOVE FROM LIST
+
+When removed:
+
+- Hide from the applicable normal list.
+- Preserve the original database record.
+- Do not classify it as ARCHIVED.
+- Do not classify it as SOFT_DELETED.
+- Do not permanently delete the record.
+- Provide an authorized restore-to-list workflow.
+
+Determine whether removal is user-specific or company-wide based on the existing business context. Document and enforce the chosen scope consistently.
+
+## C. SOFT DELETE
+
+When soft deleted:
+
+- Persist SOFT_DELETED.
+- Preserve the record.
+- Display the status through the appropriate list filter.
+- Prevent ordinary operational use.
+- Provide authorized restoration.
+- Preserve historical references.
+
+## D. DEACTIVATE
+
+When deactivated:
+
+- Persist INACTIVE or DEACTIVATED.
+- Keep visible in normal lists.
+- Sort below active records.
+- Exclude from new operational transactions.
+- Preserve historical references.
+- Provide Reactivate.
+
+## E. PERMANENT DELETE
+
+Allow only when the record has no protected dependencies and applicable retention requirements permit deletion.
+
+Use backend dependency checks and transactional deletion.
+
+Never destroy posted journal entries, statutory history, protected audit records, or required financial evidence.
+
+---
+
+# SECTION 6 — DEDICATED ARCHIVE INBOX FOR EVERY ARCHIVE-ENABLED 360° JOURNEY
+
+MANDATORY RULE:
+
+**NO ARCHIVE ACTION WITHOUT A WORKING DEDICATED ARCHIVE INBOX.**
+
+Perform a complete repository-wide scan of every archive-enabled 360° Journey.
+
+Examples, only where verified in the repository:
+
+- Chart of Accounts 360°.
+- General Ledger Account 360°.
+- Journal Entry 360°.
+- Customer 360°.
+- Supplier 360°.
+- Sales Invoice 360°.
+- Sales Order 360°.
+- Accounts Receivable 360°.
+- Purchase Order 360°.
+- Purchase Bill 360°.
+- Accounts Payable 360°.
+- Product 360°.
+- Inventory 360°.
+- Warehouse 360°.
+- Cash Transaction 360°.
+- Bank Account 360°.
+- Bank Deposit 360°.
+- Bank Reconciliation 360°.
+- Tax Code 360°.
+- Tax Filing 360°.
+- Fixed Asset 360°.
+- Employee 360°.
+- Payroll 360°.
+
+Do not invent modules or add arbitrary archive actions.
+
+## Dedicated Archive Inbox requirements
+
+Every archive-enabled journey must have a dedicated inbox with:
+
+- Search.
+- Module-specific filters.
+- Archived date.
+- Archived by.
+- Expiration date.
+- Remaining retention days.
+- Original record ID.
+- Record details.
+- Archive reason.
+- Restore action.
+- Loading, empty, error, and permission states.
+
+The inbox must query actual archived records from the database.
+
+Restoration must return the original record to its original module and preserve its identity and historical relationships.
+
+## Central Archive Management
+
+Also implement a centralized Archive Management workspace.
+
+It must aggregate archived records across all supported modules.
+
+It must provide:
+
+- Company filtering.
+- Module filtering.
+- Record type filtering.
+- Archived date filtering.
+- Expiration filtering.
+- Archived-by filtering.
+- Restore eligibility.
+- Blocked and exempt retention records.
+- Retention monitoring.
+- Audit history.
+
+Dedicated module inboxes and Central Archive Management must use the same underlying authoritative lifecycle records.
+
+Do not create duplicate archive records.
+
+## Module-aware restoration
+
+Implement module-specific restore handlers.
+
+COA restoration must validate account relationships and selector eligibility.
+
+Sales restoration must preserve invoice and customer relationships.
+
+Procurement restoration must preserve supplier and purchase document relationships.
+
+Banking restoration must preserve COA and bank registry relationships.
+
+Tax restoration must preserve tax history and filing restrictions.
+
+Inventory restoration must preserve stock movement history.
+
+Payroll restoration must preserve finalized payroll and statutory history.
+
+Do not use a generic restore rule that ignores module-specific accounting and operational dependencies.
+
+## 30-day retention processor
+
+Implement a reliable backend retention scheduler.
+
+It must:
+
+- Run independently of frontend sessions.
+- Identify expired records.
+- Check permanent deletion eligibility.
+- Delete only eligible records.
+- Preserve protected records.
+- Record deletion results.
+- Be idempotent.
+- Handle retries.
+- Log failures.
+- Preserve tenant isolation.
+
+Protected records must be marked BLOCKED or EXEMPT with a clear reason.
+
+Applicable statutory and accounting retention obligations override automatic deletion.
+
+Never delete company databases, backups, or unrelated records.
+
+Create or update:
+
+`ENTERPRISE_ARCHIVE_COVERAGE_MATRIX.md`
+
+---
+
+# SECTION 7 — COMPLETE ACCOUNTING AND GENERAL LEDGER INTEGRITY
+
+Verify the complete accounting architecture.
+
+## Chart of Accounts and GL
+
+- COA-to-register relationships.
+- Actual account primary keys.
+- Account classification.
+- Posting eligibility.
+- Debit and credit normal balance.
+- Journal entry creation.
+- Posting and reversal.
+- Trial Balance.
+- General Ledger.
+- Financial statements.
+
+## Subledger connectivity
+
+Verify:
+
+- Accounts Receivable to GL.
+- Accounts Payable to GL.
+- Inventory to GL.
+- Fixed Assets to GL.
+- Payroll liabilities to GL.
+- Cashbook to GL.
+- Bank transactions to GL.
+- Tax accounts to GL.
+
+All subledger balances must reconcile with the appropriate GL control accounts.
+
+## Journal integrity
+
+Enforce:
+
+- Balanced journal entries.
+- Correct accounting periods.
+- Duplicate prevention.
+- Correct posting status.
+- Approval requirements.
+- Reversal controls.
+- Immutable posted history.
+- Correct audit trail.
+
+Do not silently modify posted entries.
+
+Use formal correction or reversal workflows.
+
+---
+
+# SECTION 8 — COMPLETE BUSINESS WORKFLOWS
+
+Validate actual end-to-end operations.
+
+## Sales-to-Collection
+
+Customer
+→ Quotation
+→ Sales Order
+→ Delivery
+→ Sales Invoice
+→ Tax Computation
+→ Approval
+→ GL Posting
+→ Accounts Receivable
+→ Collection
+→ Cash/Bank
+→ Reconciliation
+→ Financial Reports
+
+## Procurement-to-Payment
+
+Supplier
+→ Purchase Request
+→ Purchase Order
+→ Receiving
+→ Purchase Bill
+→ Tax and Withholding
+→ Approval
+→ GL Posting
+→ Accounts Payable
+→ Payment
+→ Cash/Bank
+→ Reconciliation
+→ Financial Reports
+
+## Inventory-to-COGS
+
+Product
+→ Warehouse
+→ Receiving
+→ Stock Movement
+→ Valuation
+→ Sales Issue
+→ Cost of Goods Sold
+→ Inventory GL
+→ Stock Reports
+
+Validate supported costing methods and accounting policies.
+
+## Banking
+
+- Bank Account Registry.
+- COA relationship.
+- Cash transactions.
+- Bank deposits.
+- Bank withdrawals.
+- Transfers.
+- Reconciliation.
+- Unmatched transactions.
+- Adjustments.
+- GL postings.
+- Historical bank statement evidence.
+
+## Fixed Assets
+
+- Asset acquisition.
+- Capitalization.
+- Depreciation.
+- Disposal.
+- Impairment where supported.
+- Net book value.
+- GL reconciliation.
+
+## Payroll
+
+- Employee records.
+- Payroll calculations.
+- Approval.
+- Statutory contributions.
+- Withholding.
+- Payroll liabilities.
+- Payment.
+- GL posting.
+- Payroll reports.
+
+Do not claim compliance for payroll rules that have not been verified against applicable current requirements.
+
+---
+
+# SECTION 9 — PHILIPPINE TAX AND REGULATORY ENGINE
+
+Perform a taxpayer-specific audit of the Philippine tax engine.
+
+Verify applicable support for:
+
+- VAT.
+- Non-VAT.
+- 8% income tax option.
+- Percentage tax where applicable.
+- Expanded Withholding Tax.
+- Final Withholding Tax.
+- Creditable Withholding Tax.
+- BIR ATC mappings.
+- Tax rates and effective dates.
+- Tax filing periods.
+- Tax adjustments.
+- Tax control accounts.
+- Tax returns and supporting reports.
+- Taxpayer classification.
+- Registered tax type.
+- Relevant filing obligations.
+
+Ensure tax computations derive from the company's actual tax profile and applicable rules.
+
+Do not assume every taxpayer has the same registration, tax treatment, or filing obligations.
+
+Use effective-dated and versioned rules.
+
+Verify formulas, rounding, thresholds, exemptions, and reporting against authoritative current Philippine requirements.
+
+Do not fabricate BIR approval, CAS/CBA authorization, registration, or compliance status.
+
+Distinguish:
+- Software calculation capability.
+- Internal validation.
+- CPA-reviewed output.
+- BIR registration or authorization.
+- Actual taxpayer filing acceptance.
+
+Prepare appropriate compliance documentation and external validation requirements.
+
+---
+
+# SECTION 10 — APPROVAL, RBAC, AND SEGREGATION OF DUTIES
+
+Preserve and validate the existing RBAC architecture.
+
+Requirements:
+
+- Permission catalog.
+- Role compatibility matrix.
+- Custom grants.
+- Module access.
+- Submodule access.
+- View/create/edit/delete/archive permissions.
+- Approval permissions.
+- Posting permissions.
+- Company scope.
+- Record scope.
+- Tenant isolation.
+
+If a user lacks access, unauthorized modules and actions must not be exposed as available operations.
+
+If a user has access, visibility and functionality must match the actual granted permissions.
+
+## Company Owner
+
+Company Owner must have unrestricted company-level functional authority across the company's operational modules and submodules.
+
+Do not confuse Company Owner with platform administration.
+
+Company Owner authority must not bypass:
+
+- Authentication.
+- Tenant isolation.
+- Audit integrity.
+- Encryption.
+- Database integrity.
+- Statutory restrictions.
+- Historical accounting safeguards.
+- Applicable segregation-of-duties controls.
+
+Preserve and test existing Maker-Checker and approval policies.
+
+---
+
+# SECTION 11 — LEDGER AGENT AI AND KNOWLEDGE INTEGRATION
+
+Audit the complete Ledger Agent.
+
+Ensure:
+
+1. Complete module and submodule knowledge.
+2. Versioned functional manuals.
+3. Accurate operational instructions.
+4. Actual module navigation guidance.
+5. Tax and accounting knowledge.
+6. Troubleshooting guidance.
+7. Role-aware responses.
+8. Company-scoped live data access.
+9. Correct intent routing.
+10. Safe action execution.
+
+The agent must distinguish:
+
+- Documented system knowledge.
+- Live database facts.
+- Calculated values.
+- Recommendations.
+- Unverified information.
+
+When answering about company financial data, retrieve only authorized company-scoped information.
+
+Never invent financial balances or transaction status.
+
+Any action execution must use the actual backend authorization and validation layer.
+
+Require explicit confirmation for consequential actions.
+
+Do not bypass approval or posting controls.
+
+---
+
+# SECTION 12 — DOCUMENT MANAGEMENT AND OCR
+
+Verify document upload, storage, processing, extraction, validation, and record linking.
+
+Ensure:
+
+- Secure document storage.
+- File type validation.
+- File size validation.
+- Access controls.
+- Company isolation.
+- Duplicate detection where supported.
+- OCR confidence tracking.
+- Human review for uncertain extraction.
+- Actual database record association.
+- Audit history.
+- Document retrieval.
+- Retention safeguards.
+
+Never invent missing OCR values.
+
+Missing extracted dates must remain missing rather than silently defaulting to the current date.
+
+Ensure OCR-generated records undergo normal business validation before posting.
+
+---
+
+# SECTION 13 — OFFLINE-FIRST, SYNCHRONIZATION, BACKUP AND DISASTER RECOVERY
+
+Verify the actual offline and synchronization architecture.
+
+Test:
+
+- Offline transaction creation.
+- Local persistence.
+- Synchronization queue.
+- Retry behavior.
+- Conflict detection.
+- Duplicate prevention.
+- Concurrent updates.
+- Interrupted synchronization.
+- Recovery after restart.
+- Company isolation.
+- Data integrity after synchronization.
+
+Do not silently overwrite conflicting financial records.
+
+Implement appropriate conflict resolution and audit evidence.
+
+## Backup and Restore
+
+Verify:
+
+- Full backup.
+- Incremental backup where supported.
+- Backup integrity.
+- Encryption.
+- Restore procedure.
+- Database recovery.
+- Key recovery.
+- Data consistency after restore.
+- Backup isolation.
+- Recovery documentation.
+
+Perform actual isolated restore tests.
+
+A successful backup command alone is not proof that recovery works.
+
+---
+
+# SECTION 14 — SECURITY, PRIVACY AND ENTERPRISE RELIABILITY
+
+Conduct comprehensive security validation.
+
+Inspect:
+
+- Authentication.
+- Session management.
+- Password and credential handling.
+- Encryption at rest.
+- Encryption in transit.
+- Key management.
+- SQL injection.
+- Cross-site scripting.
+- CSRF where applicable.
+- API authorization.
+- Tenant isolation.
+- File access.
+- Filesystem boundaries.
+- Audit logs.
+- Backup security.
+- Sensitive data exposure.
+- Rate limiting.
+- Error handling.
+- Dependency vulnerabilities.
+
+Verify that secrets are not exposed in source code, frontend bundles, logs, or generated reports.
+
+Use least privilege.
+
+Ensure every backend route independently validates authorization and company scope.
+
+Run concurrency and transaction integrity tests.
+
+Do not clear encryption keys or perform destructive database operations during tests.
+
+---
+
+# SECTION 15 — REPORTS, DASHBOARDS AND SOURCE OF TRUTH
+
+Every dashboard and report must derive from authoritative persisted business records.
+
+Validate:
+
+- General Ledger.
+- Trial Balance.
+- Balance Sheet.
+- Income Statement.
+- Cash Flow Statement.
+- Accounts Receivable Aging.
+- Accounts Payable Aging.
+- Inventory Valuation.
+- Fixed Asset Schedule.
+- Payroll Reports.
+- VAT Reports.
+- Withholding Tax Reports.
+- Cash and Bank Reports.
+- Budget vs Actual.
+- Other implemented reports.
+
+Verify:
+
+- Formula correctness.
+- Date filtering.
+- Accounting period.
+- Company scope.
+- Currency.
+- Debit/credit sign.
+- Rounding.
+- Zero-data states.
+- Drill-down traceability.
+
+Every reported amount must have traceable supporting records.
+
+Do not fabricate values or use hardcoded demo balances in actual company dashboards.
+
+---
+
+# SECTION 16 — COMPANY DATABASE LIFECYCLE
+
+Verify:
+
+- Create Company.
+- Open Company.
+- Switch Company.
+- Restore Company.
+- Company Profile.
+- Database Initialization.
+- Company Shortcut History.
+- Remove Shortcut.
+- Reopen Previously Created Company.
+
+Removing a shortcut or history entry must never delete the underlying company database.
+
+Clearly distinguish:
+- Removing a shortcut.
+- Removing a list entry.
+- Archiving a business record.
+- Deactivating a record.
+- Permanently deleting a database.
+
+Preserve company data and database integrity.
+
+For fresh company onboarding:
+- Support a genuine zero-data environment.
+- Do not create fake financial history.
+- Provide explicit COA setup.
+- Provide controlled templates where supported.
+- Do not silently import sample transactions.
+
+---
+
+# SECTION 17 — SYSTEM-WIDE 360° JOURNEY VALIDATION
+
+Audit every implemented 360° Journey.
+
+For each journey verify:
+
+- Original record identity.
+- Data source.
+- Related entities.
+- Register connectivity.
+- Accounting effects.
+- Approval workflow.
+- Audit history.
+- Lifecycle state.
+- Archive behavior.
+- Dedicated Archive Inbox.
+- Restore behavior.
+- Permission rules.
+- Retention rules.
+
+No Archive action may exist without a corresponding dedicated Archive Inbox and working restoration path.
+
+No 360° Journey may display fabricated or disconnected record information.
+
+Verify that all lifecycle actions operate on actual database records.
+
+---
+
+# SECTION 18 — PERFORMANCE AND SCALABILITY
+
+Test with realistic volumes in isolated environments.
+
+Inspect:
+
+- Large COA catalogs.
+- Large customer and supplier lists.
+- Large transaction registers.
+- Long GL histories.
+- Large document collections.
+- Archive Inbox pagination.
+- Report generation.
+- Dashboard queries.
+- Concurrent users.
+- API response times.
+- Database query efficiency.
+
+Eliminate unbounded queries and N+1 query patterns where identified.
+
+Use appropriate indexes and pagination.
+
+Do not sacrifice accounting correctness for performance.
+
+Do not invent performance results without actual measurements.
+
+---
+
+# SECTION 19 — DATABASE MIGRATION AND DATA INTEGRITY
+
+Inspect every required schema change.
+
+Migrations must:
+
+- Be versioned.
+- Be repeatable where appropriate.
+- Preserve existing data.
+- Preserve IDs and foreign keys.
+- Avoid destructive operations.
+- Include appropriate indexes.
+- Include safe defaults only where valid.
+- Respect tenant boundaries.
+- Have a documented recovery strategy.
+
+Test migrations against isolated databases.
+
+Never use production data as a disposable test fixture.
+
+Never perform an uncontrolled global database reset.
+
+---
+
+# SECTION 20 — FULL AUTOMATED AND MANUAL ACCEPTANCE TESTING
+
+Execute the complete available test suite.
+
+Do not stop after selected tests pass.
+
+Required categories:
+
+1. Unit tests.
+2. Integration tests.
+3. Database tests.
+4. API tests.
+5. RBAC tests.
+6. Tenant isolation tests.
+7. Accounting posting tests.
+8. COA selector tests.
+9. Sales E2E tests.
+10. Procurement E2E tests.
+11. Banking E2E tests.
+12. Tax E2E tests.
+13. Inventory tests.
+14. Payroll tests.
+15. Fixed asset tests.
+16. 360° Journey tests.
+17. Archive and Restore tests.
+18. Retention scheduler tests.
+19. Document and OCR tests.
+20. Offline and synchronization tests.
+21. Backup and restore tests.
+22. Dashboard and reporting tests.
+23. Concurrency tests.
+24. Security tests.
+25. Regression tests.
+
+Use actual isolated database persistence.
+
+For financial tests, verify debit and credit totals and subledger-to-GL reconciliation.
+
+For lifecycle tests, verify database states and historical record preservation.
+
+For UI tests, use the actual running application.
+
+Do not weaken tests to obtain a passing result.
+
+Do not fabricate screenshots or test reports.
+
+## Required commands
+
+Inspect the project's actual package scripts before selecting commands.
+
+Run the applicable:
+
+- TypeScript typecheck.
+- Lint.
+- Production-compatible application build.
+- Full Vitest suite.
+- Node test suite.
+- Integration tests.
+- Database migration tests.
+- Browser E2E tests.
+- Security tests.
+
+Capture actual stdout, stderr, exit codes, test counts, and failures.
+
+If a suite cannot execute because of environment limitations, mark it BLOCKED or NOT TESTED.
+
+---
+
+# SECTION 21 — REAL COMPANY PILOT READINESS
+
+Prepare LedgerAI PH for a controlled real-company pilot.
+
+Do not use fabricated test evidence as proof of real company readiness.
+
+Prepare:
+
+- Company onboarding procedure.
+- COA setup and import procedure.
+- Opening balance validation.
+- Customer and supplier migration procedure.
+- Inventory opening balance procedure.
+- Bank opening balance and reconciliation procedure.
+- Tax profile verification.
+- User and role setup.
+- Approval matrix.
+- Document migration.
+- Backup and recovery setup.
+- Month-end closing procedure.
+- Financial report validation.
+- User training documentation.
+- Support and incident procedures.
+
+Prepare a pilot checklist.
+
+The pilot must use actual company-specific configuration and appropriately validated opening balances.
+
+Do not import demo transactions into a real company database.
+
+Do not declare financial outputs reliable until they have been reconciled and independently reviewed.
+
+---
+
+# SECTION 22 — EXTERNAL ACCEPTANCE GATES
+
+Maintain separate certification gates.
+
+## REQ-EXT-CPA-001 — Independent CPA Validation
+
+Require an independent qualified accounting professional to review:
+
+- Accounting policies.
+- COA configuration.
+- Journal entries.
+- Subledger reconciliation.
+- Trial Balance.
+- Financial Statements.
+- Tax calculations.
+- Month-end and year-end workflows.
+- Correction and reversal procedures.
+
+Record actual sign-off evidence.
+
+Do not fabricate CPA approval.
+
+## REQ-EXT-BIR-001 — BIR Registration and Authorization
+
+Determine which BIR registration, accreditation, authorization, or compliance requirements apply to the intended product deployment and taxpayer use.
+
+Verify against current authoritative BIR requirements.
+
+Do not claim that LedgerAI PH is BIR-approved, CAS/CBA-authorized, or registered unless documentary evidence exists.
+
+## REQ-WIN-001 — Windows Native Acceptance
+
+This requirement cannot be certified inside the Google AI Studio Linux browser environment.
+
+Defer to local Windows development or a Windows CI runner.
+
+Validate:
+
+- Windows 10/11 x64 compatibility.
+- Installer.
+- NSIS.
+- Native dependencies.
+- Database encryption.
+- DPAPI.
+- NTFS ACL.
+- File permissions.
+- Backup and restore.
+- Application startup.
+- Upgrade.
+- Uninstall.
+- Recovery.
+- Native security behavior.
+
+Keep this gate BLOCKED / NOT TESTED until actual Windows evidence exists.
+
+---
+
+# SECTION 23 — DOCUMENTATION AND MASTER ROADMAP SYNCHRONIZATION
+
+Update the existing master roadmap:
+
+`/LEDGERAI_ENTERPRISE_MASTER_ROADMAP.md`
+
+Update existing documents where applicable:
+
+- `COA_SELECTOR_COVERAGE_MATRIX.md`
+- `ENTERPRISE_ARCHIVE_COVERAGE_MATRIX.md`
+- Security and RBAC documentation.
+- Accounting and tax documentation.
+- Testing and acceptance documentation.
+- Deployment and recovery runbooks.
+- User manuals.
+
+Do not create competing master roadmap files.
+
+Document actual implementation and evidence.
+
+Maintain traceability between defects, source files, tests, and acceptance criteria.
+
+---
+
+# SECTION 24 — RELEASE CONTROL AND DEFECT CLOSURE
+
+Use only these defect statuses:
+
+- OPEN
+- INVESTIGATING
+- FIX IN PROGRESS
+- FIXED - TESTING REQUIRED
+- VERIFIED
+- BLOCKED
+- NOT TESTED
+
+A defect may be marked VERIFIED only when:
+
+1. Root cause is established.
+2. Fix is implemented.
+3. Automated tests pass.
+4. Relevant regression tests pass.
+5. Actual database behavior is verified.
+6. Browser behavior is verified where applicable.
+7. No related critical regression is introduced.
+8. Evidence is documented.
+
+Preserve existing release history.
+
+Do not silently change the release version or declare a new release without the appropriate verification.
+
+---
+
+# SECTION 25 — EXECUTION ENVIRONMENT RESTRICTION
+
+This implementation is performed in the Google AI Studio browser/Linux environment.
+
+STRICT REQUIREMENT:
+
+Do not build, package, generate, or deliver a Windows EXE/NSIS installer inside this environment.
+
+Limit work here to:
+- Source-code changes.
+- Architecture.
+- Database migrations.
+- Backend and frontend implementation.
+- Automated tests.
+- Typechecks.
+- Lint.
+- Supported web-environment builds.
+- Documentation.
+- Evidence collection.
+
+Defer Windows native installer packaging and acceptance to local Windows development or an appropriate Windows CI runner.
+
+Do not falsely report Windows acceptance as complete.
+
+---
+
+# SECTION 26 — REQUIRED EXECUTION STRATEGY
+
+Do not attempt an uncontrolled rewrite of the entire ERP.
+
+Work in controlled phases:
+
+### Phase A — Repository Audit and Baseline
+- Inspect architecture.
+- Inspect database.
+- Inventory modules.
+- Inventory 360° Journeys.
+- Inventory account selectors.
+- Inventory archive actions.
+- Run baseline tests.
+- Establish defect register.
+
+### Phase B — P0 Data Integrity and Security
+- Authentication.
+- Tenant isolation.
+- RBAC.
+- Database integrity.
+- Company lifecycle.
+- COA source of truth.
+- Journal and posting integrity.
+
+### Phase C — P0 Core Business Connectivity
+- Sales-to-Collection.
+- Procurement-to-Payment.
+- Inventory-to-COGS.
+- Banking and Reconciliation.
+- Tax.
+- Payroll.
+- Fixed Assets.
+
+### Phase D — Enterprise Record Lifecycle
+- COA lifecycle.
+- Universal lifecycle engine.
+- Dedicated Archive Inboxes.
+- Central Archive Management.
+- Module-aware restoration.
+- 30-day retention processor.
+- Permanent deletion safeguards.
+
+### Phase E — Reporting and Ledger Agent
+- Financial reports.
+- Dashboard source of truth.
+- 360° data accuracy.
+- Ledger Agent knowledge and authorization.
+
+### Phase F — Reliability and Operations
+- Offline behavior.
+- Synchronization.
+- Backup and restore.
+- Performance.
+- Security.
+- Monitoring.
+
+### Phase G — Final Certification
+- Full regression.
+- Browser verification.
+- Financial reconciliation.
+- Documentation.
+- External acceptance gates.
+- Release readiness report.
+
+At the end of each phase, preserve evidence and update the master roadmap.
+
+Do not proceed by concealing unresolved P0 defects.
+
+---
+
+# SECTION 27 — FINAL ENTERPRISE ACCEPTANCE CRITERIA
+
+LedgerAI PH may be classified as a PRODUCTION CANDIDATE only when:
+
+1. All P0 defects are VERIFIED or explicitly documented as blockers.
+2. Core accounting workflows function end-to-end.
+3. COA is the authoritative source of account references.
+4. All compatible account selectors work dynamically.
+5. Frontend, backend, and database operations are connected.
+6. Journal entries and GL postings are correct.
+7. Subledgers reconcile with the GL.
+8. Financial statements are traceable to authoritative records.
+9. Philippine tax calculations have been validated against applicable taxpayer rules.
+10. RBAC, tenant isolation, authentication, and audit controls are verified.
+11. Every archive-enabled 360° Journey has a dedicated Archive Inbox.
+12. Every Restore action is module-aware and functional.
+13. Retention processing preserves legally and financially protected records.
+14. Offline, synchronization, backup, and restore workflows are verified where supported.
+15. The full available automated regression suite has actual recorded results.
+16. Browser-level verification has actual evidence.
+17. The real-company pilot runbook is complete.
+18. External CPA, BIR, and Windows acceptance gates are accurately reported.
+
+PRODUCTION APPROVED is a separate classification requiring all applicable external and deployment acceptance gates to be satisfied.
+
+Never use the terms PRODUCTION APPROVED or FULLY CERTIFIED when the required evidence is missing.
+
+---
+
+# SECTION 28 — MANDATORY FINAL REPORT
+
+Provide one consolidated report containing:
+
+## A. Executive Summary
+- Current release baseline.
+- Overall implementation status.
+- Production readiness classification.
+- Remaining blockers.
+
+## B. Repository Coverage
+- Modules discovered.
+- Modules inspected.
+- Modules remediated.
+- 360° Journeys discovered.
+- 360° Journeys verified.
+
+## C. COA and Accounting
+- COA selector coverage.
+- Custom account validation.
+- Register connectivity.
+- GL posting evidence.
+- Subledger reconciliation.
+- Trial Balance and financial statement validation.
+
+## D. Record Lifecycle
+- Archive actions discovered.
+- Dedicated Archive Inboxes implemented.
+- Restore handlers.
+- Central Archive Management.
+- Retention processor.
+- Protected deletion exceptions.
+
+## E. Business Workflows
+- Sales.
+- Procurement.
+- Banking.
+- Inventory.
+- Tax.
+- Payroll.
+- Fixed Assets.
+
+## F. Security and Reliability
+- Authentication.
+- RBAC.
+- Tenant isolation.
+- Audit.
+- Encryption.
+- Offline.
+- Synchronization.
+- Backup and restore.
+
+## G. Automated Test Results
+For every test command provide:
+- Exact command.
+- Actual exit code.
+- Test files.
+- Passed.
+- Failed.
+- Skipped.
+- Duration.
+- Failure details.
+
+## H. Browser Evidence
+List actual screenshots and verified workflows.
+
+## I. Database and Migration Results
+List actual migrations, affected tables, validation results, and recovery status.
+
+## J. Remaining Defects
+Include defect ID, severity, status, owner/action required, and acceptance evidence still missing.
+
+## K. External Acceptance
+Report CPA, BIR, and Windows gates independently.
+
+## L. Final Classification
+
+Choose exactly one:
+
+- BLOCKED
+- PARTIALLY VERIFIED
+- CONTROLLED PILOT READY
+- PRODUCTION CANDIDATE
+- PRODUCTION APPROVED
+
+Explain why the selected classification is justified.
+
+Do not inflate the classification.
+
+---
+
+# FINAL DIRECTIVE
+
+The goal is to make LedgerAI PH a reliable, integrated, secure, and operationally complete Philippine ERP.
+
+Every module must work with real persisted data.
+
+Every business workflow must preserve accounting integrity.
+
+Every account selector must use the authoritative COA.
+
+Every archive action must have a dedicated destination and a working restoration path.
+
+Every financial amount must be traceable to supporting records.
+
+Every backend operation must enforce authorization and validation.
+
+Every critical claim must have actual evidence.
+
+Do not stop after producing an audit report.
+
+Implement the verified, in-scope remediations in controlled phases, test them, document them, and report unresolved blockers honestly.
+
+Do not fabricate code changes, database operations, test results, screenshots, CPA approval, BIR authorization, or Windows acceptance.
+
+**THE FINAL STANDARD IS REAL BUSINESS FUNCTIONALITY — NOT JUST A SUCCESSFUL BUILD, NOT JUST PASSING SELECTED TESTS, AND NOT JUST A BEAUTIFUL UI.**

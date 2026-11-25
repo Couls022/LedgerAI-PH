@@ -1,0 +1,695 @@
+LEDGERAI PH — ENTERPRISE RBAC MASTER IMPLEMENTATION
+GRANULAR MODULE ACCESS • FEATURE PERMISSIONS • ACTION GRANTS • ROLE COMPATIBILITY MATRIX
+PRIORITY: CRITICAL
+IMPLEMENTATION: EXISTING RBAC ENHANCEMENT
+AUTHORITY: src/shared/rbacCatalog.ts + role_template_versions + RbacService
+TARGET: ALL 16 CANONICAL MODULES AND 36 CANONICAL SUBMODULES
+OBJECTIVE:
+Implement a complete, customizable, enterprise-grade RBAC system where each user's access depends on the exact permissions granted by their assigned roles and authorized user-specific overrides.
+A user must only see modules and submodules they are authorized to access.
+Having module access does NOT automatically mean FULL ACCESS.
+The administrator must be able to grant individual permissions such as VIEW ONLY, CREATE, EDIT, SUBMIT, REVIEW, APPROVE, POST, REVERSE, CANCEL, DELETE, EXPORT, and other applicable operations.
+All grants must work consistently across the frontend, backend, business services, and database.
+IMPORTANT:
+Preserve the existing 16 canonical primary modules, 36 canonical submodules, routes, permission keys, existing company records, and existing business logic.
+Do not recreate duplicate modules or submodules.
+Do not replace the existing RBAC engine with a second authorization engine.
+PHASE 1 — CANONICAL PERMISSION REGISTRY
+Inspect and maintain:
+src/shared/rbacCatalog.ts
+src/shared/moduleRegistry.ts
+src/server/services/rbacService.ts
+src/server/routes/rbac.ts
+src/client/pages/master-data/RbacMatrixWorkspace.tsx
+role_template_versions
+role_compatibility_rules
+company_user_roles
+user_module_assignments
+user_permission_overrides
+user_module_assignment_history
+Create one authoritative hierarchical permission registry:
+PRIMARY MODULE
+SUBMODULE
+FEATURE
+ACTION PERMISSIONS
+Each permission must have:
+Stable permission ID.
+Canonical module ID.
+Canonical submodule ID.
+Feature ID.
+Action ID.
+Permission key.
+Description.
+Resource scope.
+Security classification.
+Supported workflow states.
+Backend authorization mapping.
+Reuse existing permission keys wherever possible.
+Do not generate incompatible alternative permission keys for existing operations.
+PHASE 2 — GRANULAR PERMISSION ACTIONS
+Support these standard actions where applicable:
+VIEW
+SEARCH
+CREATE
+EDIT
+SUBMIT
+RESUBMIT
+REVIEW
+RETURN
+APPROVE
+REJECT
+POST
+REVERSE
+CANCEL
+DELETE
+SOFT_DELETE
+ARCHIVE
+RESTORE
+EXPORT
+IMPORT
+PRINT
+UPLOAD
+DOWNLOAD
+SIGNOFF
+DELEGATE
+MANAGE
+CONFIGURE
+LOCK
+UNLOCK
+Not every feature supports every action.
+Use capability definitions to determine which actions are valid for each feature.
+For example:
+Journal Entry:
+VIEW, CREATE, EDIT, SUBMIT, RESUBMIT, REVIEW, RETURN, APPROVE, REJECT, POST, REVERSE, CANCEL, COPY, SOFT_DELETE, EXPORT.
+Immutable Audit Trail:
+VIEW, SEARCH, EXPORT, VERIFY_INTEGRITY.
+Never provide EDIT or DELETE to immutable audit records.
+PHASE 3 — DEFAULT JOB-BASED ROLE TEMPLATES
+Create or maintain these role templates:
+COMPANY_OWNER
+COMPANY_ADMINISTRATOR
+ACCOUNTANT
+BOOKKEEPER
+APPROVER
+REVIEWER
+AUDITOR
+TAX_AP_SPECIALIST
+Preserve other existing custom roles.
+Apply the following primary module defaults:
+ACCOUNTANT:
+dashboard, accounting, tax, documents, reports, activity-center.
+BOOKKEEPER:
+dashboard, sales, procurement, cash-banking, documents.
+APPROVER:
+dashboard, documents, approvals.
+REVIEWER:
+dashboard, documents, approvals.
+AUDITOR:
+dashboard, documents, reports, activity-center, audit.
+TAX_AP_SPECIALIST:
+dashboard, procurement, cash-banking, tax, documents, reports.
+COMPANY_OWNER:
+All 16 canonical modules with full company-owner authority, subject to system security and immutable accounting rules.
+COMPANY_ADMINISTRATOR:
+All 16 canonical modules with administrative authority, subject to protected Company Owner governance.
+These are default templates, not immutable permission definitions.
+All operational roles must be fully customizable.
+PHASE 4 — FEATURE-LEVEL CHECKBOX PERMISSION EDITOR
+Implement a fully functional hierarchical permission editor.
+Structure:
+[PRIMARY MODULE CHECKBOX]
+[SUBMODULE CHECKBOX]
+[FEATURE CHECKBOX]
+[VIEW]
+[SEARCH]
+[CREATE]
+[EDIT]
+[SUBMIT]
+[REVIEW]
+[RETURN]
+[APPROVE]
+[REJECT]
+[POST]
+[REVERSE]
+[CANCEL]
+[DELETE]
+[EXPORT]
+[IMPORT]
+[UPLOAD]
+[DOWNLOAD]
+[MANAGE]
+Requirements:
+Every checkbox must be interactive.
+Every checkbox must have a real state and persistence mechanism.
+Checking a module must enable its eligible default submodules.
+Unchecking a module must remove all inherited child grants.
+Checking a submodule must grant that submodule's access.
+Unchecking a submodule must revoke its access.
+Checking an action must grant only that action.
+Unchecking an action must revoke only that action.
+Parent checkboxes must support indeterminate states.
+Save must persist changes to the active company database.
+Reopening the editor must load the exact persisted configuration.
+Show unsaved changes.
+Require confirmation before destructive bulk changes.
+Provide Reset to Recommended Defaults.
+Provide Select All and Deselect All.
+Provide module, submodule, feature, and action search.
+Provide permission comparison between role templates.
+Provide role template version history and rollback.
+A module being checked must not automatically grant all feature actions.
+A module being checked means authorized module visibility, while each feature and operation follows its individual action grants.
+PHASE 5 — ROLE COMPATIBILITY MATRIX
+Implement a fully customizable role compatibility matrix.
+Supported statuses:
+ALLOWED:
+Role combination can be activated.
+RESTRICTED:
+Role combination requires explicit configuration, scope restrictions, and SoD validation.
+PROHIBITED:
+Role combination cannot be assigned.
+Initial recommended compatibility:
+Accountant + Bookkeeper = ALLOWED.
+Accountant + Reviewer = RESTRICTED.
+Accountant + Approver = RESTRICTED.
+Bookkeeper + Accountant = ALLOWED.
+Bookkeeper + Reviewer = RESTRICTED.
+Bookkeeper + Approver = PROHIBITED.
+Reviewer + Approver = RESTRICTED.
+Auditor + Operational Write Roles = PROHIBITED.
+Tax & AP Specialist + Bookkeeper = ALLOWED.
+Tax & AP Specialist + Accountant = RESTRICTED.
+Tax & AP Specialist + Approver = RESTRICTED.
+Compatibility must be evaluated using actual transaction responsibilities and segregation-of-duties rules.
+The matrix must be editable only by authorized Company Owner or delegated administrator.
+Changing compatibility rules must be audited and versioned.
+Do not permit a matrix configuration to bypass non-overridable security policies.
+PHASE 6 — MULTIPLE ROLE RESOLUTION
+Allow one primary role and multiple compatible additional roles.
+Combine authorized role grants according to compatibility rules.
+Implement these precedence rules:
+Account and membership security.
+Company isolation.
+Non-overridable system security restrictions.
+Explicit user-specific DENY.
+Compatible role grants.
+Authorized user-specific GRANT.
+Data scope and workflow validation.
+A user-specific DENY must not be bypassed by another role's grant.
+An unauthorized user-specific GRANT must not bypass a prohibited role combination or system security restriction.
+Approval limits must not be added together.
+Use the most restrictive applicable approval limit.
+Apply safe data-scope intersection when roles provide different scopes.
+Never use a simplistic union of all permissions without evaluating role compatibility.
+PHASE 7 — DATA ACCESS SCOPE
+Implement the following configurable scopes:
+OWN_RECORDS
+ASSIGNED_RECORDS
+DEPARTMENT_RECORDS
+PROJECT_RECORDS
+COMPANY_RECORDS
+ALL_AUTHORIZED_RECORDS
+Each role template must define a default scope per applicable feature.
+Examples:
+Bookkeeper:
+Create own transactions.
+Edit eligible own DRAFT and RETURNED records.
+Submit own eligible transactions.
+Reviewer:
+Access assigned review records.
+Review and return assigned records.
+Approver:
+Access assigned approval records.
+Approve within monetary limits.
+Enforce SoD.
+Auditor:
+Read authorized company financial records.
+Export authorized audit evidence.
+Edit only audit-owned workpapers where authorized.
+The frontend must never expose records outside the effective data scope.
+The backend must independently validate all record-level access.
+PHASE 8 — LIVE USER ACCESS PREVIEW
+Implement a live preview using the actual RbacService.resolveEffectiveAccess output.
+Display:
+Assigned primary role.
+Additional roles.
+Compatible role status.
+Active module grants.
+Active submodule grants.
+Feature permissions.
+Allowed actions.
+Denied actions.
+Data scopes.
+Approval limits.
+User-specific grants.
+User-specific denials.
+System security restrictions.
+Effective access explanation.
+The preview must show the actual result after all permissions are resolved.
+Do not display unauthorized modules as visible but restricted sidebar entries.
+Do not show a checked and granted permission as restricted due to an obsolete role fallback.
+Do not treat missing module grants as full access.
+PHASE 9 — USER-SPECIFIC CUSTOMIZATION
+Provide authorized administrators with individual user access customization.
+Support:
+Grant specific module.
+Revoke specific module.
+Grant specific submodule.
+Revoke specific submodule.
+Grant specific feature action.
+Revoke specific feature action.
+Configure data scope.
+Configure approval limit.
+Set expiration date.
+Add mandatory justification.
+Revoke override.
+View override history.
+Each override must record:
+Acting administrator.
+Target user.
+Permission key.
+Previous effective state.
+New effective state.
+Reason.
+Timestamp.
+Expiration.
+Company ID.
+Overrides must never bypass system-level security, company isolation, immutable accounting rules, or SoD.
+PHASE 10 — FRONTEND AND BACKEND ENFORCEMENT
+Use one centralized permission resolver.
+Integrate with:
+ErpSidebar.tsx.
+AuthContext.tsx.
+Module registry.
+Route guards.
+Navigation search.
+Permission hooks.
+Feature buttons.
+Modal actions.
+API middleware.
+Business services.
+Database query services.
+Frontend behavior:
+NO MODULE ACCESS = HIDDEN.
+NO SUBMODULE ACCESS = HIDDEN.
+NO ACTION ACCESS = ACTION BUTTON HIDDEN OR DISABLED WITH A CLEAR EXPLANATION.
+AUTHORIZED ACTION = FUNCTIONAL.
+Backend behavior:
+NO MODULE ACCESS = 403.
+NO SUBMODULE ACCESS = 403.
+NO ACTION ACCESS = 403.
+INVALID DATA SCOPE = 403.
+INVALID WORKFLOW TRANSITION = 409 OR APPROPRIATE BUSINESS ERROR.
+Do not rely on hidden buttons for security.
+Every backend operation must validate the actual effective permission.
+PHASE 11 — WORKFLOW AND ACCOUNTING INTEGRITY
+Maintain the canonical Enterprise Journey Engine.
+Preserve:
+DRAFT
+SUBMITTED
+UNDER_REVIEW
+RETURNED
+REJECTED
+APPROVED
+POSTED
+REVERSED
+CANCELLED
+ARCHIVED
+SOFT_DELETED
+RESTORED
+Rules:
+Preparers may edit eligible DRAFT, RETURNED, and REJECTED records.
+Submitted records must follow the review workflow.
+Reviewers may review and return records according to authorization.
+Approvers may approve assigned records subject to SoD and limits.
+Posting requires the appropriate posting permission and approved workflow state.
+Posted accounting entries remain immutable.
+Reversals must generate linked correcting entries.
+Cancellation must require a reason.
+Soft deletion must preserve audit history.
+Every meaningful action must record actor, timestamp, entity, action, previous values, new values, and reason in the Enterprise Journey and Audit Trail.
+PHASE 12 — OWNER AND ADMINISTRATOR GOVERNANCE
+Company Owner and Company Administrator must retain their configured administrative levels.
+Apply ownership protection:
+Company Administrator cannot remove Company Owner.
+Company Administrator cannot demote Company Owner.
+Company Administrator cannot disable Company Owner.
+Company Administrator cannot revoke protected Owner authority.
+Company Owner can remove Company Administrator.
+Last active Company Owner protection must remain enforced.
+Do not let operational roles manage the RBAC catalog unless explicitly delegated.
+PHASE 13 — PERSISTENCE AND VERSIONING
+Persist permission changes using the existing normalized RBAC tables and role_template_versions.
+Every saved role template must have:
+Role ID.
+Version.
+Permission configuration.
+Module grants.
+Submodule grants.
+Feature grants.
+Action grants.
+Scope configuration.
+Compatibility references.
+Created by.
+Approved by, when required.
+Effective date.
+Change reason.
+Do not overwrite historical template versions.
+Provide rollback and audit history.
+After a permission change:
+Persist the new version.
+Recompute effective access.
+Invalidate affected permission caches.
+Refresh active user authorization.
+Update sidebar visibility.
+Update route authorization.
+Update Live User Access Preview.
+Revoked access must take effect promptly, including across active sessions.
+PHASE 14 — END-TO-END TESTING
+Create test accounts for:
+Accountant.
+Bookkeeper.
+Approver.
+Reviewer.
+Auditor.
+Tax & AP Specialist.
+Company Administrator.
+Company Owner.
+Test:
+Default module visibility.
+Default submodule visibility.
+Individual action grants.
+Individual action denials.
+Custom role creation.
+Multiple compatible roles.
+Restricted role combinations.
+Prohibited role combinations.
+User-specific GRANT.
+User-specific DENY.
+Data scope restrictions.
+Approval monetary limits.
+SoD enforcement.
+Frontend sidebar visibility.
+Direct route protection.
+Backend API protection.
+Database record scope.
+Permission persistence after restart.
+Session invalidation after revocation.
+Company isolation.
+Mandatory functional tests:
+A. Give Bookkeeper access to Sales Invoices and grant VIEW, CREATE, EDIT, and SUBMIT.
+Expected:
+Sales & Receivables is visible.
+Sales Invoices & Billing is visible.
+New Invoice works.
+Save Draft works.
+Edit eligible drafts works.
+Submit works.
+Approve is unavailable.
+Direct unauthorized approval API returns 403.
+B. Give Accountant access to General Journal and grant VIEW, CREATE, EDIT, SUBMIT, and POST.
+Expected:
+Accounting & General Ledger is visible.
+General Journal & Ledger is visible.
+Authorized draft creation and editing work.
+Submission works.
+Posting works only after the required approved workflow state and accounting validations.
+Direct reversal is denied unless separately granted.
+C. Give Auditor access to Audit & Governance.
+Expected:
+Audit logs are visible.
+Audit workpapers are accessible.
+Authorized evidence export works.
+Financial transactions cannot be modified.
+Audit logs cannot be edited or deleted.
+D. Give Reviewer access to Approval Workflow.
+Expected:
+Assigned review queue is visible.
+Review comments work.
+Return for correction works.
+Final approval is denied.
+E. Uncheck a submodule.
+Expected:
+It disappears from navigation.
+Its direct route is blocked.
+Its backend access is denied.
+F. Revoke an existing permission.
+Expected:
+Access is promptly invalidated.
+Live User Access Preview reflects the revocation.
+Backend denies the revoked action.
+FINAL ACCEPTANCE CRITERIA
+The RBAC system is complete only when:
+All 16 canonical modules are supported.
+All 36 canonical submodules are supported.
+All actual features and buttons have appropriate permission mappings.
+Every role has a customizable default template.
+The Compatibility Matrix is fully functional.
+Multiple compatible roles work correctly.
+User-specific grants and denials work correctly.
+Feature-level and action-level permissions work.
+Data scope is enforced.
+Workflow authority is enforced.
+Frontend and backend agree on effective access.
+Database persistence works.
+Audit history is preserved.
+No unauthorized module or submodule is visible.
+No unauthorized action can execute through direct API requests.
+No posted accounting record can be modified or deleted directly.
+FINAL REPORT:
+Provide the actual implemented permission matrix, all role defaults, compatibility rules, feature-action mappings, database persistence evidence, and test results.
+Do not claim full completion based only on UI rendering or TypeScript compilation.
+Preserve all existing working LedgerAI PH functionality and data.Ang pinakaimportanteng design decision natin ay paghiwalayin ang tatlong bagay:
+Module Access – kung makikita at mabubuksan ang module.
+Feature & Action Access – kung puwedeng mag-view, create, edit, approve, delete, export, at iba pa.
+Data & Workflow Restrictions – kung anong records ang puwedeng galawin at anong workflow transitions ang pinapayagan.
+Hindi ibig sabihin na kapag may access sa Accounting ay full access na agad sa lahat ng Accounting features.
+Recommended RBAC architecture
+ROLE PERMISSIONS CATALOG
+Source of truth for role templates
+Module Access
+Visible / Hidden
+Action Access
+View / Edit / Approve
+Data Scope
+Own / Assigned / Department / All
+Workflow Authority
+Submit / Review / Post
+CENTRALIZED EFFECTIVE ACCESS RESOLVER
+Role compatibility + user overrides + security restrictions
+FRONTEND + BACKEND + DATABASE
+Same authorization policy everywhere
+Four permission levels
+Ito ang dapat na hierarchy sa Role Permissions Catalog.
+Level Permission Purpose
+1 Main Module Access to primary workspace
+2 Submodule Access to a specific page
+3 Feature Access to a specific function
+4 Action Permission to execute an operation
+Halimbawa: Accounting & General Ledger.
+Permission Accountant Bookkeeper Auditor
+Accounting module ✓ — —
+General Journal ✓ — —
+Chart of Accounts ✓ — —
+Create Journal ✓ — —
+Edit Draft Journal ✓ — —
+Submit Journal ✓ — —
+Approve Journal Custom — —
+Post Journal Custom — —
+Reverse Journal Custom — —
+View Journal Audit History ✓ — ✓
+Ang Custom ay configurable at hindi automatic na granted.
+3. Permission grant options
+Hindi sapat ang isang checkbox lang para sa lahat. Dapat may individual checkboxes bawat action.
+3.1 Available permission checkboxes
+Ito ang standard action catalog na dapat available sa bawat compatible feature:
+Action Meaning
+view View records
+search Search and filter
+create Create new records
+edit Edit eligible records
+submit Submit for workflow
+review Review submitted records
+return Return for correction
+approve Approve assigned records
+reject Reject with reason
+post Post to General Ledger
+reverse Create reversal
+cancel Cancel eligible records
+delete Delete eligible records
+archive Archive records
+restore Restore eligible records
+export Export records
+import Import records
+print Print records
+upload Upload files
+download Download files
+manage Manage configuration
+delegate Delegate authority
+signoff Sign off reports
+Not every feature should support every action. For example, an Immutable Audit Trail must never receive edit or delete permission.
+3.2 Data access scope
+Dapat may separate scope selector:
+OWN_RECORDS
+ASSIGNED_RECORDS
+DEPARTMENT_RECORDS
+PROJECT_RECORDS
+COMPANY_RECORDS
+ALL_AUTHORIZED_RECORDS
+Example:
+Bookkeeper:
+View: Company records, subject to assigned operational scope.
+Edit: Own records.
+Submit: Own eligible drafts.
+Reviewer:
+View: Assigned records.
+Review: Assigned records.
+Return: Assigned records.
+Auditor:
+View: All authorized company records.
+Export: Authorized audit evidence.
+Edit: Own audit workpapers only, never original accounting records.
+Approver:
+View: Assigned approval records.
+Approve: Assigned records within configured approval limits.
+3.3 Permission behavior
+Module: Accounting & General Ledger
+ENABLED
+Example of an editable permission template
+[x] View
+[x] Search
+[x] Create
+[x] Edit
+[x] Submit
+[ ] Review
+[ ] Approve
+[ ] Post
+[ ] Reverse
+[x] Cancel
+[ ] Delete
+[x] Export
+Selected permissions
+7 / 12
+Interactive illustration only. Actual permissions must be saved through the Role Permissions Catalog.
+Default role configuration
+Ito ang recommended starting assignments. Ang final grants ay configurable pa rin per role.
+Role Main module access
+Company Owner All 16 modules
+Company Administrator All 16 modules, except protected Owner authority
+Accountant Dashboard, Accounting, Tax, Documents, Reports, Activity
+Bookkeeper Dashboard, Sales, Procurement, Cash & Banking, Documents
+Approver Dashboard, Documents, Approvals
+Reviewer Dashboard, Documents, Approvals
+Auditor Dashboard, Documents, Reports, Activity, Audit
+Tax & AP Specialist Dashboard, Procurement, Cash & Banking, Tax, Documents, Reports
+Additional existing operational roles and custom templates must remain supported. Hindi dapat mawala ang existing role records habang ina-update ang defaults.
+Important: Dashboard visibility does not automatically mean access to every financial KPI or transaction drilldown. Those must have their own data and action authorization.
+5. Role Compatibility Matrix
+Ito ang isa sa pinakamahalagang bahagi ng system dahil may multiple-role assignment tayo.
+Primary role Additional role Compatibility
+Accountant Bookkeeper ALLOWED
+Accountant Reviewer RESTRICTED
+Accountant Approver RESTRICTED
+Bookkeeper Accountant ALLOWED
+Bookkeeper Approver PROHIBITED
+Bookkeeper Reviewer RESTRICTED
+Reviewer Approver RESTRICTED
+Auditor Bookkeeper PROHIBITED
+Auditor Accountant PROHIBITED
+Auditor Approver PROHIBITED
+Auditor Reviewer RESTRICTED
+Tax & AP Specialist Bookkeeper ALLOWED
+Tax & AP Specialist Accountant RESTRICTED
+Tax & AP Specialist Approver RESTRICTED
+Interpretation:
+ALLOWED: Compatible combination; apply both role grants.
+RESTRICTED: Requires explicit compatibility configuration, scoped permissions, and SoD validation. Do not automatically activate conflicting authority.
+PROHIBITED: Block assignment.
+These are proposed defaults for the compatibility matrix, not a claim that every combination has already been verified against the existing database rules.
+Multiple-role permission resolution
+Ito ang recommended precedence:
+Account and membership security.
+Company isolation.
+Non-overridable system restrictions.
+Explicit user-specific DENY.
+Role grants and compatible role combinations.
+Explicit user-specific GRANT, if permitted by the administrator's delegation authority.
+Data scope and workflow validation.
+Important rules:
+Multiple compatible role grants can be combined.
+A user-specific DENY must not be bypassed by another role's grant.
+A user-specific GRANT cannot bypass SoD, immutable records, or company isolation.
+Approval limits must not be added together. Use the most restrictive applicable limit.
+Data scopes must be intersected where necessary to prevent wider access from being accidentally granted.
+A prohibited role combination must never be resolved through simple permission union.
+Record lifecycle permissions
+Dapat hiwalay ang CRUD permission sa workflow permission.
+Record status View Edit Approve Delete
+DRAFT ✓ Authorized preparer — Soft delete only
+SUBMITTED ✓ — Authorized approver —
+UNDER_REVIEW ✓ — Authorized approver —
+RETURNED ✓ Authorized preparer — Controlled cancellation
+REJECTED ✓ Authorized preparer — Controlled soft delete
+APPROVED ✓ — — —
+POSTED ✓ — — —
+REVERSED ✓ — — —
+CANCELLED ✓ — — —
+ARCHIVED ✓ Authorized scope — —
+For posted accounting transactions, corrections must go through the reversal and adjustment workflow. Direct editing or deletion is prohibited.
+The Activity Journey must record every meaningful operation:
+Who created it.
+Who last edited it.
+Who submitted it.
+Who reviewed it.
+Who returned it.
+Who approved it.
+Who posted it.
+Who cancelled or reversed it.
+Timestamp.
+Previous and new values.
+Reason or remarks.
+Source module and record ID.
+This should be consistent with the existing Enterprise Journey and immutable audit trail architecture. Pasted text(20261103-033102).txt
+Final Role Permissions Catalog UI
+Ito ang recommended layout:
+Role Permissions Catalog
+Role Templates
+Compatibility Matrix
+Feature Permissions
+Role Selection
+Accountant
+Permission configuration
+Accounting & General Ledger
+Enabled
+[x] Chart of Accounts
+[x] General Journal & Ledger
+[x] Trial Balance Ledger
+[x] Accounting Periods & Lock
+[x] Foreign Exchange Revaluation
+Feature Permission Configuration
+[x] View
+[x] Create
+[x] Edit
+[x] Submit
+[ ] Approve
+[ ] Post
+[ ] Reverse
+[ ] Delete
+[x] Export
+Illustrative layout of the proposed permission editor, not an actual saved role configuration.
+The complete workspace should have four connected tabs:
+Role Templates – default and custom roles, module permissions, feature permissions, and action grants.
+Compatibility Matrix – ALLOWED, RESTRICTED, PROHIBITED role combinations.
+Live User Access – actual effective permissions after all roles and overrides are resolved.
+User-Specific Overrides – authorized individual grants and denials with reason, expiry, and audit history. TAkenote: Final recommendation
+Ang pinakamagandang approach ay huwag gawing Full Access / Restricted lang ang permission system.
+Gawin nating granular:
+No Access – hindi visible at walang access.
+View Only – visible pero read-only.
+Create Only – puwedeng gumawa pero hindi puwedeng mag-edit ng ibang records.
+Create + Edit – puwedeng gumawa at mag-edit ng eligible records.
+Process Access – puwedeng mag-submit at mag-process.
+Review Access – puwedeng mag-review at mag-return.
+Approval Access – puwedeng mag-approve subject to SoD and limits.
+Full Authorized Access – lahat ng applicable actions, subject pa rin sa system security.
+At higit sa lahat, ang bawat permission ay dapat puwedeng i-customize individually sa Role Permissions Catalog.

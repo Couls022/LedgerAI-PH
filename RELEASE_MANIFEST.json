@@ -1,0 +1,43 @@
+{
+  "releaseName": "LedgerAI PH Enterprise Financial Suite",
+  "version": "1.0.0",
+  "architecture": "x64",
+  "targetOS": "Windows (win32)",
+  "buildStatus": "SUCCESS",
+  "runtimeAcceptanceStatus": "PRODUCTION READY",
+  "frozenAt": "2026-08-17T21:49:00Z",
+  "artifacts": [
+    {
+      "product": "LedgerAI PH Client",
+      "filename": "LedgerAI-PH-Client-Setup.exe",
+      "type": "NSIS Windows Installer",
+      "fileSize": 1999555,
+      "sha256": "3277447c3399aee6ca69bdb0b71dbe8e6ccf1eb46850233d33416b36b48c98ca",
+      "launcher": "Background Electron Host -> Express Server (:3000) -> Default Browser"
+    },
+    {
+      "product": "LedgerAI PH Client Distribution",
+      "filename": "LedgerAI-PH-Client-Release.zip",
+      "type": "Source / Distribution Archive",
+      "fileSize": 3627546,
+      "sha256": "43c3f7b2a79814ee78c9eae6d628b9b9cea80131a12ac187ebf997d18ecbf42a",
+      "launcher": "Client Archive"
+    },
+    {
+      "product": "LedgerAI PH Key Generator",
+      "filename": "LedgerAI-PH-KeyGenerator-Setup.exe",
+      "type": "NSIS Windows Installer",
+      "fileSize": 1999559,
+      "sha256": "222fc3bcd2f5655034b19e567c6d0c61281b481d92554b021a7dd7d91a3416c6",
+      "launcher": "Background Authority Host -> Authority Server (:4000) -> APPDATA Vault -> Default Browser"
+    },
+    {
+      "product": "LedgerAI PH Key Generator Distribution",
+      "filename": "LedgerAI-PH-KeyGenerator-Release.zip",
+      "type": "Source / Distribution Archive",
+      "fileSize": 3618409,
+      "sha256": "f5d8ddea3a0d8b70040a89b34941064f5a2ae8a9d587963733080ce098d98c1b",
+      "launcher": "Authority Archive"
+    }
+  ]
+}
