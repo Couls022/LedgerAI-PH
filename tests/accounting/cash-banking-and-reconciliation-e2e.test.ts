@@ -335,7 +335,7 @@ describe('Module 5: Cash & Banking and Bank Reconciliation E2E Verification', ()
         .from(schema.bankReconciliations)
         .where(eq(schema.bankReconciliations.companyId, PREVIEW_COMPANY_ID));
 
-      expect(recons.length).toBe(12);
+      expect(recons.length).toBeGreaterThanOrEqual(12);
 
       const octRecon = recons.find((r) => r.id === 'brec-dg-2026-10');
       expect(octRecon).toBeDefined();

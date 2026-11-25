@@ -604,11 +604,12 @@ describe('LEDGERAI PH — ENTERPRISE DOCUMENT SCALE & HYBRID CONCURRENCY BENCHMA
       expect(quarantinedRejectedCount).toBe(25);
 
       // Free the 100k physical original files on disk after Stage 1 verification completes so subsequent stages have clean disk headroom
+      await CompanyManager.closeCompanyDb(DOC_SCALE_COMPANY_ID).catch(() => {});
       await CompanyManager.unregisterCompany(DOC_SCALE_COMPANY_ID).catch(() => {});
       await fs.rm(path.join(BENCHMARK_COMPANIES_DIR, DOC_SCALE_COMPANY_ID), {
         recursive: true,
         force: true,
-      });
+      }).catch(() => {});
     },
     300_000
   );
@@ -1589,11 +1590,12 @@ describe('LEDGERAI PH — ENTERPRISE DOCUMENT SCALE & HYBRID CONCURRENCY BENCHMA
       };
 
       // Clean up Stage 4 multi-hundred-MB SQLite DB after capturing all proofs
+      await CompanyManager.closeCompanyDb(FIN_SCALE_COMPANY_ID).catch(() => {});
       await CompanyManager.unregisterCompany(FIN_SCALE_COMPANY_ID).catch(() => {});
       await fs.rm(path.join(BENCHMARK_COMPANIES_DIR, FIN_SCALE_COMPANY_ID), {
         recursive: true,
         force: true,
-      });
+      }).catch(() => {});
     },
     300_000
   );

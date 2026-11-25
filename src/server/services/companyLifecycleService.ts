@@ -729,8 +729,8 @@ export class CompanyLifecycleService {
         const isFolderSlugManifest =
           manifest.id === path.basename(companyDirectory) ||
           manifest.id.toLowerCase() === path.basename(companyDirectory).toLowerCase() ||
-          (manifest.location && path.resolve(manifest.location) === path.resolve(companyDirectory)) ||
-          (manifest.id === 'deskguard_solutions_stress_preview' && dbCompanyId === 'LGR-PH-2026-STRESS-DG-PREVIEW');
+          (manifest.id === 'deskguard_solutions_stress_preview' && dbCompanyId === 'LGR-PH-2026-STRESS-DG-PREVIEW') ||
+          (!manifest.id.startsWith('LGR-') && manifest.location && path.resolve(manifest.location) === path.resolve(companyDirectory));
 
         if (isFolderSlugManifest) {
           // Auto-reconcile folder-slug or uncanonical manifest ID to match the authoritative SQLite database record

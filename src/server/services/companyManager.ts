@@ -4977,8 +4977,8 @@ export class CompanyManager {
         const isFolderSlugManifest =
           manifest.id === path.basename(resolvedPath) ||
           manifest.id.toLowerCase() === path.basename(resolvedPath).toLowerCase() ||
-          (manifest.location && path.resolve(manifest.location) === path.resolve(resolvedPath)) ||
-          (manifest.id === 'deskguard_solutions_stress_preview' && companyId === 'LGR-PH-2026-STRESS-DG-PREVIEW');
+          (manifest.id === 'deskguard_solutions_stress_preview' && companyId === 'LGR-PH-2026-STRESS-DG-PREVIEW') ||
+          (!manifest.id.startsWith('LGR-') && manifest.location && path.resolve(manifest.location) === path.resolve(resolvedPath));
 
         if (isFolderSlugManifest) {
           manifest.id = companyId;
