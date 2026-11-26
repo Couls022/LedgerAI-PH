@@ -211,16 +211,107 @@ router.post("/adjustments/:engagementId", requireAuth, requirePermission('audit:
 });
 
 router.post("/adjustments/:id/approve", requireAuth, requirePermission('audit:approve'), async (req, res) => {
+  const companyId = req.activeCompany!.id;
   const userId = req.user!.id;
+  const actorRole = req.activeCompany?.roleCode || req.activeCompany?.roleName || req.activeCompany?.role;
   try {
+    const adj = await db.select().from(schema.auditAdjustments).where(eq(schema.auditAdjustments.id, req.params.id)).get();
+    if (!adj) {
+      return res.status(404).json({ error: "NOT_FOUND", message: "Audit adjustment not found." });
+    }
+    const engagement = await db.select().from(schema.auditEngagements)
+      .where(and(eq(schema.auditEngagements.id, adj.engagementId), eq(schema.auditEngagements.companyId, companyId)))
+      .get();
+    if (!engagement) {
+      return res.status(403).json({ error: "CROSS_COMPANY_ACCESS_DENIED", message: "Audit adjustment does not belong to the active company." });
+    }
+    if (adj.approvalStatus === 'APPROVED') {
+      return res.status(409).json({ error: "CONCURRENT_MODIFICATION_CONFLICT", message: "Audit adjustment is already approved." });
+    }
+
+    let parsedLines: Array<{ accountId?: string; debit?: number; credit?: number; description?: string }> = [];
+    try {
+      const raw = JSON.parse(adj.affectedAccountsJson || "[]");
+      if (Array.isArray(raw)) parsedLines = raw;
+    } catch {}
+
+    const validJeLines = parsedLines.filter(l => l && l.accountId && ((Number(l.debit) || 0) > 0 || (Number(l.credit) || 0) > 0));
+    let journalEntryId: string | null = adj.journalEntryId || null;
+
+    if (validJeLines.length >= 2 && !journalEntryId) {
+      const totalDr = validJeLines.reduce((s, l) => s + Math.round(Number(l.debit) || 0), 0);
+      const totalCr = validJeLines.reduce((s, l) => s + Math.round(Number(l.credit) || 0), 0);
+      if (totalDr !== totalCr || totalDr <= 0) {
+        return res.status(400).json({ error: "UNBALANCED_JOURNAL", message: "Audit adjustment journal lines must balance (Debits == Credits > 0)." });
+      }
+      const { validateTransactionDateAndPeriod, validateJournalEntryBalance } = await import("../db/domain");
+      const entryDate = new Date().toISOString().slice(0, 10);
+      const period = await validateTransactionDateAndPeriod(companyId, entryDate, { isClosingAdjustment: true, userRole: actorRole });
+      journalEntryId = crypto.randomUUID();
+      await db.transaction(async (tx) => {
+        await tx.insert(schema.journalEntries).values({
+          id: journalEntryId!,
+          companyId,
+          journalNumber: `AJE-${adj.id.slice(0, 6).toUpperCase()}`,
+          entryDate,
+          accountingPeriodId: period.id,
+          description: adj.financialEffect || `Approved Audit Adjustment (${adj.classification})`,
+          sourceType: 'AUDIT_ADJUSTMENT',
+          sourceId: adj.id,
+          status: 'POSTED',
+          createdBy: userId,
+          approvedBy: userId,
+          approvedAt: new Date(),
+          postedBy: userId,
+          postedAt: new Date(),
+        });
+        let ln = 1;
+        for (const l of validJeLines) {
+          await tx.insert(schema.journalLines).values({
+            id: crypto.randomUUID(),
+            journalEntryId: journalEntryId!,
+            accountId: l.accountId!,
+            description: l.description || adj.financialEffect || 'Audit adjustment line',
+            debit: Math.round(Number(l.debit) || 0),
+            credit: Math.round(Number(l.credit) || 0),
+            lineNumber: ln++,
+          });
+        }
+        await validateJournalEntryBalance(tx, journalEntryId!);
+      });
+    }
+
+    const resultingType = journalEntryId ? 'POSTED' : 'PASSED';
     await db.update(schema.auditAdjustments).set({
       approvalStatus: 'APPROVED',
       approvedBy: userId,
-      adjustmentType: 'POSTED'
+      adjustmentType: resultingType,
+      journalEntryId,
     }).where(eq(schema.auditAdjustments.id, req.params.id));
-    res.json({ success: true, message: "Adjustment approved and posted to financial records." });
+
+    await AuditService.log({
+      req,
+      companyId,
+      userId,
+      action: "APPROVE_AUDIT_ADJUSTMENT",
+      entityType: "AUDIT_ADJUSTMENT",
+      entityId: req.params.id,
+      module: "Audit & Governance",
+      afterData: { approvalStatus: 'APPROVED', adjustmentType: resultingType, journalEntryId },
+      reason: adj.financialEffect || 'Approved audit adjustment',
+    });
+
+    res.json({
+      success: true,
+      adjustmentType: resultingType,
+      journalEntryId,
+      message: journalEntryId
+        ? "Audit adjustment approved and posted to General Ledger."
+        : "Audit adjustment approved and marked PASSED (summary schedule only; attach GL lines to post a journal)."
+    });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    const status = err?.statusCode || 500;
+    res.status(status).json({ error: err.code || "WORKFLOW_ERROR", message: err.message });
   }
 });
 

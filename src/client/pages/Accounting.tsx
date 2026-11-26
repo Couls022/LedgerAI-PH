@@ -1634,17 +1634,17 @@ const CashTransactions = () => {
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         <div className="inline-flex items-center gap-1.5">
-                          {t?.status === 'DRAFT' && (
+                          {(['DRAFT', 'RETURNED', 'REJECTED'].includes(String(t?.status || 'DRAFT').toUpperCase())) && (
                             <button
                               type="button"
                               disabled={processingId === t.id}
                               onClick={() => handleTxnWorkflow(t.id, 'submit')}
                               className="px-2.5 py-1 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 disabled:opacity-50"
                             >
-                              {processingId === t.id ? 'Working...' : 'Submit'}
+                              {processingId === t.id ? 'Working...' : (t?.status === 'DRAFT' ? 'Submit' : 'Resubmit')}
                             </button>
                           )}
-                          {t?.status === 'SUBMITTED' && (
+                          {(['SUBMITTED', 'REVIEWED', 'UNDER_REVIEW'].includes(String(t?.status || '').toUpperCase())) && (
                             <>
                               <button
                                 type="button"
@@ -1844,17 +1844,17 @@ const CashTransactions = () => {
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         <div className="inline-flex items-center gap-1.5">
-                          {dep.status === 'DRAFT' && (
+                          {(['DRAFT', 'RETURNED', 'REJECTED'].includes(String(dep.status || 'DRAFT').toUpperCase())) && (
                             <button
                               type="button"
                               disabled={processingId === dep.id}
                               onClick={() => handleDepositWorkflow(dep.id, 'submit')}
                               className="px-2.5 py-1 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 disabled:opacity-50"
                             >
-                              {processingId === dep.id ? 'Working...' : 'Submit'}
+                              {processingId === dep.id ? 'Working...' : (dep.status === 'DRAFT' ? 'Submit' : 'Resubmit')}
                             </button>
                           )}
-                          {dep.status === 'SUBMITTED' && (
+                          {(['SUBMITTED', 'REVIEWED', 'UNDER_REVIEW'].includes(String(dep.status || '').toUpperCase())) && (
                             <>
                               <button
                                 type="button"

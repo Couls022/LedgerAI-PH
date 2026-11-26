@@ -489,7 +489,9 @@ export async function submitJournalEntry(companyId: string, entryId: string, use
       }
     }
 
-    if (entry.status !== 'DRAFT') throw new DomainError('Only DRAFT entries can be submitted');
+    if (!['DRAFT', 'RETURNED', 'REJECTED', 'CORRECTION'].includes(String(entry.status || 'DRAFT').toUpperCase())) {
+      throw new DomainError('Only DRAFT, RETURNED, or REJECTED entries can be submitted');
+    }
 
     const nextVer = (entry.version || 1) + 1;
     const res = await tx.update(schema.journalEntries).set({
@@ -542,7 +544,9 @@ export async function approveJournalEntry(companyId: string, entryId: string, us
       }
     }
 
-    if (entry.status !== 'SUBMITTED') throw new DomainError('Only SUBMITTED entries can be approved');
+    if (!['SUBMITTED', 'REVIEWED', 'UNDER_REVIEW'].includes(String(entry.status || '').toUpperCase())) {
+      throw new DomainError('Only SUBMITTED, REVIEWED, or UNDER_REVIEW entries can be approved');
+    }
 
     // Segregation of Duties: Creator/Submitter cannot approve own entry UNLESS authorized as Company Owner/Admin or genuine single-user environment
     if (entry.createdBy === userId || entry.submittedBy === userId) {
@@ -594,6 +598,33 @@ export async function approveJournalEntry(companyId: string, entryId: string, us
       entityType: 'journal_entries',
       entityId: entryId,
     });
+
+    try {
+      const openWfs = await tx.select().from(schema.approvalWorkflows).where(
+        and(
+          eq(schema.approvalWorkflows.companyId, companyId),
+          eq(schema.approvalWorkflows.entityType, 'JOURNAL_ENTRY'),
+          eq(schema.approvalWorkflows.entityId, entryId),
+          inArray(schema.approvalWorkflows.status, ['IN_PROGRESS', 'PENDING'])
+        )
+      );
+      const wfNow = new Date();
+      for (const wf of openWfs) {
+        await tx.update(schema.approvalWorkflows).set({
+          status: 'APPROVED',
+          completedAt: wfNow,
+          updatedAt: wfNow,
+          version: Number(wf.version || 1) + 1,
+        }).where(eq(schema.approvalWorkflows.id, wf.id));
+        await tx.update(schema.approvalSteps).set({
+          status: 'APPROVED',
+          decision: 'APPROVE',
+          actualApproverId: userId,
+          respondedAt: wfNow,
+          slaStatus: 'COMPLETED_ON_TIME',
+        }).where(and(eq(schema.approvalSteps.workflowId, wf.id), inArray(schema.approvalSteps.status, ['PENDING', 'WAITING'])));
+      }
+    } catch {}
   });
 }
 
@@ -615,7 +646,9 @@ export async function rejectJournalEntry(companyId: string, entryId: string, use
       }
     }
 
-    if (entry.status !== 'SUBMITTED') throw new DomainError('Only SUBMITTED entries can be rejected');
+    if (!['SUBMITTED', 'REVIEWED', 'UNDER_REVIEW'].includes(String(entry.status || '').toUpperCase())) {
+      throw new DomainError('Only SUBMITTED, REVIEWED, or UNDER_REVIEW entries can be rejected');
+    }
 
     const nextVer = (entry.version || 1) + 1;
     const res = await tx.update(schema.journalEntries).set({
@@ -647,6 +680,33 @@ export async function rejectJournalEntry(companyId: string, entryId: string, use
       entityId: entryId,
       reason: reason || 'Rejected by approver',
     });
+
+    try {
+      const openWfs = await tx.select().from(schema.approvalWorkflows).where(
+        and(
+          eq(schema.approvalWorkflows.companyId, companyId),
+          eq(schema.approvalWorkflows.entityType, 'JOURNAL_ENTRY'),
+          eq(schema.approvalWorkflows.entityId, entryId),
+          inArray(schema.approvalWorkflows.status, ['IN_PROGRESS', 'PENDING'])
+        )
+      );
+      const wfNow = new Date();
+      for (const wf of openWfs) {
+        await tx.update(schema.approvalWorkflows).set({
+          status: 'REJECTED',
+          completedAt: wfNow,
+          updatedAt: wfNow,
+          version: Number(wf.version || 1) + 1,
+        }).where(eq(schema.approvalWorkflows.id, wf.id));
+        await tx.update(schema.approvalSteps).set({
+          status: 'REJECTED',
+          decision: 'REJECT',
+          actualApproverId: userId,
+          rejectionReason: reason || 'Rejected by approver',
+          respondedAt: wfNow,
+        }).where(and(eq(schema.approvalSteps.workflowId, wf.id), inArray(schema.approvalSteps.status, ['PENDING', 'WAITING'])));
+      }
+    } catch {}
   });
 }
 

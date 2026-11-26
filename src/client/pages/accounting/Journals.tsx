@@ -956,7 +956,7 @@ export default function Journals() {
                                 </button>
                               </>
                             )}
-                            {j.status === 'SUBMITTED' && hasPermission('accounting:approve') && (
+                            {['SUBMITTED', 'REVIEWED', 'UNDER_REVIEW'].includes(String(j.status || '').toUpperCase()) && hasPermission('accounting:approve') && (
                               <>
                                 <button 
                                   onClick={() => handleAction(j.id, 'approve')} 

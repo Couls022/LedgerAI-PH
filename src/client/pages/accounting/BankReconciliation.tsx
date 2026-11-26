@@ -650,10 +650,17 @@ export default function BankReconciliation() {
                             {r.status !== 'APPROVED' && r.status !== 'COMPLETED' && (
                               <button
                                 type="button"
-                                onClick={() => handleAutoMatch(r.id)}
+                                onClick={() => {
+                                  if ((r.totalLinesCount || 0) === 0 || (r.matchedLinesCount || 0) >= (r.totalLinesCount || 0)) {
+                                    openReconDetail(r.id);
+                                  } else {
+                                    handleAutoMatch(r.id);
+                                  }
+                                }}
                                 className="px-2 py-1 bg-indigo-600 text-white text-[11px] font-semibold rounded-lg hover:bg-indigo-700 transition-colors"
+                                title={(r.totalLinesCount || 0) === 0 ? 'Open worksheet to import/add statement lines and match' : 'Run auto-match or review matched lines & approve'}
                               >
-                                Match
+                                {(r.totalLinesCount || 0) > 0 && (r.matchedLinesCount || 0) >= (r.totalLinesCount || 0) ? 'Review & Finalize' : 'Match'}
                               </button>
                             )}
                           </div>

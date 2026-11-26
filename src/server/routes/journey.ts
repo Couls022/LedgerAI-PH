@@ -5170,7 +5170,23 @@ router.post("/action/:entityType/:entityId", requireAuth, async (req, res) => {
         await postBankDeposit(companyId, entityId, resolvedPeriodId, userId, actorRole);
       } else if (entityType === "CASH_COUNT") {
         await postCashCount(companyId, entityId, resolvedPeriodId, userId, actorRole);
+      } else if (entityType === "BANK_RECONCILIATION") {
+        const { approveBankReconciliation } = await import("../db/business_transactions");
+        await approveBankReconciliation(companyId, entityId, resolvedPeriodId, userId);
       } else {
+        const glRequiredTypes = new Set([
+          "PAYROLL_RUN",
+          "STOCK_ADJUSTMENT",
+          "DEPRECIATION_SCHEDULE",
+          "FIXED_ASSET",
+          "AUDIT_ADJUSTMENT",
+        ]);
+        if (glRequiredTypes.has(entityType) && !currentRecord.journalEntryId) {
+          return res.status(400).json({
+            error: "GL_POSTING_REQUIRED",
+            message: `${entityType} must be posted through its accounting posting engine so a balanced General Ledger journal entry is created before marking as POSTED.`,
+          });
+        }
         const postUpdates: Record<string, any> = { status: "POSTED" };
         if (hasUpdatedAtCol) postUpdates.updatedAt = new Date();
         if ("version" in table) postUpdates.version = Number(currentRecord.version || 1) + 1;
@@ -11127,10 +11143,20 @@ router.post("/approvals/:workflowId/decide", requireAuth, async (req, res) => {
                 }
 
                 if (resolvedEntity) {
+                  const reviewUpdate: Record<string, any> = { status: "UNDER_REVIEW" };
+                  if ("updatedAt" in resolvedEntity.table) reviewUpdate.updatedAt = now;
+                  if ("version" in resolvedEntity.table && entityRecord) {
+                    reviewUpdate.version = Number(entityRecord.version || 1) + 1;
+                  }
+                  const hasCompanyCol = "companyId" in resolvedEntity.table;
                   await tx
                     .update(resolvedEntity.table)
-                    .set({ status: "UNDER_REVIEW", updatedAt: now })
-                    .where(eq(resolvedEntity.table.id, workflow.entityId));
+                    .set(reviewUpdate)
+                    .where(
+                      hasCompanyCol
+                        ? and(eq(resolvedEntity.table.id, workflow.entityId), eq(resolvedEntity.table.companyId, companyId))
+                        : eq(resolvedEntity.table.id, workflow.entityId)
+                    );
                 }
               } else {
                 if (canApproveAllRemaining) {
@@ -11180,17 +11206,47 @@ router.post("/approvals/:workflowId/decide", requireAuth, async (req, res) => {
                 }
 
                 if (resolvedEntity) {
-                  const entityUpdate: Record<string, any> = {
-                    status: "APPROVED",
-                    updatedAt: now,
-                    approvedBy: actualApproverId,
-                    approvedAt: now,
-                  };
-                  try {
-                    await tx.update(resolvedEntity.table).set(entityUpdate).where(eq(resolvedEntity.table.id, workflow.entityId));
-                  } catch {
-                    await tx.update(resolvedEntity.table).set({ status: "APPROVED", updatedAt: now }).where(eq(resolvedEntity.table.id, workflow.entityId));
+                  if (workflow.entityType === "BANK_RECONCILIATION") {
+                    const { recalculateBankReconciliationMetrics } = await import("../db/business_transactions");
+                    const metrics = await recalculateBankReconciliationMetrics(companyId, workflow.entityId);
+                    if (metrics.unexplainedDifference !== 0) {
+                      throw new JourneyConflictError(
+                        "RECONCILIATION_UNBALANCED",
+                        `Cannot approve bank reconciliation: Unexplained variance is ₱${(metrics.unexplainedDifference / 100).toFixed(2)} (must be ₱0.00).`
+                      );
+                    }
+                    const reconLines = await tx
+                      .select({ id: schema.bankStatementLines.id })
+                      .from(schema.bankStatementLines)
+                      .where(and(eq(schema.bankStatementLines.bankReconciliationId, workflow.entityId), eq(schema.bankStatementLines.companyId, companyId)));
+                    const reconAdjs = await tx
+                      .select({ id: schema.bankReconciliationAdjustments.id })
+                      .from(schema.bankReconciliationAdjustments)
+                      .where(and(eq(schema.bankReconciliationAdjustments.bankReconciliationId, workflow.entityId), eq(schema.bankReconciliationAdjustments.companyId, companyId)));
+                    if (reconLines.length === 0 && reconAdjs.length === 0 && (metrics.bookEndingBalance !== 0 || Number(entityRecord?.statementEndingBalance || 0) !== 0)) {
+                      throw new JourneyConflictError(
+                        "MISSING_RECONCILIATION_EVIDENCE",
+                        "Cannot approve bank reconciliation without supporting bank statement lines or reconciliation adjustments."
+                      );
+                    }
                   }
+
+                  const entityUpdate: Record<string, any> = { status: "APPROVED" };
+                  if ("updatedAt" in resolvedEntity.table) entityUpdate.updatedAt = now;
+                  if ("approvedBy" in resolvedEntity.table) entityUpdate.approvedBy = actualApproverId;
+                  if ("approvedAt" in resolvedEntity.table) entityUpdate.approvedAt = now;
+                  if ("version" in resolvedEntity.table && entityRecord) {
+                    entityUpdate.version = Number(entityRecord.version || 1) + 1;
+                  }
+                  const hasCompanyCol = "companyId" in resolvedEntity.table;
+                  await tx
+                    .update(resolvedEntity.table)
+                    .set(entityUpdate)
+                    .where(
+                      hasCompanyCol
+                        ? and(eq(resolvedEntity.table.id, workflow.entityId), eq(resolvedEntity.table.companyId, companyId))
+                        : eq(resolvedEntity.table.id, workflow.entityId)
+                    );
                 }
 
                 pendingNotifications.push({

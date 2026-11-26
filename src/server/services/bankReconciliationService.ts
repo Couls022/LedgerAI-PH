@@ -622,6 +622,25 @@ export class BankReconciliationService {
         approvedAt: new Date(),
         createdAt: new Date(),
       });
+
+      if (txRecord.bankStatementId) {
+        const remainingUnmatched = await tx.select({ id: schema.bankTransactions.id })
+          .from(schema.bankTransactions)
+          .where(and(
+            eq(schema.bankTransactions.companyId, companyId),
+            eq(schema.bankTransactions.bankStatementId, txRecord.bankStatementId),
+            ne(schema.bankTransactions.matchedStatus, 'MATCHED'),
+            ne(schema.bankTransactions.matchedStatus, 'RECONCILED')
+          ));
+        if (remainingUnmatched.length === 0) {
+          await tx.update(schema.bankStatements)
+            .set({ status: 'RECONCILED' })
+            .where(and(
+              eq(schema.bankStatements.id, txRecord.bankStatementId),
+              eq(schema.bankStatements.companyId, companyId)
+            ));
+        }
+      }
     });
 
     await AuditService.log({

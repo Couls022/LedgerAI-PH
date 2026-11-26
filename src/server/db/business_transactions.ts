@@ -58,6 +58,62 @@ async function assertSodApprovalAllowed(
   }
 }
 
+async function syncActiveWorkflowsOnDirectDecision(
+  txRunner: any,
+  companyId: string,
+  entityType: string,
+  entityId: string,
+  decision: "APPROVE" | "REJECT",
+  userId: string,
+  reason?: string
+) {
+  try {
+    const activeWfs = await txRunner
+      .select()
+      .from(schema.approvalWorkflows)
+      .where(
+        and(
+          eq(schema.approvalWorkflows.companyId, companyId),
+          eq(schema.approvalWorkflows.entityType, entityType),
+          eq(schema.approvalWorkflows.entityId, entityId),
+          inArray(schema.approvalWorkflows.status, ["IN_PROGRESS", "PENDING"])
+        )
+      );
+    const now = new Date();
+    const targetStatus = decision === "APPROVE" ? "APPROVED" : "REJECTED";
+    for (const wf of activeWfs) {
+      await txRunner
+        .update(schema.approvalWorkflows)
+        .set({
+          status: targetStatus,
+          completedAt: now,
+          updatedAt: now,
+          version: Number(wf.version || 1) + 1,
+        })
+        .where(eq(schema.approvalWorkflows.id, wf.id));
+      await txRunner
+        .update(schema.approvalSteps)
+        .set({
+          status: targetStatus,
+          decision,
+          actualApproverId: userId,
+          comments: reason || (decision === "APPROVE" ? "Approved from transaction register" : "Rejected and returned to draft"),
+          rejectionReason: decision === "REJECT" ? (reason || "Rejected by approver") : null,
+          respondedAt: now,
+          slaStatus: "COMPLETED_ON_TIME",
+        })
+        .where(
+          and(
+            eq(schema.approvalSteps.workflowId, wf.id),
+            inArray(schema.approvalSteps.status, ["PENDING", "WAITING"])
+          )
+        );
+    }
+  } catch {
+    // Graceful no-op in minimal test schemas without Phase 2 approval tables
+  }
+}
+
 export type ControlAccountRole =
   | "AR"
   | "AP"
@@ -793,7 +849,9 @@ export async function submitSalesInvoice(companyId: string, invoiceId: string, u
       }
     }
 
-    if (invoice.status !== "DRAFT") throw new BusinessTransactionError("Only DRAFT invoices can be submitted");
+    if (!['DRAFT', 'RETURNED', 'REJECTED', 'CORRECTION'].includes(String(invoice.status || 'DRAFT').toUpperCase())) {
+      throw new BusinessTransactionError("Only DRAFT, RETURNED, or REJECTED invoices can be submitted");
+    }
 
     const nextVer = (invoice.version || 1) + 1;
     const res = await tx.update(schema.salesInvoices).set({
@@ -882,6 +940,8 @@ export async function approveSalesInvoice(companyId: string, invoiceId: string, 
       entityType: "sales_invoices",
       entityId: invoiceId,
     });
+
+    await syncActiveWorkflowsOnDirectDecision(tx, companyId, "SALES_INVOICE", invoiceId, "APPROVE", userId);
   });
 }
 
@@ -895,6 +955,7 @@ export async function rejectSalesInvoice(companyId: string, invoiceId: string, u
   await db.transaction(async (tx) => {
     await tx.update(schema.salesInvoices).set({
       status: "DRAFT",
+      version: Number(invoice.version || 1) + 1,
       updatedAt: new Date()
     }).where(eq(schema.salesInvoices.id, invoiceId));
 
@@ -907,6 +968,8 @@ export async function rejectSalesInvoice(companyId: string, invoiceId: string, u
       entityId: invoiceId,
       reason: reason || "Rejected by approver",
     });
+
+    await syncActiveWorkflowsOnDirectDecision(tx, companyId, "SALES_INVOICE", invoiceId, "REJECT", userId, reason);
   });
 }
 
@@ -1193,6 +1256,7 @@ export async function postSalesInvoice(companyId: string, invoiceId: string, per
     await tx.update(schema.salesInvoices).set({
       status: "POSTED",
       journalEntryId: entryId,
+      version: Number(invoice.version || 1) + 1,
       updatedAt: new Date()
     }).where(eq(schema.salesInvoices.id, invoiceId));
 
@@ -1272,14 +1336,17 @@ export async function createCustomerPayment(companyId: string, data: any, userId
 export async function submitCustomerPayment(companyId: string, paymentId: string, userId: string) {
   const payment = await db.select().from(schema.customerPayments).where(and(eq(schema.customerPayments.id, paymentId), eq(schema.customerPayments.companyId, companyId))).get();
   if (!payment) throw new BusinessTransactionError("Payment not found");
-  if (payment.status !== "DRAFT") throw new BusinessTransactionError("Only DRAFT payments can be submitted");
+  if (!['DRAFT', 'RETURNED', 'REJECTED', 'CORRECTION'].includes(String(payment.status || 'DRAFT').toUpperCase())) {
+    throw new BusinessTransactionError("Only DRAFT, RETURNED, or REJECTED payments can be submitted");
+  }
 
   await db.transaction(async (tx) => {
     const upd = await tx.update(schema.customerPayments).set({
       status: "SUBMITTED",
       submittedBy: userId,
+      version: Number(payment.version || 1) + 1,
       updatedAt: new Date()
-    }).where(and(eq(schema.customerPayments.id, paymentId), eq(schema.customerPayments.companyId, companyId), eq(schema.customerPayments.status, "DRAFT")));
+    }).where(and(eq(schema.customerPayments.id, paymentId), eq(schema.customerPayments.companyId, companyId), eq(schema.customerPayments.version, payment.version || 1)));
 
     if ((upd as any)?.changes === 0) {
       throw new BusinessTransactionError("Concurrent modification conflict: Customer payment status changed before submission", "CONCURRENT_MODIFICATION_CONFLICT", 409);
@@ -1299,7 +1366,9 @@ export async function submitCustomerPayment(companyId: string, paymentId: string
 export async function approveCustomerPayment(companyId: string, paymentId: string, userId: string, userRole?: string) {
   const payment = await db.select().from(schema.customerPayments).where(and(eq(schema.customerPayments.id, paymentId), eq(schema.customerPayments.companyId, companyId))).get();
   if (!payment) throw new BusinessTransactionError("Payment not found");
-  if (payment.status !== "SUBMITTED") throw new BusinessTransactionError("Only SUBMITTED payments can be approved");
+  if (!['SUBMITTED', 'REVIEWED', 'UNDER_REVIEW'].includes(String(payment.status || '').toUpperCase())) {
+    throw new BusinessTransactionError("Only SUBMITTED, REVIEWED, or UNDER_REVIEW payments can be approved");
+  }
 
   await assertSodApprovalAllowed(db, companyId, payment, userId, userRole, "payment");
 
@@ -1307,8 +1376,9 @@ export async function approveCustomerPayment(companyId: string, paymentId: strin
     const upd = await tx.update(schema.customerPayments).set({
       status: "APPROVED",
       approvedBy: userId,
+      version: Number(payment.version || 1) + 1,
       updatedAt: new Date()
-    }).where(and(eq(schema.customerPayments.id, paymentId), eq(schema.customerPayments.companyId, companyId), eq(schema.customerPayments.status, "SUBMITTED")));
+    }).where(and(eq(schema.customerPayments.id, paymentId), eq(schema.customerPayments.companyId, companyId), eq(schema.customerPayments.version, payment.version || 1)));
 
     if ((upd as any)?.changes === 0) {
       throw new BusinessTransactionError("Concurrent modification conflict: Customer payment was already processed", "CONCURRENT_MODIFICATION_CONFLICT", 409);
@@ -1322,6 +1392,36 @@ export async function approveCustomerPayment(companyId: string, paymentId: strin
       entityType: "customer_payments",
       entityId: paymentId,
     });
+
+    await syncActiveWorkflowsOnDirectDecision(tx, companyId, "CUSTOMER_PAYMENT", paymentId, "APPROVE", userId);
+  });
+}
+
+export async function rejectCustomerPayment(companyId: string, paymentId: string, userId: string, reason?: string) {
+  const payment = await db.select().from(schema.customerPayments).where(and(eq(schema.customerPayments.id, paymentId), eq(schema.customerPayments.companyId, companyId))).get();
+  if (!payment) throw new BusinessTransactionError("Payment not found");
+  if (!['SUBMITTED', 'REVIEWED', 'UNDER_REVIEW'].includes(String(payment.status || '').toUpperCase())) {
+    throw new BusinessTransactionError("Only SUBMITTED, REVIEWED, or UNDER_REVIEW payments can be rejected");
+  }
+
+  await db.transaction(async (tx) => {
+    await tx.update(schema.customerPayments).set({
+      status: "DRAFT",
+      version: Number(payment.version || 1) + 1,
+      updatedAt: new Date()
+    }).where(eq(schema.customerPayments.id, paymentId));
+
+    await tx.insert(schema.auditLogs).values({
+      id: crypto.randomUUID(),
+      companyId,
+      userId,
+      action: "REJECT_CUSTOMER_PAYMENT",
+      entityType: "customer_payments",
+      entityId: paymentId,
+      reason: reason || "Rejected by approver",
+    });
+
+    await syncActiveWorkflowsOnDirectDecision(tx, companyId, "CUSTOMER_PAYMENT", paymentId, "REJECT", userId, reason);
   });
 }
 
@@ -1976,7 +2076,9 @@ export async function submitPurchaseBill(companyId: string, billId: string, user
       }
     }
 
-    if (bill.status !== "DRAFT") throw new BusinessTransactionError("Only DRAFT bills can be submitted");
+    if (!['DRAFT', 'RETURNED', 'REJECTED', 'CORRECTION'].includes(String(bill.status || 'DRAFT').toUpperCase())) {
+      throw new BusinessTransactionError("Only DRAFT, RETURNED, or REJECTED bills can be submitted");
+    }
 
     const nextVer = (bill.version || 1) + 1;
     const res = await tx.update(schema.purchaseBills).set({
@@ -2063,6 +2165,8 @@ export async function approvePurchaseBill(companyId: string, billId: string, use
       entityType: "purchase_bills",
       entityId: billId,
     });
+
+    await syncActiveWorkflowsOnDirectDecision(tx, companyId, "PURCHASE_BILL", billId, "APPROVE", userId);
   });
 }
 
@@ -2076,6 +2180,7 @@ export async function rejectPurchaseBill(companyId: string, billId: string, user
   await db.transaction(async (tx) => {
     await tx.update(schema.purchaseBills).set({
       status: "DRAFT",
+      version: Number(bill.version || 1) + 1,
       updatedAt: new Date()
     }).where(eq(schema.purchaseBills.id, billId));
 
@@ -2088,12 +2193,15 @@ export async function rejectPurchaseBill(companyId: string, billId: string, user
       entityId: billId,
       reason: reason || "Rejected by approver",
     });
+
+    await syncActiveWorkflowsOnDirectDecision(tx, companyId, "PURCHASE_BILL", billId, "REJECT", userId, reason);
   });
 }
 
 export async function postPurchaseBill(companyId: string, billId: string, periodId: string, lines: any[], userId: string, userRole?: string) {
   const bill = await db.select().from(schema.purchaseBills).where(and(eq(schema.purchaseBills.id, billId), eq(schema.purchaseBills.companyId, companyId))).get();
   if (!bill) throw new BusinessTransactionError("Bill not found");
+  if (bill.status === "POSTED" && bill.journalEntryId) return bill.journalEntryId;
   if (bill.status !== "APPROVED") throw new BusinessTransactionError("Only APPROVED bills can be posted");
 
   const vendor = await db.select().from(schema.vendors).where(eq(schema.vendors.id, bill.vendorId)).get();
@@ -2338,6 +2446,7 @@ export async function postPurchaseBill(companyId: string, billId: string, period
     await tx.update(schema.purchaseBills).set({
       status: "POSTED",
       journalEntryId: entryId,
+      version: Number(bill.version || 1) + 1,
       updatedAt: new Date()
     }).where(eq(schema.purchaseBills.id, billId));
 
@@ -2418,14 +2527,17 @@ export async function createSupplierPayment(companyId: string, data: any, userId
 export async function submitSupplierPayment(companyId: string, paymentId: string, userId: string) {
   const payment = await db.select().from(schema.supplierPayments).where(and(eq(schema.supplierPayments.id, paymentId), eq(schema.supplierPayments.companyId, companyId))).get();
   if (!payment) throw new BusinessTransactionError("Payment not found");
-  if (payment.status !== "DRAFT") throw new BusinessTransactionError("Only DRAFT payments can be submitted");
+  if (!['DRAFT', 'RETURNED', 'REJECTED', 'CORRECTION'].includes(String(payment.status || 'DRAFT').toUpperCase())) {
+    throw new BusinessTransactionError("Only DRAFT, RETURNED, or REJECTED payments can be submitted");
+  }
 
   await db.transaction(async (tx) => {
     const upd = await tx.update(schema.supplierPayments).set({
       status: "SUBMITTED",
       submittedBy: userId,
+      version: Number(payment.version || 1) + 1,
       updatedAt: new Date()
-    }).where(and(eq(schema.supplierPayments.id, paymentId), eq(schema.supplierPayments.companyId, companyId), eq(schema.supplierPayments.status, "DRAFT")));
+    }).where(and(eq(schema.supplierPayments.id, paymentId), eq(schema.supplierPayments.companyId, companyId), eq(schema.supplierPayments.version, payment.version || 1)));
 
     if ((upd as any)?.changes === 0) {
       throw new BusinessTransactionError("Concurrent modification conflict: Supplier payment status changed before submission", "CONCURRENT_MODIFICATION_CONFLICT", 409);
@@ -2445,7 +2557,9 @@ export async function submitSupplierPayment(companyId: string, paymentId: string
 export async function approveSupplierPayment(companyId: string, paymentId: string, userId: string, userRole?: string) {
   const payment = await db.select().from(schema.supplierPayments).where(and(eq(schema.supplierPayments.id, paymentId), eq(schema.supplierPayments.companyId, companyId))).get();
   if (!payment) throw new BusinessTransactionError("Payment not found");
-  if (payment.status !== "SUBMITTED") throw new BusinessTransactionError("Only SUBMITTED payments can be approved");
+  if (!['SUBMITTED', 'REVIEWED', 'UNDER_REVIEW'].includes(String(payment.status || '').toUpperCase())) {
+    throw new BusinessTransactionError("Only SUBMITTED, REVIEWED, or UNDER_REVIEW payments can be approved");
+  }
 
   await assertSodApprovalAllowed(db, companyId, payment, userId, userRole, "payment");
 
@@ -2453,8 +2567,9 @@ export async function approveSupplierPayment(companyId: string, paymentId: strin
     const upd = await tx.update(schema.supplierPayments).set({
       status: "APPROVED",
       approvedBy: userId,
+      version: Number(payment.version || 1) + 1,
       updatedAt: new Date()
-    }).where(and(eq(schema.supplierPayments.id, paymentId), eq(schema.supplierPayments.companyId, companyId), eq(schema.supplierPayments.status, "SUBMITTED")));
+    }).where(and(eq(schema.supplierPayments.id, paymentId), eq(schema.supplierPayments.companyId, companyId), eq(schema.supplierPayments.version, payment.version || 1)));
 
     if ((upd as any)?.changes === 0) {
       throw new BusinessTransactionError("Concurrent modification conflict: Supplier payment was already processed", "CONCURRENT_MODIFICATION_CONFLICT", 409);
@@ -2468,17 +2583,22 @@ export async function approveSupplierPayment(companyId: string, paymentId: strin
       entityType: "supplier_payments",
       entityId: paymentId,
     });
+
+    await syncActiveWorkflowsOnDirectDecision(tx, companyId, "SUPPLIER_PAYMENT", paymentId, "APPROVE", userId);
   });
 }
 
 export async function rejectSupplierPayment(companyId: string, paymentId: string, userId: string, reason?: string) {
   const payment = await db.select().from(schema.supplierPayments).where(and(eq(schema.supplierPayments.id, paymentId), eq(schema.supplierPayments.companyId, companyId))).get();
   if (!payment) throw new BusinessTransactionError("Payment not found");
-  if (payment.status !== "SUBMITTED") throw new BusinessTransactionError("Only SUBMITTED payments can be rejected");
+  if (!['SUBMITTED', 'REVIEWED', 'UNDER_REVIEW'].includes(String(payment.status || '').toUpperCase())) {
+    throw new BusinessTransactionError("Only SUBMITTED, REVIEWED, or UNDER_REVIEW payments can be rejected");
+  }
 
   await db.transaction(async (tx) => {
     await tx.update(schema.supplierPayments).set({
       status: "DRAFT",
+      version: Number(payment.version || 1) + 1,
       updatedAt: new Date()
     }).where(eq(schema.supplierPayments.id, paymentId));
 
@@ -2491,6 +2611,8 @@ export async function rejectSupplierPayment(companyId: string, paymentId: string
       entityId: paymentId,
       reason: reason || "Rejected by approver",
     });
+
+    await syncActiveWorkflowsOnDirectDecision(tx, companyId, "SUPPLIER_PAYMENT", paymentId, "REJECT", userId, reason);
   });
 }
 
@@ -2753,12 +2875,15 @@ export async function createDebitMemo(companyId: string, data: any, userId: stri
 export async function submitDebitMemo(companyId: string, memoId: string, userId: string) {
   const memo = await db.select().from(schema.debitMemos).where(and(eq(schema.debitMemos.id, memoId), eq(schema.debitMemos.companyId, companyId))).get();
   if (!memo) throw new BusinessTransactionError("Debit memo not found");
-  if (memo.status !== "DRAFT") throw new BusinessTransactionError("Only DRAFT debit memos can be submitted");
+  if (!['DRAFT', 'RETURNED', 'REJECTED', 'CORRECTION'].includes(String(memo.status || 'DRAFT').toUpperCase())) {
+    throw new BusinessTransactionError("Only DRAFT, RETURNED, or REJECTED debit memos can be submitted");
+  }
 
   await db.transaction(async (tx) => {
     await tx.update(schema.debitMemos).set({
       status: "SUBMITTED",
       submittedBy: userId,
+      version: Number(memo.version || 1) + 1,
       updatedAt: new Date()
     }).where(eq(schema.debitMemos.id, memoId));
 
@@ -2776,7 +2901,9 @@ export async function submitDebitMemo(companyId: string, memoId: string, userId:
 export async function approveDebitMemo(companyId: string, memoId: string, userId: string, userRole?: string) {
   const memo = await db.select().from(schema.debitMemos).where(and(eq(schema.debitMemos.id, memoId), eq(schema.debitMemos.companyId, companyId))).get();
   if (!memo) throw new BusinessTransactionError("Debit memo not found");
-  if (memo.status !== "SUBMITTED") throw new BusinessTransactionError("Only SUBMITTED debit memos can be approved");
+  if (!['SUBMITTED', 'REVIEWED', 'UNDER_REVIEW'].includes(String(memo.status || '').toUpperCase())) {
+    throw new BusinessTransactionError("Only SUBMITTED, REVIEWED, or UNDER_REVIEW debit memos can be approved");
+  }
 
   await assertSodApprovalAllowed(db, companyId, memo, userId, userRole, "debit memo");
 
@@ -2784,6 +2911,7 @@ export async function approveDebitMemo(companyId: string, memoId: string, userId
     await tx.update(schema.debitMemos).set({
       status: "APPROVED",
       approvedBy: userId,
+      version: Number(memo.version || 1) + 1,
       updatedAt: new Date()
     }).where(eq(schema.debitMemos.id, memoId));
 
@@ -2795,17 +2923,22 @@ export async function approveDebitMemo(companyId: string, memoId: string, userId
       entityType: "debit_memos",
       entityId: memoId,
     });
+
+    await syncActiveWorkflowsOnDirectDecision(tx, companyId, "DEBIT_MEMO", memoId, "APPROVE", userId);
   });
 }
 
 export async function rejectDebitMemo(companyId: string, memoId: string, userId: string, reason?: string) {
   const memo = await db.select().from(schema.debitMemos).where(and(eq(schema.debitMemos.id, memoId), eq(schema.debitMemos.companyId, companyId))).get();
   if (!memo) throw new BusinessTransactionError("Debit memo not found");
-  if (memo.status !== "SUBMITTED") throw new BusinessTransactionError("Only SUBMITTED debit memos can be rejected");
+  if (!['SUBMITTED', 'REVIEWED', 'UNDER_REVIEW'].includes(String(memo.status || '').toUpperCase())) {
+    throw new BusinessTransactionError("Only SUBMITTED, REVIEWED, or UNDER_REVIEW debit memos can be rejected");
+  }
 
   await db.transaction(async (tx) => {
     await tx.update(schema.debitMemos).set({
       status: "DRAFT",
+      version: Number(memo.version || 1) + 1,
       updatedAt: new Date()
     }).where(eq(schema.debitMemos.id, memoId));
 
@@ -2818,6 +2951,8 @@ export async function rejectDebitMemo(companyId: string, memoId: string, userId:
       entityId: memoId,
       reason: reason || "Rejected by approver",
     });
+
+    await syncActiveWorkflowsOnDirectDecision(tx, companyId, "DEBIT_MEMO", memoId, "REJECT", userId, reason);
   });
 }
 
@@ -3193,12 +3328,15 @@ export async function createCashTransaction(companyId: string, data: any, userId
 export async function submitCashTransaction(companyId: string, transactionId: string, userId: string) {
   const txn = await db.select().from(schema.cashTransactions).where(and(eq(schema.cashTransactions.id, transactionId), eq(schema.cashTransactions.companyId, companyId))).get();
   if (!txn) throw new BusinessTransactionError("Cash transaction not found");
-  if (txn.status !== "DRAFT") throw new BusinessTransactionError("Only DRAFT transactions can be submitted");
+  if (!['DRAFT', 'RETURNED', 'REJECTED', 'CORRECTION'].includes(String(txn.status || 'DRAFT').toUpperCase())) {
+    throw new BusinessTransactionError("Only DRAFT, RETURNED, or REJECTED transactions can be submitted");
+  }
 
   await db.transaction(async (tx) => {
     await tx.update(schema.cashTransactions).set({
       status: "SUBMITTED",
       submittedBy: userId,
+      version: Number(txn.version || 1) + 1,
       updatedAt: new Date()
     }).where(eq(schema.cashTransactions.id, transactionId));
 
@@ -3216,7 +3354,9 @@ export async function submitCashTransaction(companyId: string, transactionId: st
 export async function approveCashTransaction(companyId: string, transactionId: string, userId: string, userRole?: string) {
   const txn = await db.select().from(schema.cashTransactions).where(and(eq(schema.cashTransactions.id, transactionId), eq(schema.cashTransactions.companyId, companyId))).get();
   if (!txn) throw new BusinessTransactionError("Cash transaction not found");
-  if (txn.status !== "SUBMITTED") throw new BusinessTransactionError("Only SUBMITTED transactions can be approved");
+  if (!['SUBMITTED', 'REVIEWED', 'UNDER_REVIEW'].includes(String(txn.status || '').toUpperCase())) {
+    throw new BusinessTransactionError("Only SUBMITTED, REVIEWED, or UNDER_REVIEW transactions can be approved");
+  }
   
   await assertSodApprovalAllowed(db, companyId, txn, userId, userRole, "transaction");
 
@@ -3224,6 +3364,7 @@ export async function approveCashTransaction(companyId: string, transactionId: s
     await tx.update(schema.cashTransactions).set({
       status: "APPROVED",
       approvedBy: userId,
+      version: Number(txn.version || 1) + 1,
       updatedAt: new Date()
     }).where(eq(schema.cashTransactions.id, transactionId));
 
@@ -3235,17 +3376,22 @@ export async function approveCashTransaction(companyId: string, transactionId: s
       entityType: "cash_transactions",
       entityId: transactionId,
     });
+
+    await syncActiveWorkflowsOnDirectDecision(tx, companyId, "CASH_TRANSACTION", transactionId, "APPROVE", userId);
   });
 }
 
 export async function rejectCashTransaction(companyId: string, transactionId: string, userId: string, reason?: string) {
   const txn = await db.select().from(schema.cashTransactions).where(and(eq(schema.cashTransactions.id, transactionId), eq(schema.cashTransactions.companyId, companyId))).get();
   if (!txn) throw new BusinessTransactionError("Cash transaction not found");
-  if (txn.status !== "SUBMITTED") throw new BusinessTransactionError("Only SUBMITTED transactions can be rejected");
+  if (!['SUBMITTED', 'REVIEWED', 'UNDER_REVIEW'].includes(String(txn.status || '').toUpperCase())) {
+    throw new BusinessTransactionError("Only SUBMITTED, REVIEWED, or UNDER_REVIEW transactions can be rejected");
+  }
 
   await db.transaction(async (tx) => {
     await tx.update(schema.cashTransactions).set({
       status: "DRAFT",
+      version: Number(txn.version || 1) + 1,
       updatedAt: new Date()
     }).where(eq(schema.cashTransactions.id, transactionId));
 
@@ -3258,6 +3404,8 @@ export async function rejectCashTransaction(companyId: string, transactionId: st
       entityId: transactionId,
       reason: reason || "Rejected by approver",
     });
+
+    await syncActiveWorkflowsOnDirectDecision(tx, companyId, "CASH_TRANSACTION", transactionId, "REJECT", userId, reason);
   });
 }
 
@@ -3981,14 +4129,17 @@ export async function createBankDeposit(companyId: string, data: any, userId: st
 export async function submitBankDeposit(companyId: string, depositId: string, userId: string) {
   const deposit = await db.select().from(schema.bankDeposits).where(and(eq(schema.bankDeposits.id, depositId), eq(schema.bankDeposits.companyId, companyId))).get();
   if (!deposit) throw new BusinessTransactionError("Bank deposit not found");
-  if (deposit.status !== 'DRAFT') throw new BusinessTransactionError("Only DRAFT bank deposits can be submitted");
+  const curStatus = String(deposit.status || 'DRAFT').toUpperCase();
+  if (!['DRAFT', 'RETURNED', 'REJECTED', 'CORRECTION'].includes(curStatus)) {
+    throw new BusinessTransactionError("Only DRAFT, RETURNED, or REJECTED bank deposits can be submitted");
+  }
 
   await db.transaction(async (tx) => {
     const upd = await tx.update(schema.bankDeposits).set({
       status: 'SUBMITTED',
       submittedBy: userId,
       updatedAt: new Date()
-    }).where(and(eq(schema.bankDeposits.id, depositId), eq(schema.bankDeposits.companyId, companyId), eq(schema.bankDeposits.status, 'DRAFT')));
+    }).where(and(eq(schema.bankDeposits.id, depositId), eq(schema.bankDeposits.companyId, companyId), eq(schema.bankDeposits.status, deposit.status)));
 
     if ((upd as any)?.changes === 0) {
       throw new BusinessTransactionError("Concurrent modification conflict: Bank deposit status changed before submission", "CONCURRENT_MODIFICATION_CONFLICT", 409);
@@ -4008,7 +4159,10 @@ export async function submitBankDeposit(companyId: string, depositId: string, us
 export async function approveBankDeposit(companyId: string, depositId: string, userId: string, userRole?: string) {
   const deposit = await db.select().from(schema.bankDeposits).where(and(eq(schema.bankDeposits.id, depositId), eq(schema.bankDeposits.companyId, companyId))).get();
   if (!deposit) throw new BusinessTransactionError("Bank deposit not found");
-  if (deposit.status !== 'SUBMITTED') throw new BusinessTransactionError("Only SUBMITTED bank deposits can be approved");
+  const curStatus = String(deposit.status || '').toUpperCase();
+  if (!['SUBMITTED', 'REVIEWED', 'UNDER_REVIEW'].includes(curStatus)) {
+    throw new BusinessTransactionError("Only SUBMITTED, REVIEWED, or UNDER_REVIEW bank deposits can be approved");
+  }
 
   await assertSodApprovalAllowed(db, companyId, deposit, userId, userRole, "deposit");
 
@@ -4017,7 +4171,7 @@ export async function approveBankDeposit(companyId: string, depositId: string, u
       status: 'APPROVED',
       approvedBy: userId,
       updatedAt: new Date()
-    }).where(and(eq(schema.bankDeposits.id, depositId), eq(schema.bankDeposits.companyId, companyId), eq(schema.bankDeposits.status, 'SUBMITTED')));
+    }).where(and(eq(schema.bankDeposits.id, depositId), eq(schema.bankDeposits.companyId, companyId), eq(schema.bankDeposits.status, deposit.status)));
 
     if ((upd as any)?.changes === 0) {
       throw new BusinessTransactionError("Concurrent modification conflict: Bank deposit was already processed", "CONCURRENT_MODIFICATION_CONFLICT", 409);
@@ -4031,13 +4185,17 @@ export async function approveBankDeposit(companyId: string, depositId: string, u
       entityType: "bank_deposits",
       entityId: depositId,
     });
+
+    await syncActiveWorkflowsOnDirectDecision(tx, companyId, "BANK_DEPOSIT", depositId, "APPROVE", userId);
   });
 }
 
 export async function rejectBankDeposit(companyId: string, depositId: string, userId: string, reason?: string) {
   const deposit = await db.select().from(schema.bankDeposits).where(and(eq(schema.bankDeposits.id, depositId), eq(schema.bankDeposits.companyId, companyId))).get();
   if (!deposit) throw new BusinessTransactionError("Bank deposit not found");
-  if (deposit.status !== 'SUBMITTED') throw new BusinessTransactionError("Only SUBMITTED bank deposits can be rejected");
+  if (!['SUBMITTED', 'REVIEWED', 'UNDER_REVIEW'].includes(String(deposit.status || '').toUpperCase())) {
+    throw new BusinessTransactionError("Only SUBMITTED, REVIEWED, or UNDER_REVIEW bank deposits can be rejected");
+  }
 
   await db.transaction(async (tx) => {
     await tx.update(schema.bankDeposits).set({
@@ -4054,6 +4212,8 @@ export async function rejectBankDeposit(companyId: string, depositId: string, us
       entityId: depositId,
       reason: reason || "Rejected by approver",
     });
+
+    await syncActiveWorkflowsOnDirectDecision(tx, companyId, "BANK_DEPOSIT", depositId, "REJECT", userId, reason);
   });
 }
 
@@ -4203,12 +4363,15 @@ export async function createCashCount(companyId: string, data: any, userId: stri
 export async function submitCashCount(companyId: string, countId: string, userId: string) {
   const count = await db.select().from(schema.cashCounts).where(and(eq(schema.cashCounts.id, countId), eq(schema.cashCounts.companyId, companyId))).get();
   if (!count) throw new BusinessTransactionError("Cash count record not found");
-  if (count.status !== 'DRAFT') throw new BusinessTransactionError("Only DRAFT cash counts can be submitted");
+  if (!['DRAFT', 'RETURNED', 'REJECTED', 'CORRECTION'].includes(String(count.status || 'DRAFT').toUpperCase())) {
+    throw new BusinessTransactionError("Only DRAFT, RETURNED, or REJECTED cash counts can be submitted");
+  }
 
   await db.transaction(async (tx) => {
     await tx.update(schema.cashCounts).set({
       status: 'SUBMITTED',
       submittedBy: userId,
+      version: Number(count.version || 1) + 1,
       updatedAt: new Date()
     }).where(eq(schema.cashCounts.id, countId));
 
@@ -4226,7 +4389,9 @@ export async function submitCashCount(companyId: string, countId: string, userId
 export async function approveCashCount(companyId: string, countId: string, userId: string, userRole?: string) {
   const count = await db.select().from(schema.cashCounts).where(and(eq(schema.cashCounts.id, countId), eq(schema.cashCounts.companyId, companyId))).get();
   if (!count) throw new BusinessTransactionError("Cash count record not found");
-  if (count.status !== 'SUBMITTED') throw new BusinessTransactionError("Only SUBMITTED cash counts can be approved");
+  if (!['SUBMITTED', 'REVIEWED', 'UNDER_REVIEW'].includes(String(count.status || '').toUpperCase())) {
+    throw new BusinessTransactionError("Only SUBMITTED, REVIEWED, or UNDER_REVIEW cash counts can be approved");
+  }
 
   await assertSodApprovalAllowed(db, companyId, count, userId, userRole, "cash count");
 
@@ -4234,6 +4399,7 @@ export async function approveCashCount(companyId: string, countId: string, userI
     await tx.update(schema.cashCounts).set({
       status: 'APPROVED',
       approvedBy: userId,
+      version: Number(count.version || 1) + 1,
       updatedAt: new Date()
     }).where(eq(schema.cashCounts.id, countId));
 
@@ -4245,17 +4411,22 @@ export async function approveCashCount(companyId: string, countId: string, userI
       entityType: "cash_counts",
       entityId: countId,
     });
+
+    await syncActiveWorkflowsOnDirectDecision(tx, companyId, "CASH_COUNT", countId, "APPROVE", userId);
   });
 }
 
 export async function rejectCashCount(companyId: string, countId: string, userId: string, reason?: string) {
   const count = await db.select().from(schema.cashCounts).where(and(eq(schema.cashCounts.id, countId), eq(schema.cashCounts.companyId, companyId))).get();
   if (!count) throw new BusinessTransactionError("Cash count record not found");
-  if (count.status !== 'SUBMITTED') throw new BusinessTransactionError("Only SUBMITTED cash counts can be rejected");
+  if (!['SUBMITTED', 'REVIEWED', 'UNDER_REVIEW'].includes(String(count.status || '').toUpperCase())) {
+    throw new BusinessTransactionError("Only SUBMITTED, REVIEWED, or UNDER_REVIEW cash counts can be rejected");
+  }
 
   await db.transaction(async (tx) => {
     await tx.update(schema.cashCounts).set({
       status: 'DRAFT',
+      version: Number(count.version || 1) + 1,
       updatedAt: new Date()
     }).where(eq(schema.cashCounts.id, countId));
 
@@ -4268,100 +4439,104 @@ export async function rejectCashCount(companyId: string, countId: string, userId
       entityId: countId,
       reason: reason || "Rejected by approver",
     });
+
+    await syncActiveWorkflowsOnDirectDecision(tx, companyId, "CASH_COUNT", countId, "REJECT", userId, reason);
   });
 }
 
 export async function postCashCount(companyId: string, countId: string, periodId: string, userId: string, userRole?: string) {
   const count = await db.select().from(schema.cashCounts).where(and(eq(schema.cashCounts.id, countId), eq(schema.cashCounts.companyId, companyId))).get();
   if (!count) throw new BusinessTransactionError("Cash count record not found");
+  if (count.status === 'POSTED') return;
   if (count.status !== 'APPROVED') throw new BusinessTransactionError("Only APPROVED cash counts can be posted");
 
   const validatedPeriod = await validateTransactionDateAndPeriod(companyId, count.countDate, { userRole });
   const effectivePeriodId = periodId || validatedPeriod.id;
 
-  let entryId: string | null = null;
-
-  // If there is a variance (overage or shortage), generate adjustment journal entry
-  if (count.varianceAmount !== 0) {
-    // Find or default Cash Over/Short account
-    let varianceAccId = count.varianceAccountId;
-    if (!varianceAccId) {
-      const varAcc = await db.select().from(schema.accounts).where(and(
-        eq(schema.accounts.companyId, companyId),
-        or(like(schema.accounts.accountName, '%Over%Short%'), eq(schema.accounts.accountCode, '6190'))
-      )).get();
-      varianceAccId = varAcc?.id;
-    }
-    if (!varianceAccId) throw new BusinessTransactionError("BRAC Violation: Cash Over/Short account required to post variance");
-
-    await db.transaction(async (tx) => {
-      entryId = crypto.randomUUID();
-      await tx.insert(schema.journalEntries).values({
-        id: entryId!,
-        companyId,
-        journalNumber: `JV-CNT-${count.countNumber}`,
-        entryDate: count.countDate,
-        accountingPeriodId: effectivePeriodId,
-        description: `Cash Count Adjustment for Count #${count.countNumber} - Variance: ${count.varianceAmount / 100}`,
-        sourceType: 'CASH_COUNT',
-        sourceId: countId,
-        status: 'POSTED',
-        createdBy: count.createdBy || userId,
-        submittedBy: count.submittedBy || count.createdBy || userId,
-        submittedAt: new Date(),
-        approvedBy: count.approvedBy || userId,
-        approvedAt: new Date(),
-        postedBy: userId,
-        postedAt: new Date(),
-      });
-
-      if (count.varianceAmount < 0) {
-        // Shortage: Debit Cash Over/Short expense, Credit Cash Account
-        const shortage = Math.abs(count.varianceAmount);
-        await tx.insert(schema.journalLines).values({
-          id: crypto.randomUUID(),
-          journalEntryId: entryId!,
-          accountId: varianceAccId!,
-          debit: shortage,
-          credit: 0,
-          lineNumber: 1
-        });
-        await tx.insert(schema.journalLines).values({
-          id: crypto.randomUUID(),
-          journalEntryId: entryId!,
-          accountId: count.cashAccountId,
-          debit: 0,
-          credit: shortage,
-          lineNumber: 2
-        });
-      } else {
-        // Overage: Debit Cash Account, Credit Cash Over/Short revenue/other income
-        const overage = count.varianceAmount;
-        await tx.insert(schema.journalLines).values({
-          id: crypto.randomUUID(),
-          journalEntryId: entryId!,
-          accountId: count.cashAccountId,
-          debit: overage,
-          credit: 0,
-          lineNumber: 1
-        });
-        await tx.insert(schema.journalLines).values({
-          id: crypto.randomUUID(),
-          journalEntryId: entryId!,
-          accountId: varianceAccId!,
-          debit: 0,
-          credit: overage,
-          lineNumber: 2
-        });
-      }
-      await validateJournalEntryBalance(tx, entryId!);
-    });
+  let varianceAccId = count.varianceAccountId;
+  if (count.varianceAmount !== 0 && !varianceAccId) {
+    const varAcc = await db.select().from(schema.accounts).where(and(
+      eq(schema.accounts.companyId, companyId),
+      or(like(schema.accounts.accountName, '%Over%Short%'), eq(schema.accounts.accountCode, '6190'))
+    )).get();
+    varianceAccId = varAcc?.id;
+  }
+  if (count.varianceAmount !== 0 && !varianceAccId) {
+    throw new BusinessTransactionError("BRAC Violation: Cash Over/Short account required to post variance");
   }
 
   await db.transaction(async (tx) => {
+    let entryId: string | null = null;
+    if (count.varianceAmount !== 0) {
+      const existingJe = await assertNoDuplicateSourceJournal(tx, companyId, 'CASH_COUNT', countId);
+      if (existingJe && existingJe.status === 'POSTED') {
+        entryId = existingJe.id;
+      } else {
+        entryId = crypto.randomUUID();
+        await tx.insert(schema.journalEntries).values({
+          id: entryId,
+          companyId,
+          journalNumber: `JV-CNT-${count.countNumber}`,
+          entryDate: count.countDate,
+          accountingPeriodId: effectivePeriodId,
+          description: `Cash Count Adjustment for Count #${count.countNumber} - Variance: ${count.varianceAmount / 100}`,
+          sourceType: 'CASH_COUNT',
+          sourceId: countId,
+          status: 'POSTED',
+          createdBy: count.createdBy || userId,
+          submittedBy: count.submittedBy || count.createdBy || userId,
+          submittedAt: new Date(),
+          approvedBy: count.approvedBy || userId,
+          approvedAt: new Date(),
+          postedBy: userId,
+          postedAt: new Date(),
+        });
+
+        if (count.varianceAmount < 0) {
+          const shortage = Math.abs(count.varianceAmount);
+          await tx.insert(schema.journalLines).values({
+            id: crypto.randomUUID(),
+            journalEntryId: entryId,
+            accountId: varianceAccId!,
+            debit: shortage,
+            credit: 0,
+            lineNumber: 1
+          });
+          await tx.insert(schema.journalLines).values({
+            id: crypto.randomUUID(),
+            journalEntryId: entryId,
+            accountId: count.cashAccountId,
+            debit: 0,
+            credit: shortage,
+            lineNumber: 2
+          });
+        } else {
+          const overage = count.varianceAmount;
+          await tx.insert(schema.journalLines).values({
+            id: crypto.randomUUID(),
+            journalEntryId: entryId,
+            accountId: count.cashAccountId,
+            debit: overage,
+            credit: 0,
+            lineNumber: 1
+          });
+          await tx.insert(schema.journalLines).values({
+            id: crypto.randomUUID(),
+            journalEntryId: entryId,
+            accountId: varianceAccId!,
+            debit: 0,
+            credit: overage,
+            lineNumber: 2
+          });
+        }
+        await validateJournalEntryBalance(tx, entryId);
+      }
+    }
+
     await tx.update(schema.cashCounts).set({
       status: 'POSTED',
       journalEntryId: entryId,
+      version: Number(count.version || 1) + 1,
       updatedAt: new Date()
     }).where(eq(schema.cashCounts.id, countId));
 
@@ -4979,10 +5154,16 @@ export async function submitBankReconciliation(companyId: string, reconciliation
     .get();
 
   if (!recon) throw new BusinessTransactionError("Bank reconciliation record not found");
+  if (recon.status === 'APPROVED' || recon.status === 'COMPLETED') {
+    throw new BusinessTransactionError("Approved bank reconciliations cannot be resubmitted without reopening first.");
+  }
+
+  await recalculateBankReconciliationMetrics(companyId, reconciliationId);
 
   await db.update(schema.bankReconciliations).set({
     status: 'SUBMITTED',
     submittedBy: userId,
+    version: Number(recon.version || 1) + 1,
     updatedAt: new Date()
   }).where(eq(schema.bankReconciliations.id, reconciliationId));
 }
@@ -5153,28 +5334,32 @@ export async function reopenBankReconciliation(companyId: string, reconciliation
 export async function ensureReconciledBankSeedData(companyId: string) {
   if (companyId !== 'LGR-PH-2026-STRESS-DG-PREVIEW') return;
   try {
-    const firstRow = await db.select().from(schema.bankReconciliations)
-      .where(eq(schema.bankReconciliations.companyId, companyId))
-      .get();
-    if (!firstRow) return;
-
-    const cashAccountId = firstRow.bankAccountId || 'dg-acc-1010';
+    const cashAccountId = 'dg-acc-1010';
     const recons = await db.select().from(schema.bankReconciliations)
-      .where(eq(schema.bankReconciliations.companyId, companyId))
+      .where(and(
+        eq(schema.bankReconciliations.companyId, companyId),
+        eq(schema.bankReconciliations.bankAccountId, cashAccountId)
+      ))
       .orderBy(schema.bankReconciliations.statementDate);
+    if (recons.length === 0) return;
 
-    // 1. Mark checks chk-dg-1..95 as CLEARED, and chk-dg-96..100 as ISSUED in Nov 2026
+    // Only manage the canonical seeded 2026 monthly sessions for primary account dg-acc-1010;
+    // never overwrite user-created sessions or secondary accounts (e.g., dg-acc-1012).
+    const seededRecons = recons.filter((r) => /^brec-dg-2026-(0[1-9]|1[0-2])$/.test(r.id));
+    if (seededRecons.length === 0) return;
+
+    // 1. Mark checks chk-dg-1..95 as CLEARED, and chk-dg-96..100 as ISSUED in Nov 2026 (only if still ISSUED)
     const allChecks = await db.select().from(schema.checks)
-      .where(eq(schema.checks.companyId, companyId));
+      .where(and(eq(schema.checks.companyId, companyId), eq(schema.checks.cashAccountId, cashAccountId)));
     for (const chk of allChecks) {
       const matchNum = chk.id.match(/^chk-dg-(\d+)$/);
       const idx = matchNum ? Number(matchNum[1]) : 0;
-      if (idx > 0 && idx <= 95) {
+      if (idx > 0 && idx <= 95 && chk.status === 'ISSUED') {
         await db.update(schema.checks).set({
           status: 'CLEARED',
           clearedDate: chk.checkDate,
         }).where(eq(schema.checks.id, chk.id));
-      } else if (idx > 95) {
+      } else if (idx > 95 && idx <= 100 && chk.checkDate !== '2026-11-15' && chk.status === 'ISSUED') {
         await db.update(schema.checks).set({
           status: 'ISSUED',
           checkDate: '2026-11-15',
@@ -5183,24 +5368,34 @@ export async function ensureReconciledBankSeedData(companyId: string) {
       }
     }
 
-    // 2. Keep dep-dg-1..95 in 2026-01..09 and move dep-dg-96..100 to 2026-11-16 (Deposits in Transit for Nov 2026)
+    // 2. Keep dep-dg-1..95 in 2026-01..09 and place dep-dg-96..100 in 2026-11-16 (Deposits in Transit for Nov 2026)
     const allDeps = await db.select().from(schema.bankDeposits)
-      .where(eq(schema.bankDeposits.companyId, companyId));
+      .where(and(eq(schema.bankDeposits.companyId, companyId), eq(schema.bankDeposits.toBankAccountId, cashAccountId)));
     for (const dep of allDeps) {
       const matchNum = dep.id.match(/^dep-dg-(\d+)$/);
       const idx = matchNum ? Number(matchNum[1]) : 0;
-      if (idx > 95) {
+      if (idx > 95 && idx <= 100 && dep.depositDate !== '2026-11-16') {
         await db.update(schema.bankDeposits).set({
           depositDate: '2026-11-16',
         }).where(eq(schema.bankDeposits.id, dep.id));
       }
     }
 
-    // 3. Reconcile each of the 12 monthly bank_reconciliations against true GL balances & populate statement lines
-    for (const r of recons) {
+    // 3. Reconcile each seeded 2026 monthly session for dg-acc-1010 idempotently without wiping user edits/approvals
+    for (const r of seededRecons) {
       const stDate = r.statementDate;
       const monthPrefix = stDate.slice(0, 7); // e.g. '2026-01'
       const monthNum = Number(stDate.slice(5, 7));
+
+      const existingLines = await db.select()
+        .from(schema.bankStatementLines)
+        .where(eq(schema.bankStatementLines.bankReconciliationId, r.id));
+
+      // Preserve any user-approved, completed, or reopened sessions
+      if (r.status === 'REOPENED') continue;
+      if ((r.status === 'APPROVED' || r.status === 'COMPLETED') && existingLines.length > 0 && monthNum > 10) {
+        continue;
+      }
 
       const glLines = await db.select({
         debit: schema.journalLines.debit,
@@ -5221,10 +5416,11 @@ export async function ensureReconciledBankSeedData(companyId: string) {
       const monthDebits = monthGlLines.reduce((acc, l) => acc + l.debit, 0);
       const monthCredits = monthGlLines.reduce((acc, l) => acc + l.credit, 0);
 
-      // Clear any old statement lines for this recon and insert verifiable statement lines
-      await db.delete(schema.bankStatementLines).where(eq(schema.bankStatementLines.bankReconciliationId, r.id));
-
       if (monthNum <= 10) {
+        if (existingLines.length > 0 && r.status === 'APPROVED' && r.bookEndingBalance === cumulativeBookBalance && r.unexplainedDifference === 0) {
+          continue;
+        }
+        await db.delete(schema.bankStatementLines).where(eq(schema.bankStatementLines.bankReconciliationId, r.id));
         const linesToInsert: any[] = [];
         if (monthDebits > 0) {
           linesToInsert.push({
@@ -5298,27 +5494,41 @@ export async function ensureReconciledBankSeedData(companyId: string) {
         }).where(eq(schema.bankReconciliations.id, r.id));
       } else if (monthNum === 11) {
         // Nov 2026: Active reconciliation in progress with 5 Deposits in Transit (₱56,000.00) and 5 Outstanding Checks (₱27,500.00)
+        // Never overwrite if the user already added custom statement lines or approved the session
+        const hasOnlySeededLine =
+          existingLines.length === 0 ||
+          (existingLines.length === 1 && existingLines[0].id === `bsl-${r.id}-bal-1`);
+        if (!hasOnlySeededLine || r.status === 'APPROVED' || r.status === 'COMPLETED') {
+          continue;
+        }
         const ditAmount = 5 * 1120000; // 5,600,000 centavos (₱56,000.00)
         const ocAmount = 5 * 550000;   // 2,750,000 centavos (₱27,500.00)
-        const stmtEnding = cumulativeBookBalance - ditAmount + ocAmount; // 1,969,150,000 centavos (₱19,691,500.00)
+        const stmtEnding = cumulativeBookBalance - ditAmount + ocAmount;
 
-        await db.insert(schema.bankStatementLines).values([
-          {
-            id: `bsl-${r.id}-bal-1`,
-            bankReconciliationId: r.id,
-            companyId,
-            bankAccountId: cashAccountId,
-            lineDate: '2026-11-25',
-            description: 'BPI Corporate Statement Brought Forward & Verified Activity',
-            reference: 'BPI-STMT-2026-11',
-            type: 'DEPOSIT',
+        if (existingLines.length === 0) {
+          await db.insert(schema.bankStatementLines).values([
+            {
+              id: `bsl-${r.id}-bal-1`,
+              bankReconciliationId: r.id,
+              companyId,
+              bankAccountId: cashAccountId,
+              lineDate: '2026-11-25',
+              description: 'BPI Corporate Statement Brought Forward & Verified Activity',
+              reference: 'BPI-STMT-2026-11',
+              type: 'DEPOSIT',
+              amount: stmtEnding,
+              matchedStatus: 'MATCHED',
+              matchedType: 'STATEMENT_CONFIRMATION',
+              matchedEntityId: r.id,
+              matchedAmount: stmtEnding,
+            }
+          ]);
+        } else {
+          await db.update(schema.bankStatementLines).set({
             amount: stmtEnding,
-            matchedStatus: 'MATCHED',
-            matchedType: 'STATEMENT_CONFIRMATION',
-            matchedEntityId: r.id,
             matchedAmount: stmtEnding,
-          }
-        ]);
+          }).where(eq(schema.bankStatementLines.id, `bsl-${r.id}-bal-1`));
+        }
 
         await db.update(schema.bankReconciliations).set({
           bookEndingBalance: cumulativeBookBalance,
@@ -5334,11 +5544,14 @@ export async function ensureReconciledBankSeedData(companyId: string) {
           adjustedBookBalance: cumulativeBookBalance,
           adjustedStatementBalance: cumulativeBookBalance,
           unexplainedDifference: 0,
-          status: 'SUBMITTED',
-          notes: 'Nov 2026 Bank Reconciliation — 5 Deposits in Transit (₱56,000.00) & 5 Outstanding Checks (₱27,500.00) Reconciled to GL (₱19,720,000.00)',
+          status: r.status === 'DRAFT' ? 'SUBMITTED' : r.status,
+          notes: `Nov 2026 Bank Reconciliation — 5 Deposits in Transit (₱56,000.00) & 5 Outstanding Checks (₱27,500.00) Reconciled to GL`,
         }).where(eq(schema.bankReconciliations.id, r.id));
       } else {
-        // Dec 2026: Draft year-end reconciliation template
+        // Dec 2026: Draft year-end reconciliation template (only update metrics while still DRAFT with no custom lines)
+        if (r.status !== 'DRAFT' || existingLines.length > 0) {
+          continue;
+        }
         const ditAmount = 5 * 1120000;
         const ocAmount = 5 * 550000;
         const stmtEnding = cumulativeBookBalance - ditAmount + ocAmount;

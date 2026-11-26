@@ -39,6 +39,7 @@ import {
   createCustomerPayment,
   submitCustomerPayment,
   approveCustomerPayment,
+  rejectCustomerPayment,
   postCustomerPayment,
   createCreditMemo,
   postCreditMemo,
@@ -3298,6 +3299,18 @@ router.post("/customer-payments/:id/approve", requireAuth, requireApprovalRole, 
   }
 });
 
+router.post("/customer-payments/:id/reject", requireAuth, requireApprovalRole, async (req, res) => {
+  const companyId = req.activeCompany!.id;
+  const id = req.params.id;
+  const { reason } = req.body || {};
+  try {
+    await rejectCustomerPayment(companyId, id, req.user!.id, reason);
+    res.json({ message: "Customer payment rejected and returned to draft", id, status: "DRAFT" });
+  } catch (err: any) {
+    res.status(400).json({ error: err.code || "WORKFLOW_ERROR", message: err.message });
+  }
+});
+
 router.post("/customer-payments/:id/post", requireAuth, requirePostingRole, async (req, res) => {
   const companyId = req.activeCompany!.id;
   const id = req.params.id;
@@ -4282,6 +4295,21 @@ router.get("/bank-reconciliations", requireAuth, requirePermission('bank_rec:vie
   const companyId = req.activeCompany!.id;
   try {
     await ensureReconciledBankSeedData(companyId);
+    const initialRecons = await db
+      .select()
+      .from(schema.bankReconciliations)
+      .where(and(
+        eq(schema.bankReconciliations.companyId, companyId),
+        sql`UPPER(COALESCE(${schema.bankReconciliations.status}, 'DRAFT')) NOT IN ('ARCHIVED', 'REMOVED', 'SOFT_DELETED')`
+      ))
+      .orderBy(desc(schema.bankReconciliations.statementDate));
+
+    for (const r of initialRecons) {
+      if (!['APPROVED', 'COMPLETED'].includes(String(r.status || 'DRAFT').toUpperCase())) {
+        await recalculateBankReconciliationMetrics(companyId, r.id);
+      }
+    }
+
     const recons = await db
       .select()
       .from(schema.bankReconciliations)

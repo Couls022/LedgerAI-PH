@@ -73,10 +73,14 @@ export class RecurringJournalService {
         eq(schema.recurringJournals.status, 'ACTIVE')
       ));
 
+    const companyRow = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId)).get();
+    const lockDate = companyRow?.lockDate ? String(companyRow.lockDate).slice(0, 10) : null;
     const coaRows = await db.select().from(schema.accounts).where(eq(schema.accounts.companyId, companyId));
     const periods = await db.select().from(schema.accountingPeriods).where(eq(schema.accountingPeriods.companyId, companyId));
-    const accountById = new Map(coaRows.map((a) => [a.id, a]));
-    const accountByCode = new Map(coaRows.map((a) => [a.accountCode, a]));
+    const parentIds = new Set(coaRows.filter((a) => a.parentAccountId).map((a) => String(a.parentAccountId)));
+    const postableCoaRows = coaRows.filter((a) => a.status === 'ACTIVE' && !parentIds.has(a.id) && !(a as any).isHeader);
+    const accountById = new Map(postableCoaRows.map((a) => [a.id, a]));
+    const accountByCode = new Map(postableCoaRows.map((a) => [a.accountCode, a]));
 
     let processedCount = 0;
     const generatedDrafts: any[] = [];
@@ -92,9 +96,10 @@ export class RecurringJournalService {
         const rawLines = Array.isArray(journalData.lines) ? journalData.lines : [];
         const entryDateStr = nextRun.toISOString().slice(0, 10);
 
-        const matchingPeriod = periods.find(
-          (p) => p.status === 'OPEN' && p.startDate <= entryDateStr && p.endDate >= entryDateStr
-        ) || periods.find((p) => p.status === 'OPEN');
+        const isLockedByGlobalDate = Boolean(lockDate && entryDateStr <= lockDate);
+        const matchingPeriod = !isLockedByGlobalDate
+          ? periods.find((p) => p.status === 'OPEN' && p.startDate <= entryDateStr && p.endDate >= entryDateStr)
+          : undefined;
 
         if (!matchingPeriod) {
           skippedTemplates.push({

@@ -20,10 +20,13 @@ export interface PaginationParams {
 }
 
 export function parsePaginationParams(req: Request, defaultLimit = 20, maxLimit = 200): PaginationParams {
+  const raw = req.query.raw === 'true';
+  const hasExplicitLimit = typeof req.query.limit === 'string' && req.query.limit.trim().length > 0;
   const limitQuery = parseInt(req.query.limit as string, 10);
-  let limit = isNaN(limitQuery) || limitQuery <= 0 ? defaultLimit : limitQuery;
-  if (limit > maxLimit) {
-    limit = maxLimit;
+  const effectiveMaxLimit = raw && !hasExplicitLimit ? 5000 : maxLimit;
+  let limit = isNaN(limitQuery) || limitQuery <= 0 ? (raw ? 5000 : defaultLimit) : limitQuery;
+  if (limit > effectiveMaxLimit) {
+    limit = effectiveMaxLimit;
   }
 
   const cursor = (req.query.cursor as string) || null;
@@ -41,7 +44,6 @@ export function parsePaginationParams(req: Request, defaultLimit = 20, maxLimit 
   const orderRaw = (req.query.order as string) || (req.query.sortDir as string) || (req.query.direction as string);
   const order: 'ASC' | 'DESC' = orderRaw && orderRaw.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
-  const raw = req.query.raw === 'true';
   const paginate = req.query.paginate === 'true' || Boolean(req.query.limit || req.query.cursor);
 
   return {

@@ -1460,7 +1460,14 @@ router.post("/:id/post-accounting", requireAuth, requirePermission('accounting:c
   }
 
   try {
+    const { resolveCompanyControlAccount } = await import("../db/business_transactions");
     const accMap = await AccountingEngine.ensureDefaultAccounts(companyId);
+    const resolvedAp = await resolveCompanyControlAccount(db, companyId, "AP").catch(() => null);
+    const resolvedAr = await resolveCompanyControlAccount(db, companyId, "AR").catch(() => null);
+    const resolvedExp = await resolveCompanyControlAccount(db, companyId, "EXPENSE").catch(() => null);
+    const resolvedRev = await resolveCompanyControlAccount(db, companyId, "REVENUE").catch(() => null);
+    const resolvedCash = await resolveCompanyControlAccount(db, companyId, "CASH").catch(() => null);
+    const resolvedInputVat = await resolveCompanyControlAccount(db, companyId, "INPUT_VAT").catch(() => null);
     const amountCentavos = doc.extractedTotalAmount || 0;
     const vatCentavos = doc.extractedVatAmount || 0;
     const netCentavos = Math.max(0, amountCentavos - vatCentavos);
@@ -1487,8 +1494,8 @@ router.post("/:id/post-accounting", requireAuth, requirePermission('accounting:c
           address: doc.extractedAddress || "Philippines",
           taxClassification: vatCentavos > 0 ? "VAT_REGISTERED" : "NON_VAT",
           vatStatus: vatCentavos > 0 ? "VAT" : "NON_VAT",
-          defaultPayableAccountId: accMap["2000"]?.id,
-          defaultExpenseAccountId: expenseAccountId || accMap["6000"]?.id || accMap["5000"]?.id,
+          defaultPayableAccountId: resolvedAp?.id || accMap["2000"]?.id,
+          defaultExpenseAccountId: expenseAccountId || resolvedExp?.id || accMap["6000"]?.id || accMap["5000"]?.id,
           status: "ACTIVE"
         }).onConflictDoNothing();
         finalVendorId = newVendorId;
@@ -1505,7 +1512,7 @@ router.post("/:id/post-accounting", requireAuth, requirePermission('accounting:c
         notes: notes || doc.notes || `Created from OCR document ${doc.fileName}`,
         lines: [
           {
-            accountId: expenseAccountId || accMap["6000"]?.id || accMap["5000"]?.id,
+            accountId: expenseAccountId || resolvedExp?.id || accMap["6000"]?.id || accMap["5000"]?.id,
             description: doc.extractedMerchant ? `Expenses / Purchases from ${doc.extractedMerchant}` : doc.fileName,
             quantity: 1,
             unitPrice: netCentavos || amountCentavos,
@@ -1534,8 +1541,8 @@ router.post("/:id/post-accounting", requireAuth, requirePermission('accounting:c
           address: doc.extractedAddress || "Philippines",
           taxClassification: "VAT_REGISTERED",
           vatStatus: "VAT",
-          defaultReceivableAccountId: accMap["1200"]?.id,
-          defaultRevenueAccountId: revenueAccountId || accMap["4000"]?.id,
+          defaultReceivableAccountId: resolvedAr?.id || accMap["1200"]?.id,
+          defaultRevenueAccountId: revenueAccountId || resolvedRev?.id || accMap["4000"]?.id,
           status: "ACTIVE"
         }).onConflictDoNothing();
         finalCustomerId = newCustId;
@@ -1556,8 +1563,8 @@ router.post("/:id/post-accounting", requireAuth, requirePermission('accounting:c
 
     } else if (targetTransactionType === 'EXPENSE' || targetTransactionType === 'JOURNAL_ENTRY') {
       // 3. Post Direct Balanced Double-Entry Journal Entry
-      const chosenExpenseAcc = expenseAccountId || accMap["6000"]?.id || accMap["5000"]?.id;
-      const chosenCashAcc = cashAccountId || accMap["1100"]?.id;
+      const chosenExpenseAcc = expenseAccountId || resolvedExp?.id || accMap["6000"]?.id || accMap["5000"]?.id;
+      const chosenCashAcc = cashAccountId || resolvedCash?.id || accMap["1100"]?.id;
 
       const lines: any[] = [];
       
@@ -1574,7 +1581,7 @@ router.post("/:id/post-accounting", requireAuth, requirePermission('accounting:c
       // Debit Input VAT if VAT was extracted
       if (vatCentavos > 0) {
         lines.push({
-          accountId: accMap["1500"]?.id,
+          accountId: resolvedInputVat?.id || accMap["1500"]?.id,
           debit: vatCentavos,
           credit: 0,
           description: `Input VAT (12%) - ${docNumber}`
@@ -1593,7 +1600,7 @@ router.post("/:id/post-accounting", requireAuth, requirePermission('accounting:c
 
       // Credit Cash / Bank / AP
       lines.push({
-        accountId: chosenCashAcc || accMap["2000"]?.id,
+        accountId: chosenCashAcc || resolvedAp?.id || accMap["2000"]?.id,
         debit: 0,
         credit: amountCentavos,
         description: `Disbursement / Settlement for ${docNumber}`

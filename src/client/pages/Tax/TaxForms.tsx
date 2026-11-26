@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FileText, Link as LinkIcon, Calculator, CheckCircle2, Save, RefreshCw, Settings, Play, Check, ShieldCheck, HelpCircle, AlertCircle } from 'lucide-react';
 import { apiFetch } from '../../utils/apiClient';
 import { useAuth } from '../../context/AuthContext';
+import { filterPostableLeafAccounts } from '../../../shared/coaAccountUtils';
 
 const BIR_FORMS = [
   { id: '1702Q', name: '1702Q - Quarterly Income Tax Return (Corp)', desc: 'Quarterly Corporate Income Tax under CREATE Act (20% MSME / 25% Regular)' },
@@ -517,7 +518,7 @@ export function TaxForms() {
                                 ))}
                               </optgroup>
                               <optgroup label="Specific Accounts">
-                                {accounts.map(acc => (
+                                {filterPostableLeafAccounts(accounts).map(acc => (
                                   <option key={`acc-${acc.id}`} value={`ACCOUNT::${acc.id}`}>{acc.accountCode} - {acc.accountName}</option>
                                 ))}
                               </optgroup>

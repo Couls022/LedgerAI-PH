@@ -213,13 +213,13 @@ export default function LedgerAgentWidget() {
     text: `### Hello! I'm **Ledger Agent** 🤖✨
 Your Philippine AI Accounting, BIR Tax & Business Intelligence Assistant for **${companyDisplayName}**.
 
-I answer questions in **English & Tagalog** with zero hallucinations, backed directly by your General Ledger, Philippine Tax Engine, Compliance Rule Engine, and verified Operational Knowledge Base — **100% operational both Online and Offline**.
+I answer your accounting and compliance questions with zero hallucinations, backed directly by your General Ledger, Philippine Tax Engine, Compliance Rule Engine, and verified Operational Knowledge Base — **100% operational both Online and Offline**.
 
 Use the **Date-Range Selector** above (e.g., **Last Month**, **February 2026**, **Q1 2024**) or ask directly by **Target Date, Target Week, or Target Month**:
 - *"Show sales invoices for October 2026"* vs *"Show sales invoices for February 2026"*
 - *"4th week of October 2026"* or *"1st week of October 2026"* or *"2026-10-25"*
-- *"What is my revenue in October?"* vs *"Magkano benta noong February?"*
-- *"Magkano VAT ko noong October?"* vs *"VAT noong February"*
+- *"What is my revenue in October?"* vs *"How much were sales in February?"*
+- *"How much VAT did I record in October?"* vs *"VAT summary for February"*
 - *"Show Trial Balance summary"* or *"Explain this module"*
 
 How can I assist you today?`,
