@@ -104,6 +104,10 @@ class PathService {
     return path.join(this.getConfigDir(), "registry.json");
   }
 
+  getLocalLicenseRegistryFilePath(): string {
+    return path.join(this.getConfigDir(), "trusted-license-registry.json");
+  }
+
   getCompanyDir(companyId: string): string {
     const dir = path.join(this.getCompaniesRootDir(), companyId);
     this.ensureDirSync(dir);

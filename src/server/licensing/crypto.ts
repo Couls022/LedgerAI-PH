@@ -7,6 +7,8 @@ export {
   verifyLicense,
   parseAndVerifyToken,
   extractAndValidateLicense,
+  validateLicenseFilePair,
+  computeLicensePairDigest,
   getAuthorityPublicKeyRing,
   registerAuthorityPublicKey,
   revokeAuthorityKeyId,

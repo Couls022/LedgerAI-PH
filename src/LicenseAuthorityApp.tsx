@@ -283,21 +283,17 @@ function AuthorityDashboard({ onLogout }: { onLogout: () => void }) {
       }
       const json = await res.json();
       if (res.ok) {
-        showToast('License generated successfully!', 'success');
+        showToast('Dual-File License Pair (.lkey + .lai) issued successfully!', 'success');
         setCompanyIdInput('');
         setManualCompanyId('');
         
-        // Auto download the file
-        if (json.licenseFile) {
-          const blob = new Blob([json.licenseFile], { type: 'application/json' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'ledgeria-ph.lai';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
+        if (json.licenseKeyFile) {
+          handleDownload(json.licenseKeyFile, json.licenseKeyFileName || 'ledgerai-ph.lkey');
+        }
+        if (json.keyLicenseFile || json.licenseFile) {
+          setTimeout(() => {
+            handleDownload(json.keyLicenseFile || json.licenseFile, json.keyLicenseFileName || 'ledgerai-ph.lai');
+          }, 250);
         }
         
         fetchDashboard();
@@ -336,12 +332,12 @@ function AuthorityDashboard({ onLogout }: { onLogout: () => void }) {
     showToast('Key copied to clipboard!', 'success');
   };
 
-  const handleDownload = (content: string) => {
+  const handleDownload = (content: string, filename = 'ledgerai-ph.lai') => {
     const blob = new Blob([content], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'ledgeria-ph.lai';
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

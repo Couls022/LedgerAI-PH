@@ -256,4 +256,138 @@ export class AuthoritySigner {
       compactToken,
     };
   }
+
+  /**
+   * Generates a cryptographically linked, dual-file license pair:
+   * File A (.lkey): License Key File containing authorized key identity & pair digest
+   * File B (.lai):  Key License File containing signed license authorization, entitlements & company binding
+   */
+  static generateSignedLicensePair(params: {
+    licenseId?: string;
+    licensePairId?: string;
+    keyFileId?: string;
+    companyId: string;
+    activationKey: string;
+    planType: 'PRO' | 'ENTERPRISE' | string;
+    type: 'TERM' | 'LIFETIME' | string;
+    durationType?: string;
+    expirationDate: string | null;
+    seatCount: number | 'UNLIMITED';
+    deviceBindingHash?: string | null;
+    issuedAt?: string;
+    status?: 'ACTIVE' | 'SUSPENDED' | 'REVOKED';
+    recoveryReference?: string | null;
+    recoveryReason?: string | null;
+  }) {
+    const keyMeta = this.getActiveKeyMetadata();
+    const licensePairId = params.licensePairId || `PAIR-${crypto.randomUUID()}`;
+    const licenseId = params.licenseId || crypto.randomUUID();
+    const keyFileId = params.keyFileId || `KEYF-${crypto.randomUUID()}`;
+    const issuedAt = params.issuedAt || new Date().toISOString();
+    const revocationRef = `rev-${licensePairId}`;
+
+    const canonical = [
+      licensePairId.trim(),
+      licenseId.trim(),
+      keyFileId.trim(),
+      params.companyId.trim(),
+      String(params.planType || 'PRO').trim().toUpperCase(),
+      params.expirationDate ? String(params.expirationDate).trim() : 'LIFETIME',
+      issuedAt.trim(),
+    ].join('|');
+    const pairDigest = crypto.createHash('sha256').update(canonical, 'utf8').digest('hex');
+
+    const entitlements = {
+      planType: params.planType,
+      seatCount: params.seatCount,
+      features:
+        params.planType === 'ENTERPRISE'
+          ? ['ALL_MODULES', 'UNLIMITED_SEATS', 'MULTI_BRANCH', 'AUDIT_WORKPAPERS', 'AI_ENTERPRISE']
+          : ['ALL_MODULES', 'PRO_SEAT_LIMIT', 'BIR_COMPLIANCE', 'AI_ASSISTANT'],
+    };
+
+    const licenseKeyFilePayload = {
+      artifactType: 'LEDGERAI_LICENSE_KEY_FILE' as const,
+      licensePairId,
+      licenseId,
+      keyFileId,
+      companyId: params.companyId.trim(),
+      activationKey: params.activationKey,
+      planType: params.planType,
+      type: params.type,
+      expirationDate: params.expirationDate,
+      issuedAt,
+      issuerIdentity: 'LEDGERAI-PH-AUTHORITY',
+      licenseVersion: '2.0',
+      activationPolicy: 'ONE_TIME_COMPANY_BOUND',
+      revocationRef,
+      pairDigest,
+      ...(params.status && params.status !== 'ACTIVE' ? { status: params.status } : {}),
+      authorityKeyId: keyMeta.keyId,
+      authorityKeyVersion: keyMeta.keyVersion,
+    };
+
+    const keyLicenseFilePayload = {
+      artifactType: 'LEDGERAI_KEY_LICENSE_FILE' as const,
+      licensePairId,
+      licenseId,
+      keyFileId,
+      companyId: params.companyId.trim(),
+      productId: 'LEDGERAI-PH',
+      activationKey: params.activationKey,
+      planType: params.planType,
+      type: params.type,
+      durationType: params.durationType || (params.type === 'LIFETIME' ? 'lifetime' : 'yearly'),
+      expirationDate: params.expirationDate,
+      seatCount: params.seatCount,
+      entitlements,
+      deviceBindingHash: params.deviceBindingHash ? params.deviceBindingHash.trim() : null,
+      issuedAt,
+      issuerIdentity: 'LEDGERAI-PH-AUTHORITY',
+      licenseVersion: '2.0',
+      activationPolicy: 'ONE_TIME_COMPANY_BOUND',
+      revocationRef,
+      pairDigest,
+      ...(params.status && params.status !== 'ACTIVE' ? { status: params.status } : {}),
+      ...(params.recoveryReference ? { recoveryReference: params.recoveryReference } : {}),
+      ...(params.recoveryReason ? { recoveryReason: params.recoveryReason } : {}),
+      version: '2.0',
+      authorityKeyId: keyMeta.keyId,
+      authorityKeyVersion: keyMeta.keyVersion,
+    };
+
+    const licenseKeySignature = this.signLicense(licenseKeyFilePayload);
+    const keyLicenseSignature = this.signLicense(keyLicenseFilePayload);
+
+    const licenseKeyFileJson = JSON.stringify(
+      { payload: licenseKeyFilePayload, signature: licenseKeySignature },
+      null,
+      2
+    );
+    const keyLicenseFileJson = JSON.stringify(
+      { payload: keyLicenseFilePayload, signature: keyLicenseSignature },
+      null,
+      2
+    );
+
+    const container = Buffer.from(
+      JSON.stringify({ payload: keyLicenseFilePayload, signature: keyLicenseSignature })
+    ).toString('base64url');
+    const compactToken = `LGR-${params.planType || 'PRO'}-${container}`;
+
+    return {
+      licensePairId,
+      licenseId,
+      keyFileId,
+      pairDigest,
+      revocationRef,
+      licenseKeyFilePayload,
+      licenseKeySignature,
+      licenseKeyFileJson,
+      keyLicenseFilePayload,
+      keyLicenseSignature,
+      keyLicenseFileJson,
+      compactToken,
+    };
+  }
 }

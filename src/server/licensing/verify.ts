@@ -126,6 +126,9 @@ export function resetAuthorityKeyRingForTesting(): void {
 
 export interface LicensePayload {
   licenseId: string;
+  licensePairId?: string;
+  keyFileId?: string;
+  artifactType?: string;
   companyId: string;
   productId?: string;
   activationKey: string;
@@ -134,12 +137,117 @@ export interface LicensePayload {
   durationType?: 'custom' | 'monthly' | 'quarterly' | 'yearly' | 'lifetime' | string;
   expirationDate?: string | null;
   seatCount?: number | 'UNLIMITED' | null;
+  entitlements?: {
+    planType?: string;
+    seatCount?: number | 'UNLIMITED' | null;
+    features?: string[];
+  };
   issuedAt?: string;
+  issuerIdentity?: string;
+  licenseVersion?: string;
+  activationPolicy?: string;
+  revocationRef?: string;
+  pairDigest?: string;
+  status?: 'ACTIVE' | 'SUSPENDED' | 'REVOKED' | string;
+  recoveryReference?: string | null;
+  recoveryReason?: string | null;
   version?: string;
   deviceBindingHash?: string | null;
   authorityKeyId?: string;
   authorityKeyVersion?: number;
   [key: string]: any;
+}
+
+export interface LicenseKeyFilePayload {
+  artifactType: 'LEDGERAI_LICENSE_KEY_FILE';
+  licensePairId: string;
+  licenseId: string;
+  keyFileId: string;
+  companyId: string;
+  activationKey: string;
+  planType: 'PRO' | 'ENTERPRISE' | string;
+  type: 'TERM' | 'LIFETIME' | string;
+  expirationDate: string | null;
+  issuedAt: string;
+  issuerIdentity: string;
+  licenseVersion: string;
+  activationPolicy: string;
+  revocationRef: string;
+  pairDigest: string;
+  status?: 'ACTIVE' | 'SUSPENDED' | 'REVOKED' | string;
+  authorityKeyId?: string;
+  authorityKeyVersion?: number;
+  [key: string]: any;
+}
+
+export interface KeyLicenseFilePayload extends LicensePayload {
+  artifactType: 'LEDGERAI_KEY_LICENSE_FILE';
+  licensePairId: string;
+  licenseId: string;
+  keyFileId: string;
+  companyId: string;
+  productId: string;
+  activationKey: string;
+  planType: 'PRO' | 'ENTERPRISE' | string;
+  type: 'TERM' | 'LIFETIME' | string;
+  expirationDate: string | null;
+  seatCount: number | 'UNLIMITED';
+  entitlements: {
+    planType: string;
+    seatCount: number | 'UNLIMITED';
+    features: string[];
+  };
+  issuedAt: string;
+  issuerIdentity: string;
+  licenseVersion: string;
+  activationPolicy: string;
+  revocationRef: string;
+  pairDigest: string;
+}
+
+export type PairValidationCode =
+  | 'VALID'
+  | 'BOTH_FILES_REQUIRED'
+  | 'LICENSE_KEY_FILE_REQUIRED'
+  | 'KEY_LICENSE_FILE_REQUIRED'
+  | 'INVALID_LICENSE_KEY_FILE'
+  | 'INVALID_KEY_LICENSE_FILE'
+  | 'INVALID_SIGNATURE'
+  | 'LICENSE_PAIR_MISMATCH'
+  | 'COMPANY_IDENTITY_MISMATCH'
+  | 'LICENSE_REVOKED'
+  | 'LICENSE_SUSPENDED';
+
+export interface ValidatePairResult {
+  valid: boolean;
+  code: PairValidationCode;
+  error?: string;
+  keyPayload?: LicenseKeyFilePayload;
+  keySignature?: string;
+  licensePayload?: KeyLicenseFilePayload;
+  licenseSignature?: string;
+  keyString?: string;
+}
+
+export function computeLicensePairDigest(params: {
+  licensePairId: string;
+  licenseId: string;
+  keyFileId: string;
+  companyId: string;
+  planType: string;
+  expirationDate?: string | null;
+  issuedAt: string;
+}): string {
+  const canonical = [
+    String(params.licensePairId || '').trim(),
+    String(params.licenseId || '').trim(),
+    String(params.keyFileId || '').trim(),
+    String(params.companyId || '').trim(),
+    String(params.planType || '').trim().toUpperCase(),
+    params.expirationDate ? String(params.expirationDate).trim() : 'LIFETIME',
+    String(params.issuedAt || '').trim(),
+  ].join('|');
+  return crypto.createHash('sha256').update(canonical, 'utf8').digest('hex');
 }
 
 /**
@@ -264,58 +372,246 @@ export function parseAndVerifyToken(token: string): { valid: boolean; payload?: 
 }
 
 /**
- * Universal extractor: safely resolves valid payload & signature from either an activation key, a .lai file, or both.
+ * Validates the mandatory two-file license pair (License Key File + Key License File).
+ * Neither file alone is ever accepted. Both files must parse cleanly, pass RSA-SHA256
+ * authority signature verification, cryptographically pair via IDs & pairDigest, and
+ * match the immutable Company ID.
+ */
+export function validateLicenseFilePair(options: {
+  licenseKeyFile?: string;
+  keyLicenseFile?: string;
+  expectedCompanyId?: string;
+}): ValidatePairResult {
+  const hasKeyFile = typeof options.licenseKeyFile === 'string' && options.licenseKeyFile.trim().length > 0;
+  const hasLicenseFile = typeof options.keyLicenseFile === 'string' && options.keyLicenseFile.trim().length > 0;
+
+  if (!hasKeyFile && !hasLicenseFile) {
+    return {
+      valid: false,
+      code: 'BOTH_FILES_REQUIRED',
+      error: 'Both files are required: please provide both the License Key File and the Key License File.',
+    };
+  }
+  if (!hasKeyFile) {
+    return {
+      valid: false,
+      code: 'LICENSE_KEY_FILE_REQUIRED',
+      error: 'License Key File is missing. Both licensing files are mandatory for activation.',
+    };
+  }
+  if (!hasLicenseFile) {
+    return {
+      valid: false,
+      code: 'KEY_LICENSE_FILE_REQUIRED',
+      error: 'Key License File is missing. Both licensing files are mandatory for activation.',
+    };
+  }
+
+  // 1. Parse License Key File
+  let parsedKeyArtifact: any;
+  try {
+    parsedKeyArtifact = JSON.parse(options.licenseKeyFile!.trim());
+  } catch (e: any) {
+    return {
+      valid: false,
+      code: 'INVALID_LICENSE_KEY_FILE',
+      error: `Invalid License Key File format: ${e?.message || 'Malformed JSON'}`,
+    };
+  }
+
+  const keyPayload = parsedKeyArtifact?.payload;
+  const keySignature = parsedKeyArtifact?.signature;
+  if (
+    !keyPayload ||
+    typeof keyPayload !== 'object' ||
+    !keySignature ||
+    typeof keySignature !== 'string'
+  ) {
+    return {
+      valid: false,
+      code: 'INVALID_LICENSE_KEY_FILE',
+      error: 'License Key File is missing cryptographic payload or signature.',
+    };
+  }
+
+  if (keyPayload.artifactType === 'LEDGERAI_KEY_LICENSE_FILE') {
+    return {
+      valid: false,
+      code: 'INVALID_LICENSE_KEY_FILE',
+      error: 'A Key License File was provided in the License Key File input. Please select the authorized License Key File.',
+    };
+  }
+
+  if (
+    keyPayload.artifactType !== 'LEDGERAI_LICENSE_KEY_FILE' ||
+    !keyPayload.licensePairId ||
+    !keyPayload.licenseId ||
+    !keyPayload.keyFileId ||
+    !keyPayload.companyId ||
+    !keyPayload.activationKey ||
+    !keyPayload.pairDigest ||
+    !keyPayload.issuedAt
+  ) {
+    return {
+      valid: false,
+      code: 'INVALID_LICENSE_KEY_FILE',
+      error: 'License Key File does not conform to the required dual-file pairing format.',
+    };
+  }
+
+  // 2. Parse Key License File
+  let parsedLicArtifact: any;
+  try {
+    parsedLicArtifact = JSON.parse(options.keyLicenseFile!.trim());
+  } catch (e: any) {
+    return {
+      valid: false,
+      code: 'INVALID_KEY_LICENSE_FILE',
+      error: `Invalid Key License File format: ${e?.message || 'Malformed JSON'}`,
+    };
+  }
+
+  const licPayload = parsedLicArtifact?.payload;
+  const licSignature = parsedLicArtifact?.signature;
+  if (
+    !licPayload ||
+    typeof licPayload !== 'object' ||
+    !licSignature ||
+    typeof licSignature !== 'string'
+  ) {
+    return {
+      valid: false,
+      code: 'INVALID_KEY_LICENSE_FILE',
+      error: 'Key License File is missing cryptographic payload or signature.',
+    };
+  }
+
+  if (licPayload.artifactType === 'LEDGERAI_LICENSE_KEY_FILE') {
+    return {
+      valid: false,
+      code: 'INVALID_KEY_LICENSE_FILE',
+      error: 'A License Key File was provided in the Key License File input. Please select the corresponding Key License File.',
+    };
+  }
+
+  if (
+    licPayload.artifactType !== 'LEDGERAI_KEY_LICENSE_FILE' ||
+    !licPayload.licensePairId ||
+    !licPayload.licenseId ||
+    !licPayload.keyFileId ||
+    !licPayload.companyId ||
+    !licPayload.activationKey ||
+    !licPayload.pairDigest ||
+    !licPayload.issuedAt
+  ) {
+    return {
+      valid: false,
+      code: 'INVALID_KEY_LICENSE_FILE',
+      error: 'Key License File does not conform to the required dual-file pairing format.',
+    };
+  }
+
+  // 3. Verify Cryptographic RSA-SHA256 Digital Signatures on BOTH files
+  if (!verifyLicense(keyPayload, keySignature)) {
+    return {
+      valid: false,
+      code: 'INVALID_SIGNATURE',
+      error: 'Digital signature verification failed for the License Key File. The file may be forged, corrupted, or modified.',
+    };
+  }
+
+  if (!verifyLicense(licPayload, licSignature)) {
+    return {
+      valid: false,
+      code: 'INVALID_SIGNATURE',
+      error: 'Digital signature verification failed for the Key License File. The file may be forged, corrupted, or modified.',
+    };
+  }
+
+  // 4. Verify Cryptographic Pairing between License Key File and Key License File
+  const idsMatch =
+    keyPayload.licensePairId === licPayload.licensePairId &&
+    keyPayload.licenseId === licPayload.licenseId &&
+    keyPayload.keyFileId === licPayload.keyFileId &&
+    keyPayload.companyId === licPayload.companyId &&
+    keyPayload.activationKey === licPayload.activationKey &&
+    keyPayload.planType === licPayload.planType &&
+    (keyPayload.expirationDate || null) === (licPayload.expirationDate || null) &&
+    keyPayload.issuedAt === licPayload.issuedAt &&
+    keyPayload.pairDigest === licPayload.pairDigest;
+
+  if (!idsMatch) {
+    return {
+      valid: false,
+      code: 'LICENSE_PAIR_MISMATCH',
+      error: 'License pair mismatch: The selected License Key File and Key License File do not belong to the same issued pair.',
+    };
+  }
+
+  const expectedDigest = computeLicensePairDigest({
+    licensePairId: licPayload.licensePairId,
+    licenseId: licPayload.licenseId,
+    keyFileId: licPayload.keyFileId,
+    companyId: licPayload.companyId,
+    planType: licPayload.planType,
+    expirationDate: licPayload.expirationDate,
+    issuedAt: licPayload.issuedAt,
+  });
+
+  if (licPayload.pairDigest !== expectedDigest || keyPayload.pairDigest !== expectedDigest) {
+    return {
+      valid: false,
+      code: 'LICENSE_PAIR_MISMATCH',
+      error: 'Cryptographic pair digest mismatch between License Key File and Key License File.',
+    };
+  }
+
+  // 5. Verify Company Identity Binding
+  if (options.expectedCompanyId && licPayload.companyId !== options.expectedCompanyId) {
+    return {
+      valid: false,
+      code: 'COMPANY_IDENTITY_MISMATCH',
+      error: `Company identity mismatch: This license pair is bound to Company ID '${licPayload.companyId}', not '${options.expectedCompanyId}'.`,
+    };
+  }
+
+  // 6. Verify License Lifecycle Status in Signed Payload
+  if (licPayload.status === 'REVOKED' || keyPayload.status === 'REVOKED') {
+    return {
+      valid: false,
+      code: 'LICENSE_REVOKED',
+      error: 'This license pair has been revoked by the License Authority.',
+    };
+  }
+
+  if (licPayload.status === 'SUSPENDED' || keyPayload.status === 'SUSPENDED') {
+    return {
+      valid: false,
+      code: 'LICENSE_SUSPENDED',
+      error: 'This license pair is currently suspended and cannot be activated.',
+    };
+  }
+
+  return {
+    valid: true,
+    code: 'VALID',
+    keyPayload,
+    keySignature,
+    licensePayload: licPayload,
+    licenseSignature: licSignature,
+    keyString: licPayload.activationKey,
+  };
+}
+
+/**
+ * Dual-file extractor enforcing the mandatory two-file requirement.
  */
 export function extractAndValidateLicense(options: {
-  activationKey?: string;
-  licenseFile?: string;
-}): { valid: boolean; payload?: LicensePayload; signature?: string; keyString?: string; error?: string } {
-  const { activationKey, licenseFile } = options;
-
-  // Case 1: .lai File content provided
-  if (licenseFile && licenseFile.trim().length > 0) {
-    try {
-      const parsedFile = JSON.parse(licenseFile.trim());
-      const { payload, signature } = parsedFile;
-      if (!payload || !signature) {
-        return { valid: false, error: 'License file is missing cryptographic payload or signature.' };
-      }
-      const isValid = verifyLicense(payload, signature);
-      if (!isValid) {
-        return { valid: false, error: 'Cryptographic validation failed. The license file has been tampered with or is invalid.' };
-      }
-      return {
-        valid: true,
-        payload,
-        signature,
-        keyString: payload.activationKey || activationKey || 'LGR-ACTIVATED',
-      };
-    } catch (e: any) {
-      return { valid: false, error: `Invalid license file format: ${e.message}` };
-    }
-  }
-
-  // Case 2: Activation Key string provided (standalone compact token)
-  if (activationKey && activationKey.trim().length > 0) {
-    const tokenResult = parseAndVerifyToken(activationKey.trim());
-    if (tokenResult.valid && tokenResult.payload && tokenResult.signature) {
-      return {
-        valid: true,
-        payload: tokenResult.payload,
-        signature: tokenResult.signature,
-        keyString: tokenResult.payload.activationKey || activationKey.trim(),
-      };
-    } else {
-      return {
-        valid: false,
-        error:
-          tokenResult.error ||
-          'The activation key could not be verified. Please enter a valid signed activation key or upload a .lai license file.',
-      };
-    }
-  }
-
-  return { valid: false, error: 'Please provide either an Activation Key or upload a .lai License File.' };
+  licenseKeyFile?: string;
+  keyLicenseFile?: string;
+  expectedCompanyId?: string;
+}): ValidatePairResult {
+  return validateLicenseFilePair(options);
 }
 
 /**

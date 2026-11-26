@@ -366,8 +366,14 @@ function AuthorityDashboard({ onLogout }: { onLogout: () => void }) {
   };
   const [generatedResult, setGeneratedResult] = useState<{
     licenseId: string;
+    licensePairId?: string;
+    keyFileId?: string;
     licenseKey: string;
     licenseFile: string;
+    licenseKeyFile?: string;
+    keyLicenseFile?: string;
+    licenseKeyFileName?: string;
+    keyLicenseFileName?: string;
     companyId: string;
     planType: string;
     seatCount?: number | string;
@@ -487,7 +493,7 @@ function AuthorityDashboard({ onLogout }: { onLogout: () => void }) {
       }
       const json = await res.json();
       if (res.ok) {
-        showToast('License & Activation Key issued successfully!', 'success');
+        showToast('Dual-File License Pair (.lkey + .lai) issued successfully!', 'success');
         setGeneratedResult({
           ...json,
           durationType,
@@ -495,16 +501,14 @@ function AuthorityDashboard({ onLogout }: { onLogout: () => void }) {
           companyId: targetCompanyId.trim()
         });
 
-        if (json.licenseFile) {
-          const blob = new Blob([json.licenseFile], { type: 'application/json' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'ledgerai-ph.lai';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
+        const baseSlug = targetCompanyId.trim().slice(-8).toLowerCase();
+        if (json.licenseKeyFile) {
+          handleDownload(json.licenseKeyFile, json.licenseKeyFileName || `ledgerai-ph-${baseSlug}.lkey`);
+        }
+        if (json.keyLicenseFile || json.licenseFile) {
+          setTimeout(() => {
+            handleDownload(json.keyLicenseFile || json.licenseFile, json.keyLicenseFileName || `ledgerai-ph-${baseSlug}.lai`);
+          }, 250);
         }
 
         setCompanyIdInput('');
@@ -555,12 +559,12 @@ function AuthorityDashboard({ onLogout }: { onLogout: () => void }) {
     showToast('Key copied to clipboard!', 'success');
   };
 
-  const handleDownload = (content: string) => {
+  const handleDownload = (content: string, filename = 'ledgerai-ph.lai') => {
     const blob = new Blob([content], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'ledgerai-ph.lai';
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1167,11 +1171,20 @@ function AuthorityDashboard({ onLogout }: { onLogout: () => void }) {
                           >
                             <Eye className="w-4 h-4" />
                           </button>
+                          {lic.keyFileContent && (
+                            <button 
+                              onClick={() => handleDownload(lic.keyFileContent, `ledgerai-ph-${(lic.companyId || '').slice(-8).toLowerCase()}.lkey`)} 
+                              className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer rounded hover:bg-slate-100 dark:hover:bg-slate-700" 
+                              title="Download License Key File (.lkey)"
+                            >
+                              <Key className="w-4 h-4" />
+                            </button>
+                          )}
                           {lic.signedFileContent && (
                             <button 
-                              onClick={() => handleDownload(lic.signedFileContent)} 
+                              onClick={() => handleDownload(lic.signedFileContent, `ledgerai-ph-${(lic.companyId || '').slice(-8).toLowerCase()}.lai`)} 
                               className="p-1.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer rounded hover:bg-slate-100 dark:hover:bg-slate-700" 
-                              title="Download Signed .lai File"
+                              title="Download Key License File (.lai)"
                             >
                               <Download className="w-4 h-4" />
                             </button>
@@ -1246,40 +1259,45 @@ function AuthorityDashboard({ onLogout }: { onLogout: () => void }) {
                 </div>
               </div>
 
-              {/* 1. ACTIVATION KEY DISPLAY & COPY */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide flex items-center gap-1.5">
-                    <Key className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                    1. Activation Key
-                  </label>
-                  <span className="text-[11px] text-slate-400">Can be entered directly in tenant activation</span>
+              {/* 1. REQUIRED FILE A: LICENSE KEY FILE (.lkey) */}
+              {generatedResult.licenseKeyFile && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide flex items-center gap-1.5">
+                      <Key className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      1. License Key File (.lkey)
+                    </label>
+                    <span className="text-[11px] text-slate-400">Authorized cryptographic key identity</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3.5 bg-emerald-50/70 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 bg-emerald-100 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-400 rounded-lg">
+                        <Key className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="font-mono font-bold text-xs text-emerald-950 dark:text-emerald-200">{generatedResult.licenseKeyFileName || 'ledgerai-ph.lkey'}</p>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400">Pair ID: {generatedResult.licensePairId || 'N/A'}</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDownload(generatedResult.licenseKeyFile, generatedResult.licenseKeyFileName || 'ledgerai-ph.lkey')}
+                      className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow"
+                    >
+                      <Download className="w-3.5 h-3.5" /> Download .lkey
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 p-3 bg-slate-900 text-emerald-400 rounded-xl font-mono text-sm font-bold border border-slate-700 shadow-inner justify-between">
-                  <span className="select-all tracking-wider">{generatedResult.licenseKey}</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      handleCopy(generatedResult.licenseKey);
-                      setCopiedKey(true);
-                      setTimeout(() => setCopiedKey(false), 2500);
-                    }}
-                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow"
-                  >
-                    {copiedKey ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                    {copiedKey ? 'Copied Key!' : 'Copy Key'}
-                  </button>
-                </div>
-              </div>
+              )}
 
-              {/* 2. ACTIVATION FILE DOWNLOAD */}
+              {/* 2. REQUIRED FILE B: KEY LICENSE FILE (.lai) */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide flex items-center gap-1.5">
                     <Download className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                    2. Signed License File (.lai)
+                    2. Key License File (.lai)
                   </label>
-                  <span className="text-[11px] text-slate-400">Cryptographically signed RSA artifact</span>
+                  <span className="text-[11px] text-slate-400">Cryptographically signed authorization file</span>
                 </div>
                 <div className="flex items-center justify-between p-3.5 bg-indigo-50/70 dark:bg-indigo-950/40 rounded-xl border border-indigo-200 dark:border-indigo-800">
                   <div className="flex items-center gap-2.5">
@@ -1287,13 +1305,13 @@ function AuthorityDashboard({ onLogout }: { onLogout: () => void }) {
                       <FileCode className="w-5 h-5" />
                     </div>
                     <div>
-                      <p className="font-mono font-bold text-xs text-indigo-950 dark:text-indigo-200">ledgerai-ph.lai</p>
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400">Official license payload & digital signature</p>
+                      <p className="font-mono font-bold text-xs text-indigo-950 dark:text-indigo-200">{generatedResult.keyLicenseFileName || 'ledgerai-ph.lai'}</p>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400">Paired entitlement &amp; company-bound signature</p>
                     </div>
                   </div>
                   <button
                     type="button"
-                    onClick={() => handleDownload(generatedResult.licenseFile)}
+                    onClick={() => handleDownload(generatedResult.keyLicenseFile || generatedResult.licenseFile, generatedResult.keyLicenseFileName || 'ledgerai-ph.lai')}
                     className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow"
                   >
                     <Download className="w-3.5 h-3.5" /> Download .lai

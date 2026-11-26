@@ -371,6 +371,8 @@ export class RestoreService {
       const tableNames = [
         ['companies', 'companies'],
         ['company_licenses', 'companyLicenses'],
+        ['license_redemption_records', 'licenseRedemptionRecords'],
+        ['license_audit_logs', 'licenseAuditLogs'],
         ['company_users', 'companyUsers'],
         ['company_user_roles', 'companyUserRoles'],
         ['roles', 'roles'],
@@ -549,6 +551,8 @@ export class RestoreService {
     const companyScopedTables = [
       'companies',
       'companyLicenses',
+      'licenseRedemptionRecords',
+      'licenseAuditLogs',
       'companyUsers',
       'companyUserRoles',
       'userPermissionOverrides',
@@ -1020,8 +1024,21 @@ export class RestoreService {
       'expiresAt',
       'lockedUntil',
     ]);
-    const mapDates = (obj: any): any => {
+    const mapDates = (obj: any, tbl?: any): any => {
       for (const k in obj) {
+        const col = tbl?.[k];
+        if (col && col.dataType !== 'date') {
+          if (obj[k] instanceof Date) {
+            obj[k] = col.dataType === 'number' ? obj[k].getTime() : obj[k].toISOString();
+          }
+          continue;
+        }
+        if (col && col.dataType === 'date') {
+          if (typeof obj[k] === 'number' || typeof obj[k] === 'string') {
+            obj[k] = new Date(obj[k]);
+          }
+          continue;
+        }
         if (typeof obj[k] === 'number' && (k.endsWith('At') || numericTimestampFields.has(k))) {
            obj[k] = new Date(obj[k]);
         } else if (typeof obj[k] === 'string' && (k.endsWith('At' ) || k === 'timestamp' || /^\+?\d+-\d{2}-\d{2}T/.test(obj[k]))) {
@@ -1038,6 +1055,8 @@ export class RestoreService {
       'permissions',
       'rolePermissions',
       'companyLicenses',
+      'licenseRedemptionRecords',
+      'licenseAuditLogs',
       'companyUsers',
       'companyUserRoles',
       'userPermissionOverrides',
@@ -1159,6 +1178,8 @@ export class RestoreService {
           const conflictSafeTables = new Set([
             'companies',
             'companyLicenses',
+            'licenseRedemptionRecords',
+            'licenseAuditLogs',
             'users',
             'roles',
             'permissions',
@@ -1224,6 +1245,9 @@ export class RestoreService {
                 await deleteIgnoringMissingTable(table);
               }
             }
+            if (mode === 'REPLACE' && finalPayload.data?.companyLicenses?.length > 0) {
+              await deleteIgnoringMissingTable(schema.companyLicenses);
+            }
           }
 
           for (const key of explicitOrder) {
@@ -1249,6 +1273,11 @@ export class RestoreService {
               }
 
               if (key === 'companies' || key === 'companyLicenses') {
+                // Important: A cloned company (finalCompanyId !== original metadata companyId) must never inherit
+                // the source company's paid dual-file license or redemption records.
+                if (key === 'companyLicenses' && finalCompanyId !== payload.metadata.companyId) {
+                  continue;
+                }
                 for (const row of rows) {
                   const item = { ...row };
                   if ('company_id' in item) item.company_id = finalCompanyId;
@@ -1260,8 +1289,11 @@ export class RestoreService {
                     delete item.backup_location_path;
                     delete item.backupLocationPath;
                   }
-                  await tx.insert(table).values(mapDates(item)).onConflictDoNothing();
+                  await tx.insert(table).values(mapDates(item, table)).onConflictDoNothing();
                 }
+                continue;
+              }
+              if (key === 'licenseRedemptionRecords' && finalCompanyId !== payload.metadata.companyId) {
                 continue;
               }
 
@@ -1270,7 +1302,7 @@ export class RestoreService {
                   const item = { ...row };
                   if ('company_id' in item) item.company_id = finalCompanyId;
                   if ('companyId' in item) item.companyId = finalCompanyId;
-                  return mapDates(item);
+                  return mapDates(item, table);
                 });
                 if (conflictSafeTables.has(key)) {
                   await tx.insert(table).values(chunk).onConflictDoNothing();
@@ -1657,14 +1689,6 @@ export class RestoreService {
           },
           lastValidationError: null,
         });
-
-        // Automatically compile and place standalone Windows launcher executable (<CompanyName>.exe) inside restored portable folder
-        const { CompanyLauncherGenerator } = await import('./companyLauncherGenerator');
-        await CompanyLauncherGenerator.generateLauncher({
-          companyDirectory: manifestToRegister.location,
-          companyId: finalCompanyId,
-          legalName: manifestToRegister.legalName || finalCompanyId,
-        }).catch((e) => console.warn('[Restore] Launcher generation warning:', e));
       } catch {}
 
     } catch (verErr: any) {
@@ -1905,6 +1929,8 @@ export class RestoreService {
       const aiExecutionLogRows = await safeSelectAll(schema.aiExecutionLogs);
       const integrityScanReportRows = await safeSelectAll(schema.integrityScanReports);
       const integrityScanFindingRows = await safeSelectAll(schema.integrityScanFindings);
+      const licenseRedemptionRecordRows = await safeSelectAll(schema.licenseRedemptionRecords);
+      const licenseAuditLogRows = await safeSelectAll(schema.licenseAuditLogs);
 
       const rawData: Record<string, any[]> = {
         users: userRows,
@@ -1913,6 +1939,8 @@ export class RestoreService {
         rolePermissions: rolePermissionRows,
         companies: companyRows,
         companyLicenses: companyLicensesRows,
+        licenseRedemptionRecords: licenseRedemptionRecordRows,
+        licenseAuditLogs: licenseAuditLogRows,
         companyUsers: companyUsersRows,
         companyUserRoles: companyUserRolesRows,
         userPermissionOverrides: userPermissionOverrideRows,

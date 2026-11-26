@@ -16,7 +16,6 @@ import fsSync from "fs";
 import { AuditService } from "../services/auditService";
 import { CompanyManager, COMPANIES_ROOT, CompanyClassification, inferCompanyClassification, isProtectedCompanyClassification, isSyntheticCompanyClassification, RESERVED_PROTECTED_COMPANY_IDS } from "../services/companyManager";
 import { CompanyLifecycleService, sanitizeCompanyManifestForPublic, sanitizeCompanyForClient } from "../services/companyLifecycleService";
-import { CompanyLauncherGenerator } from "../services/companyLauncherGenerator";
 import { DatabaseEncryptionService, EncryptionKeyMode } from "../services/databaseEncryptionService";
 import { FinancialIntegrityService } from "../services/financialIntegrityService";
 import { MigrationManager } from "../services/migrationManager";
@@ -1244,15 +1243,6 @@ const handleOpenCompanyTarget = async (req: any, res: any) => {
       conflictResolution,
       requireAttachments,
     });
-
-    // Ensure portable company folder contains its standalone Windows launcher executable
-    if (manifest?.location && manifest?.id) {
-      await CompanyLauncherGenerator.generateLauncher({
-        companyDirectory: manifest.location,
-        companyId: manifest.id,
-        legalName: manifest.legalName || manifest.id,
-      }).catch((e) => console.warn('Company launcher generation warning:', e));
-    }
 
     res.json({
       success: true,
@@ -3448,15 +3438,6 @@ router.post("/create-profile", async (req, res) => {
         versionMetadata: createdInspection.versionMetadata,
         lastValidationError: null,
       });
-
-      // Automatically compile and place standalone Windows launcher executable (<CompanyName>.exe) inside the folder
-      if (manifest?.location && manifest?.id) {
-        await CompanyLauncherGenerator.generateLauncher({
-          companyDirectory: manifest.location,
-          companyId: manifest.id,
-          legalName: manifest.legalName || manifest.id,
-        }).catch((e) => console.warn('Company launcher generation warning:', e));
-      }
 
       res.json({
         message: "Company profile created successfully",

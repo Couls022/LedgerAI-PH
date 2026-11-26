@@ -7,14 +7,20 @@ import { RbacService } from "./services/rbacService";
 import { dbContext } from "./db/context";
 import crypto from "crypto";
 import { verifyLicense } from "./licensing/verify";
+import { LocalLicenseRegistry } from "./licensing/localLicenseRegistry";
 import { AntiRollbackService } from "./services/antiRollbackService";
 import { isLicenseExemptPath, isPasswordChangeAllowedPath, isSegmentPrefixMatch, normalizeRequestPath } from "./utils/requestPath";
 
-export async function validateActiveLicenseForCompany(companyId: string): Promise<{ valid: boolean; code: 'LICENSE_REQUIRED' | 'LICENSE_EXPIRED' | 'LICENSE_INVALID' | 'LICENSE_REVOKED' | 'TAMPERED' | 'OK'; message?: string }> {
+export async function validateActiveLicenseForCompany(companyId: string): Promise<{
+  valid: boolean;
+  code: 'LICENSE_REQUIRED' | 'LICENSE_EXPIRED' | 'LICENSE_INVALID' | 'LICENSE_REVOKED' | 'TAMPERED' | 'OK';
+  detailCode?: string;
+  message?: string;
+}> {
   try {
     const targetDb = dbContext.getStore() || (await CompanyManager.getCompanyDb(companyId));
     if (!targetDb) {
-      return { valid: false, code: 'LICENSE_REQUIRED', message: "No database found for this company context." };
+      return { valid: false, code: 'LICENSE_REQUIRED', detailCode: 'LICENSE_REQUIRED', message: "No database found for this company context." };
     }
 
     const license = await targetDb.select().from(companyLicenses).where(eq(companyLicenses.companyId, companyId)).get();
@@ -36,20 +42,25 @@ export async function validateActiveLicenseForCompany(companyId: string): Promis
           isLifetime: false
         };
         await targetDb.insert(companyLicenses).values(newLic);
-        return { valid: true, code: 'OK' };
+        return { valid: true, code: 'OK', detailCode: 'TRIAL_ACTIVE' };
       } catch (licErr: any) {
-        return { valid: false, code: 'LICENSE_REQUIRED', message: "No license found for this company context. Please activate a valid license." };
+        return { valid: false, code: 'LICENSE_REQUIRED', detailCode: 'LICENSE_REQUIRED', message: "No license found for this company context. Please activate a valid license." };
       }
     }
 
     if (license.status === 'REVOKED') {
-      return { valid: false, code: 'LICENSE_REVOKED', message: "This company license has been revoked." };
+      return { valid: false, code: 'LICENSE_REVOKED', detailCode: 'LICENSE_REVOKED', message: "This company license has been revoked." };
+    }
+
+    if (license.status === 'SUSPENDED') {
+      return { valid: false, code: 'LICENSE_INVALID', detailCode: 'LICENSE_SUSPENDED', message: "This company license is currently suspended." };
     }
 
     if (license.status === 'TAMPERED') {
       return { 
         valid: false, 
         code: 'TAMPERED', 
+        detailCode: 'TAMPERED',
         message: "This company license is locked in a TAMPERED state due to detected system clock rollback or file tampering." 
       };
     }
@@ -69,27 +80,54 @@ export async function validateActiveLicenseForCompany(companyId: string): Promis
       return { 
         valid: false, 
         code: 'TAMPERED', 
+        detailCode: clockCheck.code,
         message: clockCheck.message || "Unauthorized system clock rollback or timestamp discrepancy detected. License is locked in TAMPERED state." 
       };
     }
 
-    // Cryptographic validation of signed file content if present and not raw TRIAL
-    if (license.signedFileContent && license.planType !== 'TRIAL' && !license.licenseKey.startsWith('LEDGERAI-TRIAL-') && !license.licenseKey.startsWith('LIC-TRIAL-')) {
-      try {
-        const parsed = JSON.parse(license.signedFileContent);
-        if (parsed && parsed.payload && parsed.signature) {
-          const isValid = verifyLicense(parsed.payload, parsed.signature);
-          if (!isValid) {
-            return { valid: false, code: 'LICENSE_INVALID', message: "Cryptographic validation failed. The license file is invalid or tampered." };
+    // Cryptographic & Trusted Local Registry verification for non-TRIAL licenses
+    const isTrial =
+      license.planType === 'TRIAL' &&
+      (license.licenseKey.startsWith('LEDGERAI-TRIAL-') || license.licenseKey.startsWith('LIC-TRIAL-'));
+    if (!isTrial) {
+      if (license.signedFileContent) {
+        try {
+          const parsed = JSON.parse(license.signedFileContent);
+          if (parsed && parsed.payload && parsed.signature) {
+            const isValid = verifyLicense(parsed.payload, parsed.signature);
+            if (!isValid) {
+              return { valid: false, code: 'LICENSE_INVALID', detailCode: 'INVALID_SIGNATURE', message: "Cryptographic validation failed. The license file is invalid or tampered." };
+            }
+            if (parsed.payload.companyId !== companyId) {
+              return { valid: false, code: 'LICENSE_INVALID', detailCode: 'COMPANY_IDENTITY_MISMATCH', message: "License is bound to a different company ID." };
+            }
+          } else {
+            return { valid: false, code: 'LICENSE_INVALID', detailCode: 'MISSING_ACTIVATION_METADATA', message: "Invalid license file structure." };
           }
-          if (parsed.payload.companyId !== companyId) {
-            return { valid: false, code: 'LICENSE_INVALID', message: "License is bound to a different company ID." };
-          }
-        } else {
-          return { valid: false, code: 'LICENSE_INVALID', message: "Invalid license file structure." };
+        } catch (e) {
+          return { valid: false, code: 'LICENSE_INVALID', detailCode: 'CORRUPTED_ACTIVATION_METADATA', message: "Failed to parse license file signature." };
         }
-      } catch (e) {
-        return { valid: false, code: 'LICENSE_INVALID', message: "Failed to parse license file signature." };
+      } else {
+        return { valid: false, code: 'LICENSE_INVALID', detailCode: 'MISSING_ACTIVATION_METADATA', message: "Missing signed license file content." };
+      }
+
+      const regCheck = LocalLicenseRegistry.verifyCompanyActivationAgainstRegistry({
+        companyId,
+        dbLicense: license,
+      });
+      if (!regCheck.valid) {
+        const mappedCode =
+          regCheck.code === 'LICENSE_REVOKED'
+            ? 'LICENSE_REVOKED'
+            : regCheck.code === 'CORRUPTED_ACTIVATION_METADATA' || regCheck.code === 'REGISTRY_MISMATCH'
+              ? 'TAMPERED'
+              : 'LICENSE_INVALID';
+        return {
+          valid: false,
+          code: mappedCode,
+          detailCode: regCheck.code,
+          message: regCheck.error || "Dual-file license activation metadata or registry verification failed.",
+        };
       }
     }
 
@@ -98,28 +136,49 @@ export async function validateActiveLicenseForCompany(companyId: string): Promis
     const effectiveNow = Math.max(Date.now(), clockCheck.lastKnownTime);
     if (!license.isLifetime && license.expirationDate && license.expirationDate !== 'LIFETIME') {
       const expTime = new Date(license.expirationDate).getTime();
-      const gracePeriodMs = 15 * 24 * 60 * 60 * 1000; // 15-Day Grace Period
-      const graceEndTime = expTime + gracePeriodMs;
-
-      if (effectiveNow > graceEndTime) {
-        return { 
-          valid: false, 
-          code: 'LICENSE_EXPIRED', 
-          message: "The 15-day trial and 15-day grace period have expired. Please activate your company license to continue." 
-        };
+      if (isTrial) {
+        const gracePeriodMs = 15 * 24 * 60 * 60 * 1000; // 15-Day Grace Period for trial
+        const graceEndTime = expTime + gracePeriodMs;
+        if (effectiveNow > graceEndTime) {
+          return { 
+            valid: false, 
+            code: 'LICENSE_EXPIRED', 
+            detailCode: 'TRIAL_AND_GRACE_EXPIRED',
+            message: "The 15-day trial and 15-day grace period have expired. Please activate your company license to continue." 
+          };
+        }
+      } else {
+        // Commercial term license (v1 or v2) checks strict expiration unless grace period explicitly enabled
+        const graceDays = 15;
+        let isDualV2 = Boolean((license as any).licensePairId);
+        if (!isDualV2 && license.signedFileContent) {
+          try {
+            const p = JSON.parse(license.signedFileContent);
+            if (p?.payload?.licenseVersion === '2.0') isDualV2 = true;
+          } catch {}
+        }
+        const deadline = isDualV2 ? expTime : expTime + graceDays * 24 * 60 * 60 * 1000;
+        if (effectiveNow > deadline) {
+          return {
+            valid: false,
+            code: 'LICENSE_EXPIRED',
+            detailCode: 'LICENSE_EXPIRED',
+            message: `This license expired on ${license.expirationDate}.`,
+          };
+        }
       }
     }
 
     if (license.status !== 'ACTIVE') {
-      return { valid: false, code: 'LICENSE_INVALID', message: `License status is ${license.status}.` };
+      return { valid: false, code: 'LICENSE_INVALID', detailCode: license.status, message: `License status is ${license.status}.` };
     }
 
     // Advance monotonic progress timestamp if confirmed valid
     await AntiRollbackService.advanceTimeIfValid(companyId);
 
-    return { valid: true, code: 'OK' };
+    return { valid: true, code: 'OK', detailCode: isTrial ? 'TRIAL_ACTIVE' : 'ACTIVE' };
   } catch (err: any) {
-    return { valid: false, code: 'LICENSE_INVALID', message: `License validation error: ${err.message}` };
+    return { valid: false, code: 'LICENSE_INVALID', detailCode: 'VERIFICATION_ERROR', message: `License validation error: ${err.message}` };
   }
 }
 
@@ -784,6 +843,12 @@ export const requirePlanEntitlement = (minPlan: 'PRO' | 'ENTERPRISE') => {
     if (!license) {
        res.status(403).json({ error: "LICENSE_REQUIRED", message: "No license found" });
        return;
+    }
+
+    const activeCheck = await validateActiveLicenseForCompany(req.activeCompany.id);
+    if (!activeCheck.valid) {
+      res.status(403).json({ error: activeCheck.detailCode || activeCheck.code, message: activeCheck.message || "License validation failed." });
+      return;
     }
 
     const planLevel = (p: string) => p === 'ENTERPRISE' ? 2 : 1;

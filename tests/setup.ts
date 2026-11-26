@@ -227,6 +227,34 @@ beforeAll(async () => {
       notes text,
       created_by text NOT NULL,
       created_at integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL
+    );`,
+    "ALTER TABLE company_licenses ADD COLUMN license_pair_id text;",
+    "ALTER TABLE company_licenses ADD COLUMN key_file_id text;",
+    "ALTER TABLE company_licenses ADD COLUMN activation_record_id text;",
+    "ALTER TABLE company_licenses ADD COLUMN activation_timestamp text;",
+    "ALTER TABLE company_licenses ADD COLUMN activated_by text;",
+    "ALTER TABLE company_licenses ADD COLUMN key_file_content text;",
+    "ALTER TABLE company_licenses ADD COLUMN activation_receipt text;",
+    "ALTER TABLE company_licenses ADD COLUMN revocation_ref text;",
+    "ALTER TABLE company_licenses ADD COLUMN license_version text DEFAULT '2.0';",
+    "ALTER TABLE company_licenses ADD COLUMN activation_policy text DEFAULT 'ONE_TIME_COMPANY_BOUND';",
+    "ALTER TABLE company_licenses ADD COLUMN recovery_reference text;",
+    "ALTER TABLE company_licenses ADD COLUMN recovery_reason text;",
+    `CREATE TABLE IF NOT EXISTS license_redemption_records (
+      id text PRIMARY KEY,
+      company_id text NOT NULL REFERENCES companies(id),
+      license_pair_id text NOT NULL,
+      license_id text NOT NULL,
+      key_file_id text NOT NULL,
+      activation_key text NOT NULL,
+      plan_type text NOT NULL,
+      activation_status text NOT NULL,
+      activated_at text NOT NULL,
+      activated_by text,
+      activation_receipt text NOT NULL,
+      recovery_reference text,
+      recovery_reason text,
+      created_at integer NOT NULL DEFAULT (strftime('%s', 'now') * 1000)
     );`
   ];
 

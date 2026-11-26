@@ -1024,6 +1024,45 @@ export class MigrationManager {
               ON approval_idempotency_keys(company_id, workflow_id, action, idempotency_key);
           `);
         }
+      },
+      {
+        version: 22,
+        name: 'v22_dual_file_licensing_and_redemption',
+        up: (sqlite) => {
+          this.safeAddColumn(sqlite, 'company_licenses', 'license_pair_id text');
+          this.safeAddColumn(sqlite, 'company_licenses', 'key_file_id text');
+          this.safeAddColumn(sqlite, 'company_licenses', 'activation_record_id text');
+          this.safeAddColumn(sqlite, 'company_licenses', 'activation_timestamp text');
+          this.safeAddColumn(sqlite, 'company_licenses', 'activated_by text');
+          this.safeAddColumn(sqlite, 'company_licenses', 'key_file_content text');
+          this.safeAddColumn(sqlite, 'company_licenses', 'activation_receipt text');
+          this.safeAddColumn(sqlite, 'company_licenses', 'revocation_ref text');
+          this.safeAddColumn(sqlite, 'company_licenses', "license_version text DEFAULT '2.0'");
+          this.safeAddColumn(sqlite, 'company_licenses', "activation_policy text DEFAULT 'ONE_TIME_COMPANY_BOUND'");
+          this.safeAddColumn(sqlite, 'company_licenses', 'recovery_reference text');
+          this.safeAddColumn(sqlite, 'company_licenses', 'recovery_reason text');
+
+          sqlite.exec(`
+            CREATE TABLE IF NOT EXISTS license_redemption_records (
+              id text PRIMARY KEY,
+              company_id text NOT NULL REFERENCES companies(id),
+              license_pair_id text NOT NULL,
+              license_id text NOT NULL,
+              key_file_id text NOT NULL,
+              activation_key text NOT NULL,
+              plan_type text NOT NULL,
+              activation_status text NOT NULL,
+              activated_at text NOT NULL,
+              activated_by text,
+              activation_receipt text NOT NULL,
+              recovery_reference text,
+              recovery_reason text,
+              created_at integer NOT NULL DEFAULT (strftime('%s', 'now') * 1000)
+            );
+            CREATE INDEX IF NOT EXISTS idx_lic_redemption_pair ON license_redemption_records(license_pair_id);
+            CREATE INDEX IF NOT EXISTS idx_lic_redemption_comp ON license_redemption_records(company_id);
+          `);
+        }
       }
     ];
   }
@@ -1048,7 +1087,7 @@ export class MigrationManager {
     }
   }
 
-  static readonly LATEST_VERSION = 21;
+  static readonly LATEST_VERSION = 22;
 
   static getCurrentVersion(sqlite: any): number {
     const history = this.getMigrationHistory(sqlite);

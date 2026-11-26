@@ -5,7 +5,8 @@ import { requireAuth, requireMinRole, requirePermission, requireApprovalRole } f
 import { eq, desc, and, inArray, sql, lt } from "drizzle-orm";
 import crypto from "crypto";
 import os from "os";
-import { verifyLicense, extractAndValidateLicense, parseAndVerifyToken } from "../licensing/verify";
+import { verifyLicense, extractAndValidateLicense, validateLicenseFilePair } from "../licensing/verify";
+import { LocalLicenseRegistry } from "../licensing/localLicenseRegistry";
 import { broadcastAuthorityEvent } from "../ws";
 import { AntiRollbackService } from "../services/antiRollbackService";
 import { AuditService } from "../services/auditService";
@@ -78,19 +79,52 @@ router.get(["/licensing/status", "/licenses/status"], requireAuth, async (req, r
       }
     }
 
-    if (license && license.status === 'ACTIVE' && license.signedFileContent) {
+    const isTrial =
+      !license ||
+      (license.planType === 'TRIAL' &&
+        (license.licenseKey?.startsWith('LEDGERAI-TRIAL-') || license.licenseKey?.startsWith('LIC-TRIAL-')));
+
+    let registryVerificationError: string | null = null;
+    let registryVerificationCode: string | null = null;
+    let recoveryRequired = false;
+
+    if (license && !isTrial && license.status !== 'TAMPERED') {
+      const regCheck = LocalLicenseRegistry.verifyCompanyActivationAgainstRegistry({
+        companyId,
+        dbLicense: license,
+      });
+      if (!regCheck.valid) {
+        registryVerificationError = regCheck.error || 'License activation verification failed.';
+        registryVerificationCode = regCheck.code;
+        if (regCheck.code === 'LICENSE_REVOKED') {
+          license = { ...license, status: 'REVOKED' };
+        } else if (regCheck.code === 'LICENSE_SUSPENDED') {
+          license = { ...license, status: 'SUSPENDED' };
+        } else {
+          recoveryRequired = true;
+          license = { ...license, status: 'RECOVERY_REQUIRED' };
+        }
+      }
+    }
+
+    if (license && license.status === 'ACTIVE' && license.signedFileContent && !isTrial) {
       try {
         const parsed = JSON.parse(license.signedFileContent);
         if (parsed && parsed.payload && parsed.signature) {
           const isValid = verifyLicense(parsed.payload, parsed.signature);
-          if (!isValid) {
-            license = { ...license, status: 'EXPIRED' };
-          } else if (parsed.payload.companyId !== companyId) {
-            license = { ...license, status: 'EXPIRED' };
+          if (!isValid || parsed.payload.companyId !== companyId) {
+            recoveryRequired = true;
+            registryVerificationCode = !isValid ? 'INVALID_SIGNATURE' : 'COMPANY_IDENTITY_MISMATCH';
+            registryVerificationError = !isValid
+              ? 'Cryptographic signature verification failed.'
+              : 'Company ID mismatch in license record.';
+            license = { ...license, status: 'RECOVERY_REQUIRED' };
           }
         }
-      } catch (e) {
-        // Ignored for raw/trial content
+      } catch {
+        recoveryRequired = true;
+        registryVerificationCode = 'CORRUPTED_ACTIVATION_METADATA';
+        license = { ...license, status: 'RECOVERY_REQUIRED' };
       }
     }
 
@@ -115,22 +149,42 @@ router.get(["/licensing/status", "/licenses/status"], requireAuth, async (req, r
 
     if (license && license.status === 'ACTIVE' && !license.isLifetime && license.expirationDate && license.expirationDate !== 'LIFETIME') {
       const expTime = new Date(license.expirationDate).getTime();
-      const gracePeriodMs = 15 * 24 * 60 * 60 * 1000; // 15-day grace period
-      const graceEndTime = expTime + gracePeriodMs;
-      graceExpirationDate = new Date(graceEndTime).toISOString().slice(0, 10);
+      if (isTrial) {
+        const gracePeriodMs = 15 * 24 * 60 * 60 * 1000;
+        const graceEndTime = expTime + gracePeriodMs;
+        graceExpirationDate = new Date(graceEndTime).toISOString().slice(0, 10);
 
-      if (effectiveNow <= expTime) {
-        // Within active 15-day trial (or active license term)
-        trialDaysRemaining = Math.max(0, Math.ceil((expTime - effectiveNow) / (24 * 60 * 60 * 1000)));
-        licenseStatus = 'ACTIVE';
-      } else if (effectiveNow <= graceEndTime) {
-        // Trial expired, now in 15-day grace period
-        inGracePeriod = true;
-        licenseStatus = 'GRACE_PERIOD';
-        graceDaysRemaining = Math.max(1, Math.ceil((graceEndTime - effectiveNow) / (24 * 60 * 60 * 1000)));
+        if (effectiveNow <= expTime) {
+          trialDaysRemaining = Math.max(0, Math.ceil((expTime - effectiveNow) / (24 * 60 * 60 * 1000)));
+          licenseStatus = 'ACTIVE';
+        } else if (effectiveNow <= graceEndTime) {
+          inGracePeriod = true;
+          licenseStatus = 'GRACE_PERIOD';
+          graceDaysRemaining = Math.max(1, Math.ceil((graceEndTime - effectiveNow) / (24 * 60 * 60 * 1000)));
+        } else {
+          licenseStatus = 'EXPIRED';
+        }
       } else {
-        // Both trial and grace period expired
-        licenseStatus = 'EXPIRED';
+        let isDualV2 = Boolean((license as any).licensePairId);
+        if (!isDualV2 && license.signedFileContent) {
+          try {
+            const p = JSON.parse(license.signedFileContent);
+            if (p?.payload?.licenseVersion === '2.0') isDualV2 = true;
+          } catch {}
+        }
+        const graceEndTime = isDualV2 ? expTime : expTime + 15 * 24 * 60 * 60 * 1000;
+        graceExpirationDate = isDualV2 ? null : new Date(graceEndTime).toISOString().slice(0, 10);
+
+        if (effectiveNow <= expTime) {
+          trialDaysRemaining = Math.max(0, Math.ceil((expTime - effectiveNow) / (24 * 60 * 60 * 1000)));
+          licenseStatus = 'ACTIVE';
+        } else if (!isDualV2 && effectiveNow <= graceEndTime) {
+          inGracePeriod = true;
+          licenseStatus = 'GRACE_PERIOD';
+          graceDaysRemaining = Math.max(1, Math.ceil((graceEndTime - effectiveNow) / (24 * 60 * 60 * 1000)));
+        } else {
+          licenseStatus = 'EXPIRED';
+        }
       }
     }
 
@@ -138,14 +192,35 @@ router.get(["/licensing/status", "/licenses/status"], requireAuth, async (req, r
       await AntiRollbackService.advanceTimeIfValid(companyId);
     }
 
+    // Sanitized authoritative status DTO (never exposes raw private keys or raw signed payloads/receipts)
     res.json({
-      ...license,
+      id: license?.id,
+      companyId: license?.companyId || companyId,
+      planType: license?.planType || 'TRIAL',
+      licenseKey: license?.licenseKey ? `${String(license.licenseKey).slice(0, 18)}` : undefined,
       seatCount: license?.planType === 'ENTERPRISE' ? 'UNLIMITED' : (license?.seatCount || 3),
       status: licenseStatus,
+      trialStartDate: license?.trialStartDate,
+      expirationDate: license?.expirationDate,
+      isLifetime: Boolean(license?.isLifetime),
+      licensePairId: (license as any)?.licensePairId || null,
+      keyFileId: (license as any)?.keyFileId || null,
+      activationRecordId: (license as any)?.activationRecordId || null,
+      activationTimestamp: (license as any)?.activationTimestamp || null,
+      activatedBy: (license as any)?.activatedBy || null,
+      revocationRef: (license as any)?.revocationRef || null,
+      licenseVersion: (license as any)?.licenseVersion || '2.0',
+      activationPolicy: (license as any)?.activationPolicy || 'ONE_TIME_COMPANY_BOUND',
+      recoveryRequired,
+      verificationCode: registryVerificationCode,
+      verificationError: registryVerificationError,
       inGracePeriod,
       graceDaysRemaining,
       trialDaysRemaining,
-      graceExpirationDate
+      graceExpirationDate,
+      needsReactivation: Boolean((license as any)?.needsReactivation),
+      clockRollbackDetected: Boolean((license as any)?.clockRollbackDetected),
+      clockRollbackMessage: (license as any)?.clockRollbackMessage || null,
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -188,68 +263,173 @@ router.get("/licensing/request", requireAuth, async (req, res) => {
 
 router.post(["/licensing/activate", "/licenses/activate"], requireAuth, requirePermission('settings:manage'), async (req, res) => {
   const companyId = req.activeCompany!.id;
-  const { activationKey, licenseFile } = req.body;
+  const actorIdentity = req.user?.email || req.user?.id || 'authorized-admin';
+  const { licenseKeyFile, keyLicenseFile, recoveryReason } = req.body || {};
 
   try {
-    if (!activationKey && !licenseFile) {
-      res.status(400).json({ error: "Please provide either an Activation Key or upload a .lai License File." });
+    // 1. Validate Anti-Rollback Clock before any activation processing
+    const clockCheck = await AntiRollbackService.verifyClock(companyId);
+    if (!clockCheck.valid) {
+      await db.update(schema.companyLicenses)
+        .set({ status: 'TAMPERED', updatedAt: new Date() })
+        .where(eq(schema.companyLicenses.companyId, companyId))
+        .catch(() => {});
+      res.status(403).json({
+        error: 'TAMPERED',
+        code: clockCheck.code,
+        message: clockCheck.message || "Cannot activate license: Unauthorized system clock rollback detected."
+      });
       return;
     }
 
-    // 1. Extract and validate cryptographic payload and signature
-    const result = extractAndValidateLicense({ activationKey, licenseFile });
-    if (!result.valid || !result.payload || !result.signature) {
-      res.status(403).json({ error: result.error || "Cryptographic validation failed. The license is invalid or has been tampered with." });
+    // 2. Enforce Mandatory Dual-File Pairing & Signature Verification
+    const pairResult = validateLicenseFilePair({
+      licenseKeyFile,
+      keyLicenseFile,
+      expectedCompanyId: companyId,
+    });
+
+    if (!pairResult.valid || !pairResult.keyPayload || !pairResult.licensePayload || !pairResult.licenseSignature) {
+      const isMissing =
+        pairResult.code === 'BOTH_FILES_REQUIRED' ||
+        pairResult.code === 'LICENSE_KEY_FILE_REQUIRED' ||
+        pairResult.code === 'KEY_LICENSE_FILE_REQUIRED';
+
+      await db.insert(schema.licenseAuditLogs).values({
+        id: crypto.randomUUID(),
+        companyId,
+        action: 'ACTIVATION_REJECTED',
+        details: `Activation rejected (${pairResult.code}): ${pairResult.error}`
+      }).catch(() => {});
+
+      res.status(isMissing ? 400 : 403).json({
+        error: pairResult.code,
+        code: pairResult.code,
+        message: pairResult.error || "Cryptographic validation failed for license pair."
+      });
       return;
     }
 
-    const payload = result.payload;
-    const signature = result.signature;
-    const effectiveKey = result.keyString || activationKey || payload.activationKey || 'LGR-ACTIVATED';
-    const effectiveFileContent = licenseFile || JSON.stringify({ payload, signature }, null, 2);
-    
-    // 2. Verify it's bound to THIS company ID
-    if (payload.companyId !== companyId) {
-      res.status(403).json({ error: `License is bound to a different Company ID (${payload.companyId}). Active company is (${companyId}).` });
-      return;
-    }
+    const payload = pairResult.licensePayload;
+    const keyPayload = pairResult.keyPayload;
+    const effectiveKey = pairResult.keyString || payload.activationKey;
+    const effectiveFileContent = keyLicenseFile.trim();
+    const effectiveKeyFileContent = licenseKeyFile.trim();
 
-    // 3. Verify Product ID if specified
+    // 3. Verify Product ID & Plan Entitlement
     if (payload.productId && payload.productId !== 'LEDGERAI-PH' && payload.productId !== 'LEDGERAI') {
-      res.status(403).json({ error: `Invalid Product ID (${payload.productId}). Expected LEDGERAI-PH.` });
+      res.status(403).json({ error: 'INVALID_PRODUCT_ID', message: `Invalid Product ID (${payload.productId}). Expected LEDGERAI-PH.` });
       return;
     }
 
-    // 4. Verify Client License Plan is ONLY PRO or ENTERPRISE
     const validPlans = ['PRO', 'ENTERPRISE'];
     const planToSave = validPlans.includes(payload.planType) ? payload.planType : null;
     if (!planToSave) {
-      res.status(403).json({ error: `Invalid plan type '${payload.planType}'. Client license plans must be strictly Pro or Enterprise.` });
-      return;
-    }
-    
-    // 5. Verify system clock anti-rollback and expiration
-    const clockCheck = await AntiRollbackService.verifyClock(companyId);
-    if (!clockCheck.valid && clockCheck.code === 'CLOCK_ROLLBACK_DETECTED') {
-      res.status(403).json({ error: clockCheck.message || "Cannot activate license: Unauthorized system clock rollback detected." });
+      res.status(403).json({ error: 'INVALID_PLAN_TYPE', message: `Invalid plan type '${payload.planType}'. Must be PRO or ENTERPRISE.` });
       return;
     }
 
+    // 4. Verify Expiration against Monotonic Watermark
     const effectiveNow = Math.max(Date.now(), clockCheck.lastKnownTime);
-    const isLifetime = payload.type === 'LIFETIME' || payload.isLifetime === true;
+    const isLifetime = payload.type === 'LIFETIME' || payload.isLifetime === true || !payload.expirationDate;
     if (!isLifetime && payload.expirationDate && payload.expirationDate !== 'LIFETIME' && new Date(payload.expirationDate).getTime() < effectiveNow) {
-      res.status(403).json({ error: `This license has expired on ${payload.expirationDate}.` });
+      res.status(403).json({
+        error: 'LICENSE_EXPIRED',
+        code: 'LICENSE_EXPIRED',
+        message: `This license pair expired on ${payload.expirationDate}.`
+      });
       return;
     }
 
-    // 6. Verify revocation state
+    // 5. Load Existing Company DB License Record & Guard Revoked/Tampered States
     const existing = await db.select().from(schema.companyLicenses).where(eq(schema.companyLicenses.companyId, companyId)).get();
-    if (existing && existing.status === 'REVOKED') {
-      res.status(403).json({ error: "This company license has been revoked and cannot be activated." });
+    if (existing?.status === 'TAMPERED') {
+      res.status(403).json({
+        error: 'TAMPERED',
+        code: 'TAMPERED',
+        message: "This company workspace is locked in TAMPERED state. Use authorized recovery after correcting system time integrity."
+      });
       return;
     }
 
-    const deviceBindingHash = payload.deviceBindingHash || (req.headers['user-agent'] ? crypto.createHash('sha256').update(req.headers['user-agent'] as string).digest('hex') : null);
+    if (existing?.status === 'REVOKED' && !payload.recoveryReference) {
+      res.status(403).json({
+        error: 'LICENSE_REVOKED',
+        code: 'LICENSE_REVOKED',
+        message: "This company license has been revoked and cannot be reactivated."
+      });
+      return;
+    }
+
+    if (existing?.status === 'SUSPENDED' && !payload.recoveryReference) {
+      res.status(403).json({
+        error: 'LICENSE_SUSPENDED',
+        code: 'LICENSE_SUSPENDED',
+        message: "This company license is currently suspended."
+      });
+      return;
+    }
+
+    // 6. Execute One-Time Pair Redemption in Trusted Local Licensing Registry
+    const authorizedRecovery =
+      payload.recoveryReference
+        ? {
+            recoveryReference: String(payload.recoveryReference),
+            reason: recoveryReason || payload.recoveryReason || 'Authorized license recovery/replacement',
+            authorizedBy: actorIdentity,
+          }
+        : null;
+
+    const redemption = LocalLicenseRegistry.redeemPairForCompany({
+      companyId,
+      licensePairId: payload.licensePairId,
+      licenseId: payload.licenseId,
+      keyFileId: keyPayload.keyFileId,
+      activationKey: effectiveKey,
+      planType: planToSave,
+      expirationDate: isLifetime ? 'LIFETIME' : (payload.expirationDate || 'LIFETIME'),
+      isLifetime,
+      revocationRef: payload.revocationRef || `rev-${payload.licensePairId}`,
+      activatedBy: actorIdentity,
+      existingDbLicense: existing || null,
+      authorizedRecovery,
+    });
+
+    if (!redemption.allowed || !redemption.record) {
+      await db.insert(schema.licenseAuditLogs).values({
+        id: crypto.randomUUID(),
+        companyId,
+        action: 'REDEMPTION_DENIED',
+        details: `Pair '${payload.licensePairId}' rejected (${redemption.code}): ${redemption.error}`
+      }).catch(() => {});
+
+      res.status(403).json({
+        error: redemption.code,
+        code: redemption.code,
+        message: redemption.error || "License pair redemption rejected."
+      });
+      return;
+    }
+
+    // Idempotent verification of already activated matching company + pair (no duplicate activation records)
+    if (redemption.idempotent) {
+      res.json({
+        success: true,
+        idempotent: true,
+        alreadyActivated: true,
+        activationRecordId: redemption.record.activationRecordId,
+        licensePairId: redemption.record.licensePairId,
+        companyId,
+        planType: planToSave,
+        isLifetime,
+        expirationDate: isLifetime ? 'LIFETIME' : payload.expirationDate,
+        message: `License (${planToSave}) is already active and verified for this company.`,
+      });
+      return;
+    }
+
+    const record = redemption.record;
+    const deviceBindingHash = payload.deviceBindingHash || null;
 
     let seatCountToSave: number | null = null;
     if (planToSave !== 'ENTERPRISE') {
@@ -262,7 +442,7 @@ router.post(["/licensing/activate", "/licenses/activate"], requireAuth, requireP
       }
     }
 
-    // Update or insert
+    // 7. Persist Signed Activation Record, Dual-File Proofs & Receipt in Company Database
     if (existing) {
       await db.update(schema.companyLicenses).set({
         licenseKey: effectiveKey,
@@ -271,6 +451,20 @@ router.post(["/licensing/activate", "/licenses/activate"], requireAuth, requireP
         seatCount: seatCountToSave,
         expirationDate: isLifetime ? 'LIFETIME' : (payload.expirationDate || 'LIFETIME'),
         signedFileContent: effectiveFileContent,
+        keyFileContent: effectiveKeyFileContent,
+        licensePairId: payload.licensePairId,
+        keyFileId: keyPayload.keyFileId,
+        activationRecordId: record.activationRecordId,
+        activationTimestamp: record.redeemedAt,
+        activatedBy: actorIdentity,
+        activationReceipt: record.signedActivationReceipt,
+        revocationRef: payload.revocationRef || `rev-${payload.licensePairId}`,
+        licenseVersion: payload.licenseVersion || '2.0',
+        activationPolicy: payload.activationPolicy || 'ONE_TIME_COMPANY_BOUND',
+        recoveryReference: payload.recoveryReference || null,
+        recoveryReason: authorizedRecovery?.reason || null,
+        previousLicenseId: existing.id,
+        replacementReason: authorizedRecovery?.reason || (existing.planType === 'TRIAL' ? 'Trial upgraded via Dual-File Activation' : null),
         isLifetime,
         deviceBindingHash,
         updatedAt: new Date()
@@ -286,35 +480,216 @@ router.post(["/licensing/activate", "/licenses/activate"], requireAuth, requireP
         trialStartDate: payload.issuedAt ? payload.issuedAt.slice(0, 10) : new Date().toISOString().slice(0, 10),
         expirationDate: isLifetime ? 'LIFETIME' : (payload.expirationDate || 'LIFETIME'),
         signedFileContent: effectiveFileContent,
+        keyFileContent: effectiveKeyFileContent,
+        licensePairId: payload.licensePairId,
+        keyFileId: keyPayload.keyFileId,
+        activationRecordId: record.activationRecordId,
+        activationTimestamp: record.redeemedAt,
+        activatedBy: actorIdentity,
+        activationReceipt: record.signedActivationReceipt,
+        revocationRef: payload.revocationRef || `rev-${payload.licensePairId}`,
+        licenseVersion: payload.licenseVersion || '2.0',
+        activationPolicy: payload.activationPolicy || 'ONE_TIME_COMPANY_BOUND',
+        recoveryReference: payload.recoveryReference || null,
+        recoveryReason: authorizedRecovery?.reason || null,
         isLifetime,
         deviceBindingHash
       });
     }
 
+    await db.insert(schema.licenseRedemptionRecords).values({
+      id: record.activationRecordId,
+      companyId,
+      licensePairId: payload.licensePairId,
+      licenseId: payload.licenseId,
+      keyFileId: keyPayload.keyFileId,
+      activationKey: effectiveKey,
+      planType: planToSave,
+      activationStatus: 'ACTIVE',
+      activatedAt: record.redeemedAt,
+      activatedBy: actorIdentity,
+      activationReceipt: record.signedActivationReceipt,
+      recoveryReference: payload.recoveryReference || null,
+      recoveryReason: authorizedRecovery?.reason || null,
+    });
+
     await db.insert(schema.licenseAuditLogs).values({
       id: crypto.randomUUID(),
       companyId,
-      action: 'ACTIVATED',
-      details: `License key (${planToSave}) activated successfully via cryptographic offline validation.`
+      action: authorizedRecovery ? 'RECOVERED_AND_ACTIVATED' : 'ACTIVATED',
+      details: `Dual-file license pair '${payload.licensePairId}' (${planToSave}) activated cleanly via one-time company-bound redemption. Activation Record: ${record.activationRecordId}`
     });
+
+    await AntiRollbackService.advanceTimeIfValid(companyId);
 
     broadcastAuthorityEvent({
       type: 'LICENSE_ACTIVATED',
       action: 'ACTIVATED',
       companyId,
+      licensePairId: payload.licensePairId,
+      activationRecordId: record.activationRecordId,
       licenseKey: effectiveKey,
       planType: planToSave
     });
 
-    // Notify Authority Server immediately if online (records claim & starts heartbeat)
     AuthorityHeartbeatClient.pingCompany(companyId).catch(() => {});
 
     res.json({ 
-      success: true, 
-      message: `License (${planToSave}) activated successfully. Full functionality enabled.`,
+      success: true,
+      idempotent: false,
+      alreadyActivated: false,
+      activationRecordId: record.activationRecordId,
+      licensePairId: payload.licensePairId,
+      keyFileId: keyPayload.keyFileId,
+      companyId,
+      message: `Dual-file license pair verified and activated (${planToSave}). Full functionality enabled.`,
       planType: planToSave,
       isLifetime,
-      expirationDate: isLifetime ? 'LIFETIME' : payload.expirationDate
+      expirationDate: isLifetime ? 'LIFETIME' : payload.expirationDate,
+      activationTimestamp: record.redeemedAt
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Controlled Authorized License Recovery Endpoint
+router.post(["/licensing/recover", "/licenses/recover"], requireAuth, requirePermission('settings:manage'), async (req, res) => {
+  const companyId = req.activeCompany!.id;
+  const actorIdentity = req.user?.email || req.user?.id || 'authorized-admin';
+  const { licenseKeyFile, keyLicenseFile, recoveryReason } = req.body || {};
+
+  if (!recoveryReason || typeof recoveryReason !== 'string' || recoveryReason.trim().length < 5) {
+    res.status(400).json({
+      error: 'RECOVERY_REASON_REQUIRED',
+      message: 'An explicit audit reason (min 5 characters) is required for authorized license recovery.',
+    });
+    return;
+  }
+
+  try {
+    const pairResult = validateLicenseFilePair({
+      licenseKeyFile,
+      keyLicenseFile,
+      expectedCompanyId: companyId,
+    });
+
+    if (!pairResult.valid || !pairResult.keyPayload || !pairResult.licensePayload) {
+      res.status(403).json({
+        error: pairResult.code,
+        message: pairResult.error || 'Dual-file recovery artifact validation failed.',
+      });
+      return;
+    }
+
+    const payload = pairResult.licensePayload;
+    if (!payload.recoveryReference) {
+      res.status(403).json({
+        error: 'AUTHORIZED_RECOVERY_REFERENCE_REQUIRED',
+        message: 'Recovery requires a License Authority signed recoveryReference bound to the prior activation or company profile.',
+      });
+      return;
+    }
+
+    const clockCheck = await AntiRollbackService.verifyClock(companyId);
+    const effectiveNow = Math.max(Date.now(), clockCheck.lastKnownTime);
+    const isLifetime = payload.type === 'LIFETIME' || payload.isLifetime === true || !payload.expirationDate;
+    if (!isLifetime && payload.expirationDate && payload.expirationDate !== 'LIFETIME' && new Date(payload.expirationDate).getTime() < effectiveNow) {
+      res.status(403).json({
+        error: 'LICENSE_EXPIRED',
+        message: 'Expired licenses cannot be activated during recovery.',
+      });
+      return;
+    }
+
+    const existing = await db.select().from(schema.companyLicenses).where(eq(schema.companyLicenses.companyId, companyId)).get();
+
+    const redemption = LocalLicenseRegistry.redeemPairForCompany({
+      companyId,
+      licensePairId: payload.licensePairId,
+      licenseId: payload.licenseId,
+      keyFileId: pairResult.keyPayload.keyFileId,
+      activationKey: payload.activationKey,
+      planType: payload.planType,
+      expirationDate: isLifetime ? 'LIFETIME' : (payload.expirationDate || 'LIFETIME'),
+      isLifetime,
+      revocationRef: payload.revocationRef || `rev-${payload.licensePairId}`,
+      activatedBy: actorIdentity,
+      existingDbLicense: existing || null,
+      authorizedRecovery: {
+        recoveryReference: String(payload.recoveryReference),
+        reason: recoveryReason.trim(),
+        authorizedBy: actorIdentity,
+      },
+    });
+
+    if (!redemption.allowed || !redemption.record) {
+      res.status(403).json({
+        error: redemption.code,
+        message: redemption.error || 'Authorized recovery failed registry validation.',
+      });
+      return;
+    }
+
+    const record = redemption.record;
+    const seatCountToSave = payload.planType === 'ENTERPRISE' ? null : (typeof payload.seatCount === 'number' ? payload.seatCount : 3);
+
+    if (existing) {
+      await db.update(schema.companyLicenses).set({
+        licenseKey: payload.activationKey,
+        planType: payload.planType,
+        status: 'ACTIVE',
+        seatCount: seatCountToSave,
+        expirationDate: isLifetime ? 'LIFETIME' : (payload.expirationDate || 'LIFETIME'),
+        signedFileContent: keyLicenseFile.trim(),
+        keyFileContent: licenseKeyFile.trim(),
+        licensePairId: payload.licensePairId,
+        keyFileId: pairResult.keyPayload.keyFileId,
+        activationRecordId: record.activationRecordId,
+        activationTimestamp: record.redeemedAt,
+        activatedBy: actorIdentity,
+        activationReceipt: record.signedActivationReceipt,
+        revocationRef: payload.revocationRef || `rev-${payload.licensePairId}`,
+        recoveryReference: String(payload.recoveryReference),
+        recoveryReason: recoveryReason.trim(),
+        previousLicenseId: existing.id,
+        replacementReason: recoveryReason.trim(),
+        isLifetime,
+        updatedAt: new Date(),
+      }).where(eq(schema.companyLicenses.companyId, companyId));
+    }
+
+    await db.insert(schema.licenseRedemptionRecords).values({
+      id: record.activationRecordId,
+      companyId,
+      licensePairId: payload.licensePairId,
+      licenseId: payload.licenseId,
+      keyFileId: pairResult.keyPayload.keyFileId,
+      activationKey: payload.activationKey,
+      planType: payload.planType,
+      activationStatus: 'ACTIVE',
+      activatedAt: record.redeemedAt,
+      activatedBy: actorIdentity,
+      activationReceipt: record.signedActivationReceipt,
+      recoveryReference: String(payload.recoveryReference),
+      recoveryReason: recoveryReason.trim(),
+    });
+
+    await db.insert(schema.licenseAuditLogs).values({
+      id: crypto.randomUUID(),
+      companyId,
+      action: 'AUTHORIZED_RECOVERY',
+      details: `Recovered company license via Authority reference '${payload.recoveryReference}'. New Pair: '${payload.licensePairId}'. Reason: ${recoveryReason.trim()}. Operator: ${actorIdentity}`,
+    });
+
+    res.json({
+      success: true,
+      activationRecordId: record.activationRecordId,
+      licensePairId: payload.licensePairId,
+      recoveryReference: payload.recoveryReference,
+      recoveryReason: recoveryReason.trim(),
+      planType: payload.planType,
+      message: 'Company license recovered and re-activated cleanly with full audit history.',
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

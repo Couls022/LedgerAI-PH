@@ -53,9 +53,11 @@ export default function LicensingBanner() {
   const isActive = license.status === 'ACTIVE' || license.status === 'ACTIVATED';
   const inGracePeriod = Boolean(license.inGracePeriod || license.status === 'GRACE_PERIOD');
   const isExpired = license.status === 'EXPIRED';
+  const isRevokedOrSuspended = license.status === 'REVOKED' || license.status === 'SUSPENDED';
+  const isRecoveryRequired = Boolean(license.recoveryRequired || license.status === 'RECOVERY_REQUIRED' || license.status === 'TAMPERED');
 
   // Enterprise Lifetime Active -> Warning/Banner completely disappears
-  if (planName === 'ENTERPRISE' && isLifetime && isActive) {
+  if (planName === 'ENTERPRISE' && isLifetime && isActive && !isRecoveryRequired) {
     return null;
   }
 
@@ -64,7 +66,7 @@ export default function LicensingBanner() {
       className={`border-b px-3 sm:px-5 lg:px-6 py-2 flex flex-wrap items-center justify-between gap-2 text-xs transition-colors ${
         inGracePeriod
           ? 'bg-amber-500/10 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-800/80'
-          : isExpired
+          : isExpired || isRevokedOrSuspended || isRecoveryRequired
           ? 'bg-rose-500/10 dark:bg-rose-950/40 text-rose-900 dark:text-rose-200 border-rose-300 dark:border-rose-800/80'
           : planName === 'TRIAL'
           ? 'bg-sky-500/10 dark:bg-sky-950/40 text-sky-900 dark:text-sky-200 border-sky-300 dark:border-sky-800/80'
@@ -76,7 +78,7 @@ export default function LicensingBanner() {
           className={`w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 ${
             inGracePeriod
               ? 'bg-amber-100 dark:bg-amber-900/60 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300'
-              : isExpired
+              : isExpired || isRevokedOrSuspended || isRecoveryRequired
               ? 'bg-rose-100 dark:bg-rose-900/60 border-rose-300 dark:border-rose-700 text-rose-700 dark:text-rose-300'
               : planName === 'TRIAL'
               ? 'bg-sky-100 dark:bg-sky-900/60 border-sky-300 dark:border-sky-700 text-sky-700 dark:text-sky-300'
@@ -85,7 +87,7 @@ export default function LicensingBanner() {
         >
           {inGracePeriod ? (
             <AlertTriangle className="w-4 h-4 animate-pulse" />
-          ) : isExpired ? (
+          ) : isExpired || isRevokedOrSuspended || isRecoveryRequired ? (
             <Lock className="w-4 h-4" />
           ) : (
             <ShieldCheck className="w-4 h-4" />
@@ -96,19 +98,27 @@ export default function LicensingBanner() {
             className={`px-2 py-0.5 rounded-md text-[11px] font-mono font-bold whitespace-nowrap border ${
               inGracePeriod
                 ? 'bg-amber-200/70 text-amber-900 dark:bg-amber-900/80 dark:text-amber-200 border-amber-300 dark:border-amber-700'
-                : isExpired
+                : isExpired || isRevokedOrSuspended || isRecoveryRequired
                 ? 'bg-rose-200/70 text-rose-900 dark:bg-rose-900/80 dark:text-rose-200 border-rose-300 dark:border-rose-700'
                 : planName === 'TRIAL'
                 ? 'bg-sky-200/70 text-sky-900 dark:bg-sky-900/80 dark:text-sky-200 border-sky-300 dark:border-sky-700'
                 : 'bg-teal-50 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300 border-teal-200 dark:border-teal-800'
             }`}
           >
-            {inGracePeriod ? 'GRACE PERIOD' : isExpired ? 'EXPIRED' : planName === 'TRIAL' ? '15-DAY TRIAL' : license.status}
+            {inGracePeriod ? 'GRACE PERIOD' : isRecoveryRequired ? 'RECOVERY REQUIRED' : isRevokedOrSuspended ? license.status : isExpired ? 'EXPIRED' : planName === 'TRIAL' ? '15-DAY TRIAL' : license.status}
           </span>
           <span className="text-xs whitespace-nowrap">
             {inGracePeriod ? (
               <span>
                 Trial Expired &middot; <strong className="font-bold underline">{license.graceDaysRemaining ?? 15} Day(s) Remaining</strong> in Grace Period (Lock Date: {license.graceExpirationDate || 'Soon'})
+              </span>
+            ) : isRecoveryRequired ? (
+              <span className="font-semibold text-rose-700 dark:text-rose-300">
+                {license.verificationError || 'License verification / metadata recovery required before full operations.'}
+              </span>
+            ) : isRevokedOrSuspended ? (
+              <span className="font-semibold text-rose-700 dark:text-rose-300">
+                License {license.status} &middot; Contact your License Authority.
               </span>
             ) : isExpired ? (
               <span className="font-semibold text-rose-700 dark:text-rose-300">

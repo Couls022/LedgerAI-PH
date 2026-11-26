@@ -22,12 +22,19 @@ const REGISTRY_FILE = path.join(VAULT_DIR, 'authority-license-registry.json');
 
 export interface RegisteredLicense {
   id: string;
+  licensePairId?: string;
+  keyFileId?: string;
   companyId: string;
   companyName?: string;
   planType: string;
   licenseKey: string;
   shortKey?: string;
-  status: 'ACTIVE' | 'EXPIRED' | 'REVOKED';
+  status: 'ACTIVE' | 'EXPIRED' | 'REVOKED' | 'SUSPENDED';
+  redemptionState?: 'ISSUED' | 'REDEEMED' | 'ACTIVE' | 'EXPIRED' | 'REVOKED' | 'SUSPENDED' | 'INVALID' | 'RECOVERY_REQUIRED';
+  redeemedAt?: string | null;
+  activationRecordId?: string | null;
+  recoveryReference?: string | null;
+  recoveryReason?: string | null;
   durationType?: string;
   expirationDate: string | null;
   isLifetime: boolean;
@@ -40,6 +47,7 @@ export interface RegisteredLicense {
   daysRemaining?: number | null;
   seatCount?: number | 'UNLIMITED';
   features?: any;
+  keyFileContent?: string;
   signedFileContent?: string;
 }
 
@@ -195,11 +203,16 @@ router.get("/authority/dashboard", requireAuthorityAuth, async (req, res) => {
       const resolvedName = regLic.companyName || companyNameMap.get(regLic.companyId) || 'Registered Enterprise Client';
       allLicenses.push({
         id: regLic.id,
+        licensePairId: regLic.licensePairId,
+        keyFileId: regLic.keyFileId,
         companyId: regLic.companyId,
         companyName: resolvedName,
         planType: regLic.planType,
         licenseKey: regLic.shortKey || regLic.licenseKey,
         status: regLic.status,
+        redemptionState: regLic.redemptionState || (regLic.status === 'REVOKED' ? 'REVOKED' : regLic.claimedByInstallationId ? 'ACTIVE' : 'ISSUED'),
+        redeemedAt: regLic.redeemedAt || null,
+        activationRecordId: regLic.activationRecordId || null,
         expirationDate: regLic.expirationDate,
         isLifetime: regLic.isLifetime,
         claimedByInstallationId: regLic.claimedByInstallationId,
@@ -207,6 +220,7 @@ router.get("/authority/dashboard", requireAuthorityAuth, async (req, res) => {
         clientIp: regLic.clientIp,
         seatCount: regLic.seatCount || (regLic.planType === 'ENTERPRISE' ? 'UNLIMITED' : 3),
         features: regLic.features,
+        keyFileContent: regLic.keyFileContent,
         signedFileContent: regLic.signedFileContent,
         createdAt: regLic.issuedAt,
         issuedAt: regLic.issuedAt
@@ -293,9 +307,10 @@ router.post("/authority/licenses/:id/revoke", requireAuthorityAuth, async (req, 
 
     // Update in persistent authority registry
     const registry = getAuthorityRegistry();
-    const item = registry.find(l => l.id === req.params.id || l.companyId === companyId);
+    const item = registry.find(l => l.id === req.params.id || l.companyId === companyId || l.licensePairId === req.params.id);
     if (item) {
       item.status = 'REVOKED';
+      item.redemptionState = 'REVOKED';
       saveAuthorityRegistry(registry);
     }
     
@@ -312,6 +327,161 @@ router.post("/authority/licenses/:id/revoke", requireAuthorityAuth, async (req, 
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// Suspend an active or issued license pair
+router.post("/authority/licenses/:id/suspend", requireAuthorityAuth, async (req, res) => {
+  const { companyId, reason } = req.body || {};
+  try {
+    const registry = getAuthorityRegistry();
+    const item = registry.find(l => l.id === req.params.id || l.companyId === companyId || l.licensePairId === req.params.id);
+    if (!item) {
+      res.status(404).json({ error: "License record not found." });
+      return;
+    }
+    item.status = 'SUSPENDED';
+    item.redemptionState = 'SUSPENDED';
+    saveAuthorityRegistry(registry);
+
+    logAuthorityAction('authority', 'SUSPEND_LICENSE', { licenseId: item.id, companyId: item.companyId, reason });
+    res.json({ success: true, message: "License suspended successfully." });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Controlled Authorized License Recovery / Reissuance
+router.post("/authority/licenses/:id/recover", requireAuthorityAuth, async (req, res) => {
+  const { id } = req.params;
+  const { companyId, reason, authorizedOperator } = req.body || {};
+  try {
+    const registry = getAuthorityRegistry();
+    const prevIdx = registry.findIndex(l => l.id === id || l.licensePairId === id || (companyId && l.companyId === companyId && l.status !== 'REVOKED'));
+    if (prevIdx === -1) {
+      res.status(404).json({ error: "Previous license record not found for recovery." });
+      return;
+    }
+
+    const prev = registry[prevIdx];
+    if (prev.status === 'REVOKED') {
+      res.status(403).json({ error: "Revoked licenses cannot be recovered or reactivated." });
+      return;
+    }
+
+    if (companyId && prev.companyId !== companyId) {
+      res.status(403).json({ error: `Cannot transfer license across companies. Bound to '${prev.companyId}', requested '${companyId}'.` });
+      return;
+    }
+
+    const shortKey = `LGR-${prev.planType}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+    const recoveryRef = prev.licensePairId || prev.id;
+    const recoveryReason = reason || 'Authorized database/host recovery';
+
+    const newPair = AuthoritySigner.generateSignedLicensePair({
+      companyId: prev.companyId,
+      activationKey: shortKey,
+      planType: prev.planType as 'PRO' | 'ENTERPRISE',
+      type: prev.isLifetime ? 'LIFETIME' : 'TERM',
+      durationType: prev.durationType || (prev.isLifetime ? 'lifetime' : 'yearly'),
+      expirationDate: prev.expirationDate,
+      seatCount: prev.seatCount || (prev.planType === 'ENTERPRISE' ? 'UNLIMITED' : 3),
+      recoveryReference: recoveryRef,
+      recoveryReason,
+    });
+
+    prev.status = 'REVOKED';
+    prev.redemptionState = 'REVOKED';
+
+    const recoveredRecord: RegisteredLicense = {
+      id: newPair.licenseId,
+      licensePairId: newPair.licensePairId,
+      keyFileId: newPair.keyFileId,
+      companyId: prev.companyId,
+      companyName: prev.companyName,
+      planType: prev.planType,
+      licenseKey: newPair.compactToken,
+      shortKey,
+      status: 'ACTIVE',
+      redemptionState: 'ISSUED',
+      redeemedAt: null,
+      activationRecordId: null,
+      recoveryReference: recoveryRef,
+      recoveryReason,
+      durationType: prev.durationType,
+      expirationDate: prev.expirationDate,
+      isLifetime: prev.isLifetime,
+      issuedAt: newPair.keyLicenseFilePayload.issuedAt,
+      seatCount: prev.seatCount,
+      keyFileContent: newPair.licenseKeyFileJson,
+      signedFileContent: newPair.keyLicenseFileJson,
+    };
+
+    registry[prevIdx] = prev;
+    registry.unshift(recoveredRecord);
+    saveAuthorityRegistry(registry);
+
+    logAuthorityAction(authorizedOperator || 'authority', 'AUTHORIZED_LICENSE_RECOVERY', {
+      previousLicenseId: prev.id,
+      previousPairId: prev.licensePairId,
+      newLicenseId: newPair.licenseId,
+      newPairId: newPair.licensePairId,
+      companyId: prev.companyId,
+      reason: recoveryReason,
+    });
+
+    res.json({
+      success: true,
+      recoveryReference: recoveryRef,
+      reason: recoveryReason,
+      licenseId: newPair.licenseId,
+      licensePairId: newPair.licensePairId,
+      keyFileId: newPair.keyFileId,
+      companyId: prev.companyId,
+      licenseKeyFile: newPair.licenseKeyFileJson,
+      keyLicenseFile: newPair.keyLicenseFileJson,
+      licenseFile: newPair.keyLicenseFileJson,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Claim One-Time Redemption State on Authority Registry (ISSUED -> REDEEMED -> ACTIVE)
+router.post(["/authority/claim-redemption", "/claim-redemption"], async (req, res) => {
+  const { licensePairId, companyId, activationRecordId } = req.body || {};
+  if (!licensePairId || !companyId) {
+    res.status(400).json({ error: "licensePairId and companyId are required." });
+    return;
+  }
+
+  const registry = getAuthorityRegistry();
+  const lic = registry.find(l => l.licensePairId === licensePairId);
+  if (!lic) {
+    res.json({ success: true, tracked: false, message: "Offline pair validated locally." });
+    return;
+  }
+
+  if (lic.status === 'REVOKED') {
+    res.status(403).json({ error: "LICENSE_REVOKED", message: "License pair is revoked." });
+    return;
+  }
+  if (lic.status === 'SUSPENDED') {
+    res.status(403).json({ error: "LICENSE_SUSPENDED", message: "License pair is suspended." });
+    return;
+  }
+  if (lic.companyId !== companyId || (lic.redemptionState === 'REDEEMED' && lic.companyId !== companyId)) {
+    res.status(403).json({ error: "LICENSE_ALREADY_REDEEMED", message: "License pair belongs to or was redeemed by another company." });
+    return;
+  }
+
+  if (lic.redemptionState === 'ISSUED') {
+    lic.redemptionState = 'REDEEMED';
+    lic.redeemedAt = new Date().toISOString();
+    lic.activationRecordId = activationRecordId || null;
+    saveAuthorityRegistry(registry);
+  }
+
+  res.json({ success: true, tracked: true, redemptionState: lic.redemptionState });
 });
 
 // Online Client Heartbeat & Anti-Piracy Single-Device Enforcer
@@ -474,11 +644,12 @@ router.post("/authority/generate-license", requireAuthorityAuth, async (req, res
 
     const licenseId = crypto.randomUUID();
     const shortKey = `LGR-${finalPlan}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+    const recoveryReference = typeof req.body.recoveryReference === 'string' ? req.body.recoveryReference.trim() : null;
+    const recoveryReason = typeof req.body.recoveryReason === 'string' ? req.body.recoveryReason.trim() : null;
 
-    const licensePayload = {
+    const pair = AuthoritySigner.generateSignedLicensePair({
       licenseId,
       companyId: targetCompanyId,
-      productId: 'LEDGERAI-PH',
       activationKey: shortKey,
       planType: finalPlan,
       type,
@@ -486,88 +657,46 @@ router.post("/authority/generate-license", requireAuthorityAuth, async (req, res
       expirationDate: expDate,
       seatCount: effectiveSeatCount,
       deviceBindingHash: deviceFingerprint ? deviceFingerprint.trim() : null,
-      issuedAt: new Date().toISOString(),
-      version: '1.0'
-    };
+      recoveryReference,
+      recoveryReason,
+    });
 
-    const { signature, json: signedContent, compactToken } = AuthoritySigner.generateSignedLicenseArtifact(licensePayload);
-
-    // Completely decoupled: Key generation is 100% self-contained and purely cryptographic.
-    // If and only if the client company happens to be located on this local machine, optionally record issuance.
-    try {
-      if (typeof CompanyManager?.getCompanyDb === 'function') {
-        try {
-          const companyDb = await CompanyManager.getCompanyDb(targetCompanyId).catch(() => null);
-          if (companyDb) {
-            const existing = await companyDb.select().from(schema.companyLicenses).where(eq(schema.companyLicenses.companyId, targetCompanyId)).get().catch(() => null);
-
-            const dbSeatCount = typeof effectiveSeatCount === 'number' ? effectiveSeatCount : null;
-            if (existing) {
-              await companyDb.update(schema.companyLicenses).set({
-                licenseKey: compactToken,
-                planType: finalPlan,
-                status: 'ACTIVE',
-                expirationDate: expDate || 'LIFETIME',
-                seatCount: dbSeatCount,
-                signedFileContent: signedContent,
-                isLifetime: type === 'LIFETIME',
-                deviceBindingHash: deviceFingerprint ? deviceFingerprint.trim() : null,
-                updatedAt: new Date()
-              }).where(eq(schema.companyLicenses.id, existing.id)).catch(() => {});
-            } else {
-              await companyDb.insert(schema.companyLicenses).values({
-                id: licenseId,
-                companyId: targetCompanyId,
-                licenseKey: compactToken,
-                planType: finalPlan,
-                status: 'ACTIVE',
-                seatCount: dbSeatCount,
-                trialStartDate: new Date().toISOString().slice(0, 10),
-                expirationDate: expDate || 'LIFETIME',
-                signedFileContent: signedContent,
-                isLifetime: type === 'LIFETIME',
-                deviceBindingHash: deviceFingerprint ? deviceFingerprint.trim() : null
-              }).catch(() => {});
-            }
-
-            await companyDb.insert(schema.licenseAuditLogs).values({
-              id: crypto.randomUUID(),
-              companyId: targetCompanyId,
-              action: 'GENERATED_AND_ACTIVATED',
-              details: `Authority generated new ${finalPlan} signed license key for company ${targetCompanyId} (${effectiveSeatCount} seats)`
-            }).catch(() => {});
-          }
-        } finally {
-          await CompanyManager.closeCompanyDb(targetCompanyId).catch(() => {});
-        }
-      }
-    } catch (e) {
-      // Intentionally decoupled — client DB is not required on the issuing authority machine
-    }
-
-    // Always record in persistent central Authority Registry
+    // Always record in persistent central Authority Registry (starts as ISSUED until redeemed on company workstation)
     try {
       const newRecord: RegisteredLicense = {
-        id: licenseId,
+        id: pair.licenseId,
+        licensePairId: pair.licensePairId,
+        keyFileId: pair.keyFileId,
         companyId: targetCompanyId,
         companyName: req.body.companyName || undefined,
         planType: finalPlan,
-        licenseKey: compactToken,
+        licenseKey: pair.compactToken,
         shortKey,
         status: 'ACTIVE',
+        redemptionState: 'ISSUED',
+        redeemedAt: null,
+        activationRecordId: null,
+        recoveryReference,
+        recoveryReason,
         seatCount: effectiveSeatCount,
-        signedFileContent: signedContent,
+        keyFileContent: pair.licenseKeyFileJson,
+        signedFileContent: pair.keyLicenseFileJson,
         durationType: durationType || (type === 'LIFETIME' ? 'lifetime' : 'yearly'),
         expirationDate: expDate,
         isLifetime: type === 'LIFETIME',
-        issuedAt: new Date().toISOString(),
+        issuedAt: pair.keyLicenseFilePayload.issuedAt,
         claimedByInstallationId: null,
         claimedDeviceFingerprint: deviceFingerprint ? deviceFingerprint.trim() : null,
         lastHeartbeat: null,
         clientIp: null,
       };
-      if (existingIdx >= 0) {
-        registry[existingIdx] = { ...registry[existingIdx], ...newRecord };
+      if (existingIdx >= 0 && recoveryReference) {
+        registry[existingIdx] = {
+          ...registry[existingIdx],
+          redemptionState: 'REVOKED',
+          status: 'REVOKED',
+        };
+        registry.unshift(newRecord);
       } else {
         registry.unshift(newRecord);
       }
@@ -576,21 +705,24 @@ router.post("/authority/generate-license", requireAuthorityAuth, async (req, res
       console.warn('[AuthorityServer] Failed to write to license registry:', regErr);
     }
 
-    logAuthorityAction('authority', 'GENERATE_LICENSE', {
-      licenseId,
+    logAuthorityAction('authority', 'GENERATE_LICENSE_PAIR', {
+      licenseId: pair.licenseId,
+      licensePairId: pair.licensePairId,
+      keyFileId: pair.keyFileId,
       companyId: targetCompanyId,
       planType: finalPlan,
-      licenseKey: compactToken,
       shortKey,
       seatCount: effectiveSeatCount,
-      expirationDate: expDate
+      expirationDate: expDate,
+      recoveryReference
     });
 
     broadcastAuthorityEvent({
       type: 'LICENSE_GENERATED',
       action: 'GENERATED',
       companyId: targetCompanyId,
-      licenseKey: compactToken,
+      licensePairId: pair.licensePairId,
+      licenseKey: pair.compactToken,
       shortKey,
       planType: finalPlan,
       seatCount: effectiveSeatCount
@@ -598,14 +730,21 @@ router.post("/authority/generate-license", requireAuthorityAuth, async (req, res
 
     res.json({
       success: true,
-      licenseId,
-      licenseKey: compactToken,
+      licenseId: pair.licenseId,
+      licensePairId: pair.licensePairId,
+      keyFileId: pair.keyFileId,
+      licenseKey: pair.compactToken,
       shortKey,
-      activationKey: compactToken,
+      activationKey: pair.compactToken,
       seatCount: effectiveSeatCount,
-      licenseFile: signedContent,
+      licenseKeyFile: pair.licenseKeyFileJson,
+      keyLicenseFile: pair.keyLicenseFileJson,
+      licenseFile: pair.keyLicenseFileJson,
+      licenseKeyFileName: `ledgerai-ph-${targetCompanyId.slice(-8).toLowerCase()}.lkey`,
+      keyLicenseFileName: `ledgerai-ph-${targetCompanyId.slice(-8).toLowerCase()}.lai`,
       companyId: targetCompanyId,
       planType: finalPlan,
+      redemptionState: 'ISSUED',
       expirationDate: expDate,
       isLifetime: type === 'LIFETIME'
     });

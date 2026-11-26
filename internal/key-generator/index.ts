@@ -13,6 +13,9 @@ export interface GenerateLicenseOptions {
   customDays?: number;
   deviceFingerprint?: string;
   seatCount?: number | 'UNLIMITED';
+  status?: 'ACTIVE' | 'SUSPENDED' | 'REVOKED';
+  recoveryReference?: string | null;
+  recoveryReason?: string | null;
 }
 
 export interface LicenseRequestPayload {
@@ -65,6 +68,9 @@ export function generateLicense({
   customDays,
   deviceFingerprint,
   seatCount,
+  status,
+  recoveryReference,
+  recoveryReason,
 }: GenerateLicenseOptions) {
   const licenseId = crypto.randomUUID();
   const activationKey = `LGR-${planType}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
@@ -84,7 +90,7 @@ export function generateLicense({
   } else if (duration === 'quarterly') {
     now.setMonth(now.getMonth() + 3);
     expDate = now.toISOString().slice(0, 10);
-  } else if (duration === 'yearly') {
+  } else if (duration === 'yearly' || duration === '1y') {
     now.setFullYear(now.getFullYear() + 1);
     expDate = now.toISOString().slice(0, 10);
   } else if (duration === 'custom' && customDays) {
@@ -98,32 +104,45 @@ export function generateLicense({
 
   const effectiveSeats = planType === 'ENTERPRISE' ? 'UNLIMITED' : (seatCount || 3);
 
-  const payload = {
+  const pair = AuthoritySigner.generateSignedLicensePair({
     licenseId,
     companyId: companyId.trim(),
-    productId: 'LEDGERAI-PH',
+    activationKey,
+    planType,
+    type,
+    durationType: duration,
+    expirationDate: expDate,
+    seatCount: effectiveSeats,
+    deviceBindingHash: deviceFingerprint ? deviceFingerprint.trim() : null,
+    status,
+    recoveryReference,
+    recoveryReason,
+  });
+
+  return {
+    licenseId: pair.licenseId,
+    licensePairId: pair.licensePairId,
+    keyFileId: pair.keyFileId,
+    pairDigest: pair.pairDigest,
+    revocationRef: pair.revocationRef,
+    companyId: companyId.trim(),
     activationKey,
     planType,
     type,
     expirationDate: expDate,
     seatCount: effectiveSeats,
-    deviceBindingHash: deviceFingerprint ? deviceFingerprint.trim() : null,
-    issuedAt: new Date().toISOString(),
-    version: '1.0',
-  };
-
-  const { signature, json } = AuthoritySigner.generateSignedLicenseArtifact(payload);
-
-  return {
-    licenseId,
-    companyId: companyId.trim(),
-    activationKey,
-    planType,
-    type,
-    expirationDate: expDate,
-    payload,
-    signature,
-    json,
+    // Dual-file outputs
+    licenseKeyFilePayload: pair.licenseKeyFilePayload,
+    licenseKeyFileSignature: pair.licenseKeySignature,
+    licenseKeyFileJson: pair.licenseKeyFileJson,
+    keyLicenseFilePayload: pair.keyLicenseFilePayload,
+    keyLicenseFileSignature: pair.keyLicenseSignature,
+    keyLicenseFileJson: pair.keyLicenseFileJson,
+    // Backward-compatible properties mapped to Key License File
+    payload: pair.keyLicenseFilePayload,
+    signature: pair.keyLicenseSignature,
+    json: pair.keyLicenseFileJson,
+    compactToken: pair.compactToken,
   };
 }
 
@@ -155,17 +174,22 @@ if (process.argv[1] && process.argv[1].includes('key-generator')) {
     duration: durationArg,
   });
 
-  const outFilename = `license_${result.companyId.replace(/[^A-Za-z0-9_-]/g, '_')}.lai`;
-  const outPath = path.resolve(process.cwd(), outFilename);
-  fs.writeFileSync(outPath, result.json, 'utf8');
+  const baseName = `license_${result.companyId.replace(/[^A-Za-z0-9_-]/g, '_')}`;
+  const keyOutFilename = `${baseName}.lkey`;
+  const licOutFilename = `${baseName}.lai`;
+  fs.writeFileSync(path.resolve(process.cwd(), keyOutFilename), result.licenseKeyFileJson, 'utf8');
+  fs.writeFileSync(path.resolve(process.cwd(), licOutFilename), result.keyLicenseFileJson, 'utf8');
 
   console.log(`\n======================================================`);
-  console.log(`✔ LICENSE GENERATED & SIGNED BY AUTHORITY`);
+  console.log(`✔ DUAL-FILE LICENSE PAIR GENERATED & SIGNED BY AUTHORITY`);
   console.log(`======================================================`);
-  console.log(`Company ID:     ${result.companyId}`);
-  console.log(`Activation Key: ${result.activationKey}`);
-  console.log(`Plan Type:      ${result.planType}`);
-  console.log(`Expiration:     ${result.expirationDate || 'LIFETIME'}`);
-  console.log(`License File:   ${outFilename}`);
+  console.log(`Company ID:        ${result.companyId}`);
+  console.log(`License Pair ID:   ${result.licensePairId}`);
+  console.log(`Key File ID:       ${result.keyFileId}`);
+  console.log(`Activation Key:    ${result.activationKey}`);
+  console.log(`Plan Type:         ${result.planType}`);
+  console.log(`Expiration:        ${result.expirationDate || 'LIFETIME'}`);
+  console.log(`License Key File:  ${keyOutFilename}`);
+  console.log(`Key License File:  ${licOutFilename}`);
   console.log(`======================================================\n`);
 }

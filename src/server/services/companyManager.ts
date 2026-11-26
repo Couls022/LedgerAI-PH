@@ -2291,10 +2291,44 @@ export class CompanyManager {
         }
         try {
           const licTableInfo = sqlite.pragma("table_info('company_licenses')") as any[];
-          const hasSeatCountCol = Array.isArray(licTableInfo) && licTableInfo.some(c => c.name === 'seat_count');
-          if (!hasSeatCountCol) {
-            await sqlite.exec("ALTER TABLE company_licenses ADD COLUMN seat_count integer DEFAULT 3;");
-          }
+          const colNames = new Set(Array.isArray(licTableInfo) ? licTableInfo.map((c: any) => c.name) : []);
+          const addColIfMissing = (name: string, def: string) => {
+            if (!colNames.has(name)) {
+              sqlite.exec(`ALTER TABLE company_licenses ADD COLUMN ${name} ${def};`);
+            }
+          };
+          addColIfMissing('seat_count', 'integer DEFAULT 3');
+          addColIfMissing('license_pair_id', 'text');
+          addColIfMissing('key_file_id', 'text');
+          addColIfMissing('activation_record_id', 'text');
+          addColIfMissing('activation_timestamp', 'text');
+          addColIfMissing('activated_by', 'text');
+          addColIfMissing('key_file_content', 'text');
+          addColIfMissing('activation_receipt', 'text');
+          addColIfMissing('revocation_ref', 'text');
+          addColIfMissing('license_version', "text DEFAULT '2.0'");
+          addColIfMissing('activation_policy', "text DEFAULT 'ONE_TIME_COMPANY_BOUND'");
+          addColIfMissing('recovery_reference', 'text');
+          addColIfMissing('recovery_reason', 'text');
+
+          await sqlite.exec(`
+            CREATE TABLE IF NOT EXISTS license_redemption_records (
+              id text PRIMARY KEY,
+              company_id text NOT NULL REFERENCES companies(id),
+              license_pair_id text NOT NULL,
+              license_id text NOT NULL,
+              key_file_id text NOT NULL,
+              activation_key text NOT NULL,
+              plan_type text NOT NULL,
+              activation_status text NOT NULL,
+              activated_at text NOT NULL,
+              activated_by text,
+              activation_receipt text NOT NULL,
+              recovery_reference text,
+              recovery_reason text,
+              created_at integer NOT NULL DEFAULT (strftime('%s', 'now') * 1000)
+            );
+          `);
         } catch (_) {}
         try {
           await sqlite.exec(`

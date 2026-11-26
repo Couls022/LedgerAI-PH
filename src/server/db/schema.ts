@@ -49,8 +49,38 @@ export const companyLicenses = sqliteTable('company_licenses', {
   seatCount: integer('seat_count').default(3),
   previousLicenseId: text('previous_license_id'),
   replacementReason: text('replacement_reason'),
+  licensePairId: text('license_pair_id'),
+  keyFileId: text('key_file_id'),
+  activationRecordId: text('activation_record_id'),
+  activationTimestamp: text('activation_timestamp'),
+  activatedBy: text('activated_by'),
+  keyFileContent: text('key_file_content'),
+  activationReceipt: text('activation_receipt'),
+  revocationRef: text('revocation_ref'),
+  licenseVersion: text('license_version').default('2.0'),
+  activationPolicy: text('activation_policy').default('ONE_TIME_COMPANY_BOUND'),
+  recoveryReference: text('recovery_reference'),
+  recoveryReason: text('recovery_reason'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().defaultNow(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().defaultNow(),
+});
+
+// 1.6 LICENSE REDEMPTION RECORDS (ONE-TIME DUAL-FILE ACTIVATION TRACKING)
+export const licenseRedemptionRecords = sqliteTable('license_redemption_records', {
+  id: text('id').primaryKey(), // Activation Record ID
+  companyId: text('company_id').notNull().references(() => companies.id),
+  licensePairId: text('license_pair_id').notNull(),
+  licenseId: text('license_id').notNull(),
+  keyFileId: text('key_file_id').notNull(),
+  activationKey: text('activation_key').notNull(),
+  planType: text('plan_type').notNull(),
+  activationStatus: text('activation_status').notNull(), // ACTIVE, RECOVERED, REVOKED, SUSPENDED, EXPIRED
+  activatedAt: text('activated_at').notNull(),
+  activatedBy: text('activated_by'),
+  activationReceipt: text('activation_receipt').notNull(),
+  recoveryReference: text('recovery_reference'),
+  recoveryReason: text('recovery_reason'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().defaultNow(),
 });
 
 // 2. USERS
